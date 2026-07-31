@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { getDMQueue, getRedisConnection } from "@/lib/queue/client";
 import { getWorkerHealth } from "@/lib/ops/worker-health";
@@ -56,7 +56,15 @@ async function checkQueue(): Promise<HealthCheck & { counts?: unknown }> {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth = request.headers.get("authorization");
+    if (auth !== `Bearer ${secret}`) {
+      return NextResponse.json({ status: "unauthorized" }, { status: 401 });
+    }
+  }
+
   const [database, redis, queue, worker] = await Promise.all([
     checkDatabase(),
     checkRedis(),

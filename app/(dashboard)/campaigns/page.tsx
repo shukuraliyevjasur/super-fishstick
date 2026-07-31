@@ -245,7 +245,7 @@ export default function CampaignsPage() {
           publicReplyMessages: auto.publicReplyMessages,
           trackedDestinationUrl: auto.trackedLinks[0]?.destinationUrl ?? "",
           secondaryDestinationUrl: auto.trackedLinks[1]?.destinationUrl ?? "",
-          secondaryButtonLabel: auto.trackedLinks[1]?.label ?? "Open link",
+          secondaryButtonLabel: auto.trackedLinks[1]?.label ?? "Havolani ochish",
           requireFollow: auto.requireFollow,
           followPromptMessage: auto.followPromptMessage,
           followPromptButtonLabel: auto.followPromptButtonLabel,

@@ -1,0 +1,19 @@
+-- Enable Row Level Security on all tables to block direct PostgREST/anon-key access.
+-- Prisma connects as the postgres superuser (service role) which bypasses RLS,
+-- so this has no effect on application queries.
+
+ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Account" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Session" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "VerificationToken" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Workspace" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "WorkspaceMember" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "WorkspaceInvitation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "InstagramAccount" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Automation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "DmLog" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ProcessedComment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TrackedLink" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "LinkClick" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "WebhookEvent" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "OperationalEvent" ENABLE ROW LEVEL SECURITY;

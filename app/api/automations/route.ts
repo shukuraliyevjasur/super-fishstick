@@ -10,6 +10,7 @@ import {
   canManageWorkspace,
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
+import { canUseFeature, getPlanLimits } from "@/lib/billing/plan";
 
 // This list is read-your-writes (created/imported campaigns must show up
 // immediately), so never cache it at the route or CDN layer.
@@ -305,7 +306,11 @@ export async function POST(request: NextRequest) {
   const [workspace, instagramAccount] = await Promise.all([
     prisma.workspace.findUnique({
       where: { id: workspaceId },
-      select: { id: true },
+      select: {
+        id: true,
+        plan: true,
+        _count: { select: { automations: true } },
+      },
     }),
     requestedInstagramAccountId
       ? prisma.instagramAccount.findFirst({
@@ -328,6 +333,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: "Connect Instagram before creating campaigns" },
       { status: 400 }
+    );
+  }
+
+  // Plan enforcement: campaign count
+  const limits = getPlanLimits(workspace.plan);
+  if (
+    limits.maxActiveAutomations !== Infinity &&
+    workspace._count.automations >= limits.maxActiveAutomations
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `${workspace.plan === "STANDART" ? "Standart" : "Pro"} rejim ${limits.maxActiveAutomations} ta campaign bilan cheklangan`,
+      },
+      { status: 403 }
+    );
+  }
+
+  // Plan enforcement: Pro-only features
+  if (parsed.data.requireFollow && !canUseFeature(workspace.plan, "followGate")) {
+    return NextResponse.json(
+      { success: false, error: "Follow gate faqat Pro rejimda mavjud" },
+      { status: 403 }
+    );
+  }
+  if (parsed.data.openingDmEnabled && !canUseFeature(workspace.plan, "openingDm")) {
+    return NextResponse.json(
+      { success: false, error: "Kirish DM faqat Pro rejimda mavjud" },
+      { status: 403 }
+    );
+  }
+  if (parsed.data.trackedDestinationUrl && !canUseFeature(workspace.plan, "trackedLinks")) {
+    return NextResponse.json(
+      { success: false, error: "Kuzatilgan havolalar faqat Pro rejimda mavjud" },
+      { status: 403 }
     );
   }
 
@@ -354,7 +394,7 @@ export async function POST(request: NextRequest) {
     linkCreates.push({
       workspaceId,
       slug: generateTrackedLinkSlug(),
-      label: secondaryButtonLabel?.trim() || "Open link",
+      label: secondaryButtonLabel?.trim() || "Havolani ochish",
       destinationUrl: secondaryDestinationUrl,
     });
   }

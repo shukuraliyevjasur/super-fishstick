@@ -3,7 +3,11 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "replie - Instagram izohlarini DM ga aylantirish",
+  metadataBase: new URL(process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "https://replie.uz"),
+  title: {
+    default: "replie — Instagram izohlarini DM ga aylantirish",
+    template: "%s | replie",
+  },
   description:
     "Instagram izohlariga avtomatik DM yuboring. Rasmiy Meta API orqali ishlaydigan, kuchli kampaniya boshqaruv tizimi.",
   keywords: [
@@ -13,6 +17,21 @@ export const metadata: Metadata = {
     "ijtimoiy savdo",
     "DM avtomatlashtirish",
   ],
+  openGraph: {
+    title: "replie — Instagram izohlarini DM ga aylantirish",
+    description:
+      "Instagram izohlariga avtomatik DM yuboring. Rasmiy Meta API orqali ishlaydigan, kuchli kampaniya boshqaruv tizimi.",
+    url: "/",
+    siteName: "replie",
+    locale: "uz_UZ",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "replie — Instagram izohlarini DM ga aylantirish",
+    description:
+      "Instagram izohlariga avtomatik DM yuboring. Rasmiy Meta API orqali ishlaydigan, kuchli kampaniya boshqaruv tizimi.",
+  },
 };
 
 export default function RootLayout({

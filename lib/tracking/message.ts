@@ -46,7 +46,7 @@ export function renderMessageWithoutLink({
   commenterName?: string | null;
 }) {
   return message
-    .replace(/\{username\}/gi, commenterName ?? "there")
+    .replace(/\{username\}/gi, commenterName ?? "do'stim")
     .replace(/\s*\{link\}\s*/gi, " ")
     .trim();
 }
@@ -56,7 +56,11 @@ export function buildTrackedUrl(slug: string, baseUrl?: string) {
     baseUrl ??
     (typeof window !== "undefined"
       ? window.location.origin
-      : process.env.NEXTAUTH_URL ?? "http://localhost:3000");
+      : process.env.APP_URL ??
+        process.env.NEXTAUTH_URL ??
+        (process.env.NODE_ENV === "production"
+          ? (() => { throw new Error("APP_URL env var required in production"); })()
+          : "http://localhost:3000"));
 
   return `${resolvedBaseUrl.replace(/\/$/, "")}/r/${slug}`;
 }
@@ -72,7 +76,7 @@ export function renderMessageWithTracking({
   trackedLinks?: MessageTrackedLink[];
   baseUrl?: string;
 }) {
-  let rendered = message.replace(/\{username\}/gi, commenterName ?? "there");
+  let rendered = message.replace(/\{username\}/gi, commenterName ?? "do'stim");
   const primaryLink = trackedLinks?.[0];
 
   if (!primaryLink) return rendered;

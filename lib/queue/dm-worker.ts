@@ -62,7 +62,7 @@ function buildLinkButtons(
 ): { title: string; url: string }[] {
   return trackedLinks.slice(0, 3).map((link, index) => ({
     url: buildTrackedUrl(link.slug),
-    title: (index === 0 ? primaryLabel : link.label) || link.label || "Open link",
+    title: (index === 0 ? primaryLabel : link.label) || link.label || "Havolani ochish",
   }));
 }
 
@@ -428,7 +428,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
         const promptText = renderMessageWithoutLink({
           message:
             automation.followPromptMessage ||
-            "Almost there! Follow me and tap the button below to grab your link 💛",
+            "Deyarli yetdingiz! Meni kuzating va quyidagi tugmani bosib havolani oling 💛",
           commenterName,
         });
         await sendPrivateReplyWithButton(
@@ -436,7 +436,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
           automation.instagramAccount.instagramId,
           commentId,
           promptText,
-          automation.followPromptButtonLabel || "I'm following ✅",
+          automation.followPromptButtonLabel || "Obuna bo'ldim ✅",
           `followcheck:${automation.id}`
         );
       } else if (automation.trackedLinks.length > 0) {
@@ -445,7 +445,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
           renderMessageWithoutLink({
             message: automation.dmMessage,
             commenterName,
-          }) || "Here's your link:";
+          }) || "Sizning havolangiz:";
         const buttons = buildLinkButtons(
           automation.trackedLinks,
           automation.linkButtonLabel
@@ -612,7 +612,7 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
           automation.instagramAccount.instagramId,
           userId,
           promptText,
-          automation.followPromptButtonLabel || "I'm following ✅",
+          automation.followPromptButtonLabel || "Obuna bo'ldim ✅",
           `followcheck:${automation.id}`
         );
       } catch (error) {

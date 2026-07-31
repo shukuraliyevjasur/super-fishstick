@@ -8,6 +8,7 @@ import {
   canManageWorkspace,
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
+import { canUseFeature } from "@/lib/billing/plan";
 
 const campaignSchema = z.object({
   postId: z.string().min(1),
@@ -38,6 +39,17 @@ export async function POST(request: NextRequest) {
   if (!canManageWorkspace(context.role)) {
     return NextResponse.json(
       { success: false, error: "Only owners and admins can import campaigns" },
+      { status: 403 }
+    );
+  }
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: context.workspaceId },
+    select: { plan: true },
+  });
+  if (!workspace || !canUseFeature(workspace.plan, "csvImport")) {
+    return NextResponse.json(
+      { success: false, error: "CSV import faqat Pro rejimda mavjud" },
       { status: 403 }
     );
   }

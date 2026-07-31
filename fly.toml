@@ -1,10 +1,12 @@
 app = "replie-worker"
-primary_region = "ams"
+primary_region = "iad"
 
 [build]
 
 [env]
   NODE_ENV = "production"
+  # APP_URL must be set as a fly secret: fly secrets set APP_URL=https://replie.uz
+  # Without it every tracked link in sent DMs will point to localhost.
 
 [[vm]]
   size = "shared-cpu-1x"

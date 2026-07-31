@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/client";
+import { getPlanLimits } from "@/lib/billing/plan";
 
 export async function canConnectInstagramAccount({
   workspaceId,
@@ -19,10 +20,29 @@ export async function canConnectInstagramAccount({
     };
   }
 
-  return {
-    allowed: true,
-    reason: null,
-  };
+  // Already connected to this workspace — reconnecting is allowed (token refresh).
+  if (existingAccount?.workspaceId === workspaceId) {
+    return { allowed: true, reason: null };
+  }
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: {
+      plan: true,
+      _count: { select: { instagramAccounts: true } },
+    },
+  });
+
+  if (!workspace) {
+    return { allowed: false, reason: "workspace_not_found" as const };
+  }
+
+  const { maxInstagramAccounts } = getPlanLimits(workspace.plan);
+  if (workspace._count.instagramAccounts >= maxInstagramAccounts) {
+    return { allowed: false, reason: "plan_limit" as const };
+  }
+
+  return { allowed: true, reason: null };
 }
 
 export async function getWorkspaceInstagramAccount(

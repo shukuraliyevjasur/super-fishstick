@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -65,15 +66,16 @@ model VerificationToken {
 }
 
 model Workspace {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   name      String
   ownerId   String
-  owner     User     @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  owner     User          @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
-  usagePeriodStart  DateTime @default(now())
-  dmsSentThisPeriod Int      @default(0)
+  plan              WorkspacePlan @default(STANDART)
+  usagePeriodStart  DateTime      @default(now())
+  dmsSentThisPeriod Int           @default(0)
 
   members           WorkspaceMember[]
   invitations       WorkspaceInvitation[]
@@ -313,6 +315,11 @@ model OperationalEvent {
   @@index([source])
   @@index([level])
   @@index([createdAt])
+}
+
+enum WorkspacePlan {
+  STANDART
+  PRO
 }
 
 enum WorkspaceRole {
