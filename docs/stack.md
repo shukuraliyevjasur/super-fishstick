@@ -45,11 +45,23 @@ worker + Postgres + Redis) are covered in [setup.md](setup.md).
 | Piece | Service | Free tier |
 | --- | --- | --- |
 | Web app | Vercel (Hobby) | Free |
-| PostgreSQL | Neon | Free (~0.5 GB) |
+| PostgreSQL | Supabase (session-mode pooler, port 5432) | Free (~0.5 GB) |
 | Redis | Redis Cloud (Essentials) | Free (30 MB, TCP) |
-| Worker (24/7) | Oracle Cloud "Always Free" VM (VM.Standard.E2.1.Micro, Ubuntu 22.04, kept alive with `pm2`) | Free forever |
+| Worker (24/7) | GCP Compute Engine e2-micro (Debian, standard persistent disk, Docker with `--restart always`) | Always Free |
 | Login email | Resend | Free (3k emails/mo) |
 | Instagram API | Meta app with Instagram Login | Free |
+
+Notes on the two that have caveats:
+
+- **Supabase** — use the *session-mode pooler* host on port 5432. The direct
+  connection resolves to IPv6 only, which Vercel's builders cannot reach.
+- **GCP e2-micro** — Always Free requires `us-central1`, `us-west1`, or
+  `us-east1` and a *standard* persistent disk; a balanced/SSD disk bills. The VM
+  is too small to build the worker image itself, so CI builds it and the VM
+  pulls — see [HANDOFF.md](../HANDOFF.md#worker).
+
+Fly.io is no longer viable for the worker: its free allowance is now a 7-day
+trial, after which a shared-cpu-1x instance bills roughly $2–5/month.
 
 ## Environment variables
 

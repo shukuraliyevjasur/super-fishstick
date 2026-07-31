@@ -1,116 +1,181 @@
 # replie — Agent Handoff
 
+**Last updated:** 2026-07-31
+
 ## What this is
 
-**replie** (`replie.uz`) is a paid SaaS for the Uzbek market built on top of the OpenReply fork.
-It automates Instagram comment-to-DM campaigns (keyword triggers, follow gates, tracked links).
+**replie** is a paid SaaS for the Uzbek market, built on an OpenReply fork.
+It automates Instagram comment-to-DM campaigns (keyword triggers, follow gates,
+tracked links).
 
-All branding, UI copy, and pricing have been finalized. The codebase is deployment-ready.
+**Status: deployed and running.** Web app is live on Vercel, worker is live on a
+GCP VM, database is migrated. Not yet open to real users — see
+[Before real users](#before-real-users).
 
 ---
 
-## Deployment stack
+## Live infrastructure
 
-| Layer | Platform | Notes |
-|-------|----------|-------|
-| Web app | Vercel | Next.js 16 App Router |
-| Database | PostgreSQL | Any provider (Neon, Supabase, Railway) |
-| Queue / cache | Redis | BullMQ needs blocking commands — Upstash free tier hits 10k/day limit fast; use Upstash paid or Railway Redis |
-| Background worker | Fly.io | Always-on process, no HTTP port |
+| Layer | Where | Detail |
+|-------|-------|--------|
+| Web app | Vercel | `super-fishstick-gamma.vercel.app`, repo `shukuraliyevjasur/super-fishstick`, auto-deploys on push to `main` |
+| Database | Supabase Postgres | Session-mode pooler, port 5432 (IPv4-compatible; the direct connection is IPv6-only and fails from Vercel) |
+| Queue / cache | Redis Cloud | Essentials free tier, native TCP |
+| Worker | GCP Compute Engine | VM `replie`, zone `us-central1-a`, e2-micro, Debian 13, 30 GB standard disk — Always Free tier |
 | Email | Resend | Magic-link auth |
-| Domain | replie.uz | Not yet purchased |
+| Domain | — | `replie.uz` not purchased yet |
 
-**Worker must stay running 24/7.** It processes Instagram DM jobs from BullMQ queues.
-HTTP-only Redis services (Upstash REST API) do NOT work for the worker — it needs raw TCP Redis.
+**Cost: $0/month.** The GCP e2-micro is in the Always Free tier (`us-central1`,
+standard persistent disk — a balanced/SSD disk would bill). Fly.io was the
+original plan but dropped its free allowance to a 7-day trial; `fly.toml` was
+removed in the same commit as this file.
 
----
+### Why the worker needs its own host
 
-## Key brand values
-
-| Field | Value |
-|-------|-------|
-| Product name | replie |
-| Domain | replie.uz |
-| Email | info@replie.uz |
-| Telegram | https://t.me/ceo_syr |
-| Headline | Izohlaringiz o'zi ishlaydi |
-| Tier 1 | Standart — 19 000 so'm/oy |
-| Tier 2 | Pro — 29 000 so'm/oy |
+`worker/dm-worker.ts` is a long-running process: it consumes the BullMQ send
+queue, runs a heartbeat every 30s, and runs the comment-reconciliation poller
+every 5 minutes. Vercel cannot host it — its free crons only fire once a day, and
+functions do not stay resident. If the worker is down, **jobs queue in Redis and
+no DMs are sent.**
 
 ---
 
-## What's done
+## Deploying
 
-- Full Uzbek translation across all pages and components
-- Light B2B theme (`#EDF1F5` bg, `#0145F2` accent) replacing all dark zinc classes
-- Semantic design tokens: `bg-surface`, `text-muted`, `border-border`, `bg-accent`, etc.
-- Pricing page (`app/pricing/page.tsx`) — two-tier, Telegram CTA
-- All placeholder tokens replaced (`[PRODUCT_NAME]`, `[HEADLINE_PLACEHOLDER]`, etc.)
-- Auth email sender: `replie <login@example.com>` → uses `EMAIL_FROM` env var
-- SEO pages that don't apply now redirect to `/` (templates, comment-link-automation)
-- `Dockerfile` and `fly.toml` for the worker — ready to `fly deploy`
-- `NEXTAUTH_URL` in fly.toml env section
+### Web app
 
-## What's NOT done (needs action before go-live)
-
-1. **Environment variables** — not set on Vercel or Fly.io yet
-2. **Domain** — `replie.uz` not purchased yet; update `NEXTAUTH_URL` when live
-3. **Meta app** — Instagram App ID/Secret need to be created in Meta Developer Console
-4. **Database** — PostgreSQL provider not chosen, no migrations run yet
-5. **Redis** — provider not chosen
-6. **Resend account** — API key not created
-7. **`fly deploy`** — worker not deployed yet (Dockerfile is ready)
-8. **Vercel deployment** — not triggered yet
-
----
-
-## Architecture notes
-
-### Design token system
-
-All colors use semantic tokens defined in `app/globals.css` under `@theme inline`.
-Never use raw Tailwind color classes (`bg-zinc-*`, `text-gray-*`) in new code — use tokens.
-
-**Exception**: `components/campaign-preview.tsx` phone mockup intentionally uses dark zinc
-colors to simulate the Instagram UI. Do NOT change these.
+Push to `main`. Vercel builds with `prisma generate && prisma migrate deploy && next build`.
 
 ### Worker
 
-- Entry: `worker/dm-worker.ts`
-- Runtime: `tsx` (TypeScript, no compile step)
-- Runs: BullMQ worker + heartbeat every 30s + polling reconciler
-- Start command: `npm run worker`
-- Required env vars: `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `NEXTAUTH_URL`
+The e2-micro is too small to build the image itself — `npm ci` took over 40
+minutes and ran out of memory before swap was added. **Build on GitHub Actions,
+pull on the VM.**
 
-### Vercel build script
+1. `.github/workflows/worker-image.yml` builds and pushes
+   `ghcr.io/shukuraliyevjasur/replie-worker:latest`. It triggers on pushes that
+   touch `worker/`, `lib/`, `prisma/`, `Dockerfile`, or `package*.json`, and can
+   be run manually via **Actions → Build & Push Worker Image → Run workflow**.
+   The GHCR package must stay **public** for the VM to pull without auth.
 
+2. On the VM (GCP Console → Compute Engine → `replie` → SSH):
+
+```bash
+docker pull ghcr.io/shukuraliyevjasur/replie-worker:latest
+docker stop replie-worker && docker rm replie-worker
+docker run -d --name replie-worker --restart always \
+  -e NODE_ENV=production \
+  -e DATABASE_URL="..." -e REDIS_URL="..." \
+  -e ENCRYPTION_KEY="..." -e APP_URL="..." \
+  ghcr.io/shukuraliyevjasur/replie-worker:latest
 ```
-prisma generate && prisma migrate deploy && next build
-```
-(The `vercel-build` npm script already contains this.)
 
-### ENCRYPTION_KEY
+3. Confirm: `docker logs replie-worker` → `[DM Worker] Started`.
 
-Must be **byte-for-byte identical** on Vercel and on the Fly.io worker.
-It's used to encrypt/decrypt stored Instagram OAuth tokens.
-Generate once with: `openssl rand -hex 32`
-
-### Dead code (safe to ignore, do not render)
-
-`seo-page-shell.tsx`, `template-visual.tsx`, `lib/seo-pages.ts` — all pages that used
-these now redirect to `/`, so they're never rendered. Left in place to avoid risk.
+`--restart always` means it survives VM reboots. Secret values are not in this
+repo — read them off the existing `docker run` (`docker inspect replie-worker`)
+or the Vercel env settings.
 
 ---
 
-## File locations for key things
+## Environment variables
+
+Values live in Vercel's env settings and in the worker's `docker run` — never in
+the repo.
+
+**Web app (Vercel):** `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `CRON_SECRET`,
+`ENCRYPTION_KEY`, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `EMAIL_FROM`,
+`META_GRAPH_API_VERSION`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`,
+`FACEBOOK_APP_SECRET`, `WEBHOOK_VERIFY_TOKEN`, `APP_URL`.
+
+**Worker (GCP):** `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `APP_URL`, `NODE_ENV`.
+
+> **`ENCRYPTION_KEY` must be byte-for-byte identical on Vercel and the worker.**
+> It encrypts stored Instagram OAuth tokens: the web app writes them, the worker
+> decrypts them to send. A mismatch means every DM fails to decrypt. It was
+> rotated on 2026-07-31, which invalidated any previously stored tokens —
+> connected accounts must reconnect. Generate with `openssl rand -hex 32`.
+
+`APP_URL` builds the tracked links inside sent DMs. Set it wherever the app is
+actually reachable; swap both to `https://replie.uz` when the domain lands.
+
+---
+
+## Database migrations
+
+Prisma 7 reads the datasource URL from `prisma.config.ts`, **not** `schema.prisma`.
+Adding `url = env("DATABASE_URL")` to the schema's datasource block breaks the
+build with P1012.
+
+If you ever apply a migration by hand in the Supabase SQL editor, also insert its
+row into `_prisma_migrations` — otherwise the next deploy tries to re-apply it,
+fails, and records a *failed* migration, which then blocks every later deploy
+with P3009. Recovering means setting `finished_at` on the failed row and deleting
+any duplicate. Prefer letting `prisma migrate deploy` do the work.
+
+---
+
+## Design system
+
+Tokens live in `app/globals.css` under `@theme inline`. The scales are **closed
+sets** — use only what is defined, and add to the token file rather than reaching
+for a one-off value.
+
+- **Type:** `text-xs` (11px floor) → `text-6xl`. No arbitrary `text-[Npx]`.
+- **Radius:** `rounded-md` controls · `rounded-lg` cards · `rounded-full` pills. Nothing else.
+- **Neutrals:** `foreground` primary · `muted` secondary · `subtle` tertiary.
+- **Font:** Inter via `next/font` in `app/layout.tsx`. Headings are `font-bold`
+  (700) — do not use `font-black`, since the previous `system-ui` stack had no
+  900 weight and Windows synthesised it.
+- Never use raw Tailwind colors (`bg-zinc-*`, `text-gray-*`). Use tokens.
+
+**Exception:** `components/campaign-preview.tsx` intentionally uses dark zinc and
+`rounded-2xl` bubbles to mimic the Instagram UI. Do not "fix" it.
+
+**UI language is Uzbek.** The product noun is **kampaniya / kampaniyalar**, not
+"campaign". The TypeScript type is still `Campaign` — that is correct, don't
+rename identifiers.
+
+See [DESIGN_REVIEW.md](DESIGN_REVIEW.md) for the full audit. P0 items are done;
+the remaining P2 items (10–11: landing-page composition) are editorial decisions,
+not token changes.
+
+---
+
+## Before real users
+
+1. **Meta app credentials** — confirm `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET`
+   exist and the webhook is subscribed. Without them nobody can connect an
+   account and the product does nothing.
+2. **`EMAIL_FROM`** is still `onboarding@resend.dev` (Resend's sandbox sender).
+   Deliverability will be poor. Move to a domain sender.
+3. **Domain** — buy `replie.uz`, point it at Vercel, then update `NEXTAUTH_URL`
+   and `APP_URL` in both places.
+4. **Redis eviction policy** — the worker logs
+   `Eviction policy is volatile-lru. It should be "noeviction"` on boot. Under
+   memory pressure Redis Cloud can evict queued jobs, silently losing DMs. Change
+   it in the Redis Cloud console if the free tier allows.
+5. **Meta App Review** — needed only to let people outside your test users
+   connect their own accounts. See [META_APP_REVIEW.md](META_APP_REVIEW.md).
+
+---
+
+## Key files
 
 | What | File |
 |------|------|
 | Design tokens | `app/globals.css` |
-| Pricing page | `app/pricing/page.tsx` |
-| Auth config | `lib/auth.ts` |
+| Root layout / font | `app/layout.tsx` |
 | Worker entry | `worker/dm-worker.ts` |
-| Fly.io config | `fly.toml` |
+| Worker job logic | `lib/queue/dm-worker.ts` |
+| Worker image CI | `.github/workflows/worker-image.yml` |
 | Docker config | `Dockerfile` |
 | Prisma schema | `prisma/schema.prisma` |
-| DB client | `lib/db/client.ts` |
+| Prisma datasource | `prisma.config.ts` |
+| Plan limits | `lib/billing/plan.ts` |
+| Public header / footer | `components/public-site-header.tsx`, `components/public-site-footer.tsx` |
+
+**Dead code** — `seo-page-shell.tsx`, `template-visual.tsx`, `lib/seo-pages.ts`.
+The pages that used them now redirect to `/`, so they never render. Left in place
+to avoid churn; they still contain raw zinc colors, so ignore them when auditing
+design tokens.

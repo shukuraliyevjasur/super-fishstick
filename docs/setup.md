@@ -9,7 +9,7 @@ If you would rather have an AI assistant drive most of this, skip to [Set it up 
 OpenReply is two processes and two datastores.
 
 - Web app and API: Next.js. Serves the dashboard, the OAuth callback, and the incoming webhook. Runs well on Vercel.
-- Worker: a long-running Node process (`npm run worker`) that consumes the send queue and runs the polling reconciler. It cannot run on Vercel, because serverless functions are short-lived and a queue consumer has to stay up. Railway, Render, Fly, or any always-on box works.
+- Worker: a long-running Node process (`npm run worker`) that consumes the send queue and runs the polling reconciler. It cannot run on Vercel, because serverless functions are short-lived and a queue consumer has to stay up. Railway, Render, a GCP/Oracle always-free VM, or any always-on box works. (Fly.io's free allowance is now a 7-day trial.)
 - PostgreSQL: campaigns, logs, accounts, sessions.
 - Redis: the BullMQ send queue and the per-account rate limiter.
 
