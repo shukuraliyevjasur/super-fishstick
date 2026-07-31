@@ -1,22 +1,18 @@
 "use client";
 
-/**
- * Top Bar
- *
- * Page title, mobile hamburger, and connection status.
- */
-
 import { usePathname } from "next/navigation";
 
 const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
+  "/dashboard": "Bosh sahifa",
   "/campaigns": "Campaigns",
-  "/campaigns/new": "New Campaign",
+  "/campaigns/new": "Yangi Campaign",
   "/automations": "Campaigns",
-  "/automations/new": "New Campaign",
-  "/logs": "DM Logs",
-  "/settings": "Settings",
-  "/diagnostics": "Diagnostics",
+  "/automations/new": "Yangi Campaign",
+  "/logs": "DM Jurnali",
+  "/settings": "Sozlamalar",
+  "/diagnostics": "Diagnostika",
+  "/overview": "Statistika",
+  "/inbox": "Xabarlar",
 };
 
 interface TopBarProps {
@@ -34,30 +30,34 @@ export default function TopBar({
   const title = pageTitles[pathname] ?? "Dashboard";
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-8 border-b border-border bg-background">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 lg:px-6 border-b border-border bg-surface shadow-sm">
+      <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="lg:hidden px-2 py-1 rounded border border-border text-sm text-muted hover:text-foreground"
-          aria-label="Toggle sidebar"
+          className="lg:hidden p-1.5 rounded-md border border-border text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+          aria-label="Menuni ochish"
         >
-          Menu
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
         </button>
-        <h1 className="text-lg font-semibold">{title}</h1>
+        <h1 className="text-sm font-semibold text-foreground">{title}</h1>
       </div>
 
       {instagramAccountCount > 0 ? (
         <p className="text-sm text-muted">
           {instagramAccountCount > 1
-            ? `${instagramAccountCount} accounts`
+            ? `${instagramAccountCount} ta akkaunt`
             : `@${instagramUsername}`}
         </p>
       ) : (
         <a
           href="/api/instagram/connect"
-          className="text-sm font-medium px-3 py-1.5 rounded bg-accent text-white hover:bg-accent-hover"
+          className="text-sm font-semibold px-3.5 py-1.5 rounded-md bg-accent text-white hover:bg-accent-hover transition-colors"
         >
-          Connect Instagram
+          Instagram ulash
         </a>
       )}
     </header>

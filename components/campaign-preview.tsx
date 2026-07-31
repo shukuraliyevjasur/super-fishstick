@@ -263,7 +263,7 @@ function CommentsScreen({
                 <span className="font-semibold">{username}</span>{" "}
                 <span className="text-zinc-500">Now</span>
               </p>
-              <p className="text-sm">{publicReplyMessage || "Sent you a DM! 📩"}</p>
+              <p className="text-sm">{publicReplyMessage || "Sizga DM yubordim! 📩"}</p>
               <p className="mt-0.5 text-xs text-zinc-500">Reply</p>
             </div>
             <span className="mt-1">{Ico.heart("h-3.5 w-3.5 text-zinc-500")}</span>
@@ -336,15 +336,15 @@ function DmScreen({
             <div className="flex items-end gap-2">
               <Avatar url={avatarUrl} size={24} />
               <div className="max-w-[80%] overflow-hidden rounded-2xl rounded-bl-md bg-zinc-800">
-                <p className="whitespace-pre-wrap px-3 py-2 text-sm">{openingDmMessage || "Your opening message…"}</p>
+                <p className="whitespace-pre-wrap px-3 py-2 text-sm">{openingDmMessage || "Kirish xabaringiz…"}</p>
                 <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                  {openingDmButtonLabel || "Button label"}
+                  {openingDmButtonLabel || "Tugma nomi"}
                 </div>
               </div>
             </div>
             <div className="flex justify-end">
               <div className="rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
-                {openingDmButtonLabel || "Button label"}
+                {openingDmButtonLabel || "Tugma nomi"}
               </div>
             </div>
           </>
@@ -356,16 +356,16 @@ function DmScreen({
               <div className="max-w-[80%] overflow-hidden rounded-2xl rounded-bl-md bg-zinc-800">
                 <p className="whitespace-pre-wrap px-3 py-2 text-sm">
                   {followPromptMessage ||
-                    "Almost there! Follow me and tap the button below to grab your link 💛"}
+                    "Deyarli bo'ldi! Meni kuzating va quyidagi tugmani bosib havolani oling 💛"}
                 </p>
                 <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                  {followPromptButtonLabel || "I'm following ✅"}
+                  {followPromptButtonLabel || "Obuna bo'ldim ✅"}
                 </div>
               </div>
             </div>
             <div className="flex justify-end">
               <div className="rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
-                {followPromptButtonLabel || "I'm following ✅"}
+                {followPromptButtonLabel || "Obuna bo'ldim ✅"}
               </div>
             </div>
           </>
@@ -384,7 +384,7 @@ function DmScreen({
                 {(!showCard || bodyText) && (
                   <p className="whitespace-pre-wrap px-3 py-2 text-sm">
                     {!revealMessage
-                      ? "Write a message"
+                      ? "Xabar yozing"
                       : showCard
                         ? bodyText
                         : renderMessage(revealMessage, hasLink)}
@@ -393,11 +393,11 @@ function DmScreen({
                 {showCard && (
                   <>
                     <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                      {linkButtonLabel || "Open link"}
+                      {linkButtonLabel || "Havolani ochish"}
                     </div>
                     {hasSecondLink && (
                       <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                        {secondLinkButtonLabel || "Open link"}
+                        {secondLinkButtonLabel || "Havolani ochish"}
                       </div>
                     )}
                   </>

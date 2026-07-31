@@ -259,7 +259,7 @@ export default function InboxPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-4">
-        <h1 className="text-lg font-semibold text-foreground">Inbox</h1>
+        <h1 className="text-lg font-semibold text-foreground">Xabarlar</h1>
         {accounts.length > 1 && (
           <AccountSelect
             accounts={accounts}
@@ -279,15 +279,15 @@ export default function InboxPage() {
           }`}
         >
           <div className="shrink-0 border-b border-border px-4 py-3 text-sm font-semibold text-foreground">
-            Conversations
+            Suhbatlar
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {convLoading ? (
-              <p className="px-4 py-6 text-sm text-muted">Loading…</p>
+              <p className="px-4 py-6 text-sm text-muted">Yuklanmoqda…</p>
             ) : convError ? (
               <p className="px-4 py-6 text-sm text-error">{convError}</p>
             ) : conversations.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-muted">No conversations yet.</p>
+              <p className="px-4 py-6 text-sm text-muted">Hali suhbat yo&apos;q.</p>
             ) : (
               conversations.map((c) => {
                 const isActive = c.id === activeId;
@@ -304,14 +304,14 @@ export default function InboxPage() {
                       <span className="truncate text-sm font-medium text-foreground">
                         @{c.contact.username ?? "unknown"}
                       </span>
-                      <span className="shrink-0 text-[11px] text-zinc-500">
+                      <span className="shrink-0 text-[11px] text-muted">
                         {formatTime(c.updatedTime)}
                       </span>
                     </div>
                     {c.lastMessage && (
                       <p className="mt-0.5 truncate text-xs text-muted">
-                        {c.lastMessage.fromMe ? "You: " : ""}
-                        {c.lastMessage.text || "(no text)"}
+                        {c.lastMessage.fromMe ? "Siz: " : ""}
+                        {c.lastMessage.text || "(matn yoʿq)"}
                       </p>
                     )}
                   </button>
@@ -328,7 +328,7 @@ export default function InboxPage() {
         >
           {!active ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted">
-              Select a conversation to read and reply.
+              O&apos;qish va javob berish uchun suhbat tanlang.
             </div>
           ) : (
             <>
@@ -339,7 +339,7 @@ export default function InboxPage() {
                   className="-ml-1 rounded px-2 py-1 text-muted hover:text-foreground sm:hidden"
                   aria-label="Back to conversations"
                 >
-                  Back
+                  Orqaga
                 </button>
                 <span className="truncate">
                   @{active.contact.username ?? "unknown"}
@@ -348,9 +348,9 @@ export default function InboxPage() {
 
               <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
                 {threadLoading && messages.length === 0 ? (
-                  <p className="text-sm text-muted">Loading…</p>
+                  <p className="text-sm text-muted">Yuklanmoqda…</p>
                 ) : messages.length === 0 ? (
-                  <p className="text-sm text-muted">No messages.</p>
+                  <p className="text-sm text-muted">Xabarlar yo&apos;q.</p>
                 ) : (
                   messages.map((m) => (
                     <div
@@ -367,7 +367,7 @@ export default function InboxPage() {
                         <p className="whitespace-pre-wrap break-words">{m.text}</p>
                         <p
                           className={`mt-1 text-[10px] ${
-                            m.fromMe ? "text-white/70" : "text-zinc-500"
+                            m.fromMe ? "text-white/70" : "text-muted"
                           }`}
                         >
                           {formatTime(m.createdTime)}
@@ -388,8 +388,8 @@ export default function InboxPage() {
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={handleKeyDown}
                     rows={1}
-                    placeholder="Write a reply…  (Enter to send, Shift+Enter for a new line)"
-                    className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                    placeholder="Javob yozing… (Enter — yuborish, Shift+Enter — yangi qator)"
+                    className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -397,7 +397,7 @@ export default function InboxPage() {
                     disabled={sending || !draft.trim()}
                     className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
                   >
-                    {sending ? "Sending…" : "Send"}
+                    {sending ? "Yuborilmoqda…" : "Yuborish"}
                   </button>
                 </div>
               </div>

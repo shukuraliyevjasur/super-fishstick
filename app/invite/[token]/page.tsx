@@ -10,7 +10,7 @@ type InvitePageProps = {
 };
 
 export const metadata: Metadata = {
-  title: "Accept Workspace Invitation - OpenReply",
+  title: "replie — Ish maydoni taklifi",
   robots: { index: false, follow: false },
 };
 
@@ -35,24 +35,23 @@ export default async function InvitePage({ params }: InvitePageProps) {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-5 py-12">
-        <Link href="/" className="mb-8 text-sm font-bold text-cyan-100">
-          OpenReply
+        <Link href="/" className="mb-8 text-base font-bold text-foreground">
+          replie
         </Link>
-        <section className="border border-white/10 bg-white/[0.035] p-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
-            Workspace invitation
+        <section className="rounded-lg border border-border bg-surface p-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Ish maydoni taklifi
           </p>
-          <h1 className="mt-4 text-3xl font-black leading-tight text-white">
-            Join {invitation.workspace.name}
+          <h1 className="mt-4 text-3xl font-bold leading-tight text-foreground">
+            {invitation.workspace.name} jamoasiga qo&apos;shilish
           </h1>
-          <p className="mt-4 text-sm leading-6 text-zinc-400">
-            You were invited as {invitation.role.toLowerCase()} for{" "}
-            {invitation.email}.
+          <p className="mt-4 text-sm leading-6 text-muted">
+            Siz {invitation.email} uchun {invitation.role.toLowerCase()} sifatida taklif qilindingiz.
           </p>
           <div className="mt-8">
             {expired ? (
               <p className="text-sm text-error">
-                This invitation has expired. Ask the workspace owner to resend it.
+                Ushbu taklifning muddati o&apos;tgan. Ish maydoni egasidan qayta yuborishni so&apos;rang.
               </p>
             ) : (
               <InvitationAcceptCard
@@ -67,4 +66,3 @@ export default async function InvitePage({ params }: InvitePageProps) {
     </main>
   );
 }
-

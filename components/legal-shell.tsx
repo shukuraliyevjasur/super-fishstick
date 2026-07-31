@@ -15,32 +15,43 @@ export default function LegalShell({
 }: LegalShellProps) {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-white/10">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="text-lg font-bold text-white">OpenReply</span>
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
+          <Link href="/" className="text-base font-bold text-foreground">
+            replie
           </Link>
           <Link
             href="/login"
-            className="text-sm font-semibold text-zinc-300 transition hover:text-white"
+            className="text-sm font-medium text-muted transition-colors hover:text-foreground"
           >
-            Sign in
+            Kirish
           </Link>
         </div>
       </header>
 
       <article className="mx-auto max-w-3xl px-5 py-14">
-        <p className="text-sm font-semibold uppercase text-cyan-200">
-          Last updated {updatedAt}
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+          So&apos;nggi yangilanish / Last updated: {updatedAt}
         </p>
-        <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">
+        <h1 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-5 text-base leading-8 text-zinc-300">{description}</p>
-        <div className="mt-10 space-y-8 text-sm leading-7 text-zinc-300">
+        <p className="mt-4 text-sm leading-7 text-muted">{description}</p>
+        <div className="mt-10 space-y-10 text-sm leading-7">
           {children}
         </div>
       </article>
+
+      <footer className="border-t border-border py-8 mt-10">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-muted">
+          <span>© 2026 replie</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Maxfiylik</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Shartlar</Link>
+            <Link href="/data-deletion" className="hover:text-foreground transition-colors">Ma&apos;lumotlarni o&apos;chirish</Link>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

@@ -46,9 +46,7 @@ interface WorkspaceMembersData {
 
 export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null);
-  const [membersData, setMembersData] = useState<WorkspaceMembersData | null>(
-    null
-  );
+  const [membersData, setMembersData] = useState<WorkspaceMembersData | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -74,10 +72,9 @@ export default function SettingsPage() {
   }
 
   async function disconnectInstagram(instagramAccountId: string) {
-    if (!confirm("Disconnect Instagram? Campaigns for this account will stop sending DMs.")) {
+    if (!confirm("Instagram uzilasinmi? Bu akkaunt uchun campaignlar DM yuborishni to'xtatadi.")) {
       return;
     }
-
     setBusy(`disconnect:${instagramAccountId}`);
     await fetch("/api/instagram/disconnect", {
       method: "POST",
@@ -101,7 +98,7 @@ export default function SettingsPage() {
       setMembersData(payload.data);
       setInviteEmail("");
     } else {
-      setMemberError(payload.error ?? "Could not invite member");
+      setMemberError(payload.error ?? "A'zoni taklif qilib bo'lmadi");
     }
     setBusy(null);
   }
@@ -118,7 +115,7 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="panel rounded p-8 h-64" />;
+    return <div className="panel rounded-lg p-8 h-64" />;
   }
 
   const accounts = data?.instagramAccounts ?? [];
@@ -127,91 +124,90 @@ export default function SettingsPage() {
     membersData?.currentUserRole === "ADMIN";
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <section className="panel rounded p-6">
-        <h2 className="text-base font-semibold mb-6">Instagram Connection</h2>
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Instagram Connection */}
+      <section className="panel rounded-lg p-6">
+        <h2 className="text-base font-semibold text-foreground mb-6">Instagram Ulash</h2>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div>
-              <p className="text-sm font-medium text-foreground">Status</p>
+              <p className="text-sm font-medium text-foreground">Holat</p>
               <p className="text-xs text-muted mt-0.5">
-                Comment webhooks and private replies depend on this connection.
+                Izoh webhook va xususiy javoblar ushbu ulanishga bog&apos;liq.
               </p>
             </div>
             <span
-              className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
                 accounts.length > 0
                   ? "bg-success/10 text-success"
                   : "bg-warning/10 text-warning"
               }`}
             >
-              {accounts.length > 0 ? "Connected" : "Not connected"}
+              {accounts.length > 0 ? "Ulangan" : "Ulanmagan"}
             </span>
           </div>
 
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div>
-              <p className="text-sm font-medium text-foreground">Accounts</p>
+              <p className="text-sm font-medium text-foreground">Akkauntlar</p>
               <p className="text-xs text-muted mt-0.5">
-                {accounts.length} connected Instagram profile
-                {accounts.length === 1 ? "" : "s"}
+                {accounts.length} ta ulangan Instagram profil
               </p>
             </div>
             <span className="text-sm text-muted">
-              {accounts.length > 0 ? `${accounts.length} connected` : "None"}
+              {accounts.length > 0 ? `${accounts.length} ta ulangan` : "Yo'q"}
             </span>
           </div>
 
           <div className="space-y-3 py-3">
             {accounts.length === 0 && (
               <p className="text-sm text-muted">
-                Connect an Instagram professional account to launch campaigns.
+                Campaign ishga tushirish uchun Instagram professional akkauntingizni ulang.
               </p>
             )}
             {accounts.map((account) => (
               <div
                 key={account.id}
-                className="flex flex-col gap-3 rounded border border-border bg-surface/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-sm font-semibold text-foreground">
                     @{account.username}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    Token expires{" "}
+                    Token muddati:{" "}
                     {account.tokenExpiresAt
-                      ? new Date(account.tokenExpiresAt).toLocaleDateString()
-                      : "not available"}{" "}
-                    · {account.webhookSubscribed ? "Webhook ready" : "Webhook pending"}
+                      ? new Date(account.tokenExpiresAt).toLocaleDateString("uz-UZ")
+                      : "ma'lum emas"}{" "}
+                    · {account.webhookSubscribed ? "Webhook tayyor" : "Webhook kutilmoqda"}
                   </p>
                 </div>
                 <button
                   onClick={() => disconnectInstagram(account.id)}
                   disabled={busy === `disconnect:${account.id}`}
-                  className="inline-flex items-center justify-center rounded border border-error/20 px-4 py-2 text-sm font-medium text-error transition-all hover:border-error/40 hover:bg-error/10 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-lg border border-error/20 px-4 py-2 text-sm font-medium text-error hover:border-error/40 hover:bg-error/5 disabled:opacity-50 transition-colors"
                 >
-                  {busy === `disconnect:${account.id}`
-                    ? "Disconnecting..."
-                    : "Disconnect"}
+                  {busy === `disconnect:${account.id}` ? "Uzilyapti..." : "Uzish"}
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border flex gap-3">
+        <div className="mt-6 pt-4 border-t border-border">
           <a
             href="/api/instagram/connect"
-            className="px-4 py-2 rounded text-sm font-medium transition-colors bg-accent text-white hover:bg-accent-hover"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-colors"
           >
-            {accounts.length > 0 ? "Connect another account" : "Connect Instagram"}
+            {accounts.length > 0 ? "Boshqa akkaunt ulash" : "Instagram ulash"}
           </a>
         </div>
       </section>
 
-      <section className="panel rounded p-6">
-        <h2 className="text-base font-semibold mb-6">Team</h2>
+      {/* Team */}
+      <section className="panel rounded-lg p-6">
+        <h2 className="text-base font-semibold text-foreground mb-6">Jamoa</h2>
         <div className="space-y-3">
           {membersData?.members.map((member) => (
             <div
@@ -220,7 +216,7 @@ export default function SettingsPage() {
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {member.user.name ?? member.user.email ?? "Unknown member"}
+                  {member.user.name ?? member.user.email ?? "Noma'lum a'zo"}
                 </p>
                 <p className="text-xs text-muted">{member.user.email}</p>
               </div>
@@ -233,14 +229,14 @@ export default function SettingsPage() {
 
         {membersData?.invitations.length ? (
           <div className="mt-6 border-t border-border pt-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Pending invites
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
+              Kutilayotgan takliflar
             </p>
             <div className="space-y-3">
               {membersData.invitations.map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex flex-col gap-3 rounded border border-border bg-surface/70 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
@@ -253,20 +249,18 @@ export default function SettingsPage() {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        void navigator.clipboard?.writeText(invitation.inviteUrl)
-                      }
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-border-hover hover:text-foreground"
+                      onClick={() => void navigator.clipboard?.writeText(invitation.inviteUrl)}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:border-border-hover hover:text-foreground transition-colors"
                     >
-                      Copy
+                      Nusxa
                     </button>
                     <button
                       type="button"
                       onClick={() => removeInvitation(invitation.id)}
                       disabled={busy === `invite:${invitation.id}`}
-                      className="rounded-lg border border-error/20 px-3 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error/10 disabled:opacity-50"
+                      className="rounded-lg border border-error/20 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/5 disabled:opacity-50 transition-colors"
                     >
-                      Revoke
+                      Bekor qilish
                     </button>
                   </div>
                 </div>
@@ -284,16 +278,14 @@ export default function SettingsPage() {
               type="email"
               value={inviteEmail}
               onChange={(event) => setInviteEmail(event.target.value)}
-              placeholder="teammate@agency.com"
-              className="rounded border border-border bg-surface px-4 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/40"
+              placeholder="hamkasb@kompaniya.com"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors"
               required
             />
             <select
               value={inviteRole}
-              onChange={(event) =>
-                setInviteRole(event.target.value as "ADMIN" | "MEMBER")
-              }
-              className="rounded border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/40"
+              onChange={(event) => setInviteRole(event.target.value as "ADMIN" | "MEMBER")}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors"
             >
               <option value="MEMBER">Member</option>
               <option value="ADMIN">Admin</option>
@@ -301,9 +293,9 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={busy === "invite"}
-              className="rounded bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
-              {busy === "invite" ? "Inviting..." : "Invite"}
+              {busy === "invite" ? "Yuborilmoqda..." : "Taklif yuborish"}
             </button>
             {memberError && (
               <p className="sm:col-span-3 text-sm text-error">{memberError}</p>
@@ -312,16 +304,13 @@ export default function SettingsPage() {
         )}
       </section>
 
-      <section className="panel rounded p-6">
-        <h2 className="text-base font-semibold mb-6">Usage</h2>
+      {/* Usage */}
+      <section className="panel rounded-lg p-6">
+        <h2 className="text-base font-semibold text-foreground mb-6">Foydalanish</h2>
         <div className="flex items-center justify-between py-3">
           <div>
-            <p className="text-sm font-medium text-foreground">
-              DMs sent this month
-            </p>
-            <p className="text-xs text-muted mt-0.5">
-              Self-hosted — no plan limits.
-            </p>
+            <p className="text-sm font-medium text-foreground">Bu oy yuborilgan DM lar</p>
+            <p className="text-xs text-muted mt-0.5">Joriy hisob-kitob davri</p>
           </div>
           <span className="text-sm font-semibold text-foreground">
             {data?.workspace.dmsSentThisPeriod ?? 0}

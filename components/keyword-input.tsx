@@ -52,10 +52,10 @@ export default function KeywordInput({ keywords, onChange, max = 10 }: KeywordIn
             <button
               type="button"
               onClick={() => removeKeyword(keyword)}
-              aria-label={`Remove ${keyword}`}
+              aria-label={`${keyword}ni o'chirish`}
               className="text-muted hover:text-error"
             >
-              Remove
+              ×
             </button>
           </span>
         ))}
@@ -64,12 +64,12 @@ export default function KeywordInput({ keywords, onChange, max = 10 }: KeywordIn
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={keywords.length === 0 ? "Type keyword and press Enter..." : ""}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-zinc-500 outline-none"
+          placeholder={keywords.length === 0 ? "Kalit so'z kiriting va Enter bosing..." : ""}
+          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted outline-none"
         />
       </div>
       <p className="text-xs text-muted">
-        {keywords.length}/{max} keywords · Press Enter or comma to add
+        {keywords.length}/{max} kalit so&apos;z · Enter yoki vergul bilan qo&apos;shing
       </p>
     </div>
   );

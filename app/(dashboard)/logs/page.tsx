@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * DM Logs Page
- *
- * Filterable, paginated table of DM logs.
- */
-
 import { useEffect, useState, useCallback } from "react";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import StatusBadge from "@/components/status-badge";
@@ -29,14 +23,14 @@ interface Pagination {
   totalPages: number;
 }
 
-const STATUS_FILTERS = [
-  "ALL",
-  "SENT",
-  "FAILED",
-  "PENDING",
-  "SKIPPED_RATE_LIMIT",
-  "SKIPPED_PLAN_LIMIT",
-  "SKIPPED_DEDUP",
+const STATUS_FILTERS: { value: string; label: string }[] = [
+  { value: "ALL", label: "Barchasi" },
+  { value: "SENT", label: "Yuborildi" },
+  { value: "FAILED", label: "Muvaffaqiyatsiz" },
+  { value: "PENDING", label: "Navbatda" },
+  { value: "SKIPPED_RATE_LIMIT", label: "Cheklov" },
+  { value: "SKIPPED_PLAN_LIMIT", label: "O'tkazib yuborildi" },
+  { value: "SKIPPED_DEDUP", label: "Takror" },
 ];
 
 export default function LogsPage() {
@@ -55,7 +49,6 @@ export default function LogsPage() {
       if (selectedAccountId !== "all") {
         params.set("instagramAccountId", selectedAccountId);
       }
-
       const res = await fetch(`/api/logs?${params}`);
       const data = await res.json();
       if (data.success) {
@@ -79,9 +72,7 @@ export default function LogsPage() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchLogs();
-    }, 0);
+    const timer = window.setTimeout(() => { void fetchLogs(); }, 0);
     return () => window.clearTimeout(timer);
   }, [fetchLogs]);
 
@@ -102,20 +93,20 @@ export default function LogsPage() {
       {/* Filters */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((status) => (
+          {STATUS_FILTERS.map(({ value, label }) => (
             <button
-              key={status}
-              onClick={() => handleFilterChange(status)}
+              key={value}
+              onClick={() => handleFilterChange(value)}
               className={`
                 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
                 ${
-                  statusFilter === status
-                    ? "bg-accent/15 text-accent border border-accent/20"
+                  statusFilter === value
+                    ? "bg-accent/10 text-accent border border-accent/20"
                     : "bg-surface text-muted border border-border hover:border-border-hover hover:text-foreground"
                 }
               `}
             >
-              {status === "ALL" ? "All" : status.replace("SKIPPED_", "").replace("_", " ")}
+              {label}
             </button>
           ))}
         </div>
@@ -129,17 +120,17 @@ export default function LogsPage() {
       </div>
 
       {/* Table */}
-      <div className="panel rounded overflow-hidden">
+      <div className="panel rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left">
-                <th className="px-6 py-4 text-xs font-semibold text-muted uppercase tracking-wider">Commenter</th>
-                <th className="px-6 py-4 text-xs font-semibold text-muted uppercase tracking-wider">Comment</th>
-                <th className="px-6 py-4 text-xs font-semibold text-muted uppercase tracking-wider">Campaign</th>
-                <th className="px-6 py-4 text-xs font-semibold text-muted uppercase tracking-wider">Account</th>
-                <th className="px-6 py-4 text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-semibold text-muted uppercase tracking-wider">Time</th>
+              <tr className="border-b border-border text-left bg-background">
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Izoh yozuvchi</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Izoh</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Campaign</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Akkaunt</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Holat</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Vaqt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -148,7 +139,7 @@ export default function LogsPage() {
                   {[...Array(5)].map((_, i) => (
                     <tr key={i}>
                       <td colSpan={6} className="px-6 py-4">
-                        <div className="h-4 bg-zinc-800 rounded" />
+                        <div className="h-4 bg-border rounded" />
                       </td>
                     </tr>
                   ))}
@@ -157,32 +148,35 @@ export default function LogsPage() {
               {!loading && logs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted">
-                    No logs found
+                    Jurnal yozuvlari topilmadi
                   </td>
                 </tr>
               )}
               {!loading &&
-                logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-surface-hover/50 transition-colors">
-                    <td className="px-6 py-4">
+                logs.map((log, i) => (
+                  <tr
+                    key={log.id}
+                    className={`transition-colors hover:bg-surface-hover ${i % 2 === 1 ? "bg-background/50" : ""}`}
+                  >
+                    <td className="px-6 py-3.5">
                       <span className="font-medium text-foreground">
                         @{log.commenterName ?? log.commenterId.slice(0, 8)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 max-w-[200px]">
+                    <td className="px-6 py-3.5 max-w-[200px]">
                       <span className="text-muted truncate block">{log.commentText}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3.5">
                       <span className="text-muted">{log.automation.name}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3.5">
                       <span className="text-muted">@{log.instagramAccount.username}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3.5">
                       <StatusBadge status={log.status} />
                     </td>
-                    <td className="px-6 py-4 text-muted whitespace-nowrap">
-                      {new Date(log.createdAt).toLocaleString("en-US", {
+                    <td className="px-6 py-3.5 text-muted whitespace-nowrap text-xs">
+                      {new Date(log.createdAt).toLocaleString("uz-UZ", {
                         month: "short",
                         day: "numeric",
                         hour: "2-digit",
@@ -199,33 +193,26 @@ export default function LogsPage() {
         {pagination && pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-border">
             <p className="text-xs text-muted">
-              Showing {(pagination.page - 1) * pagination.limit + 1}–
-              {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-              {pagination.total}
+              {(pagination.page - 1) * pagination.limit + 1}–
+              {Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total}
             </p>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
-                onClick={() => {
-                  setLoading(true);
-                  setPage(page - 1);
-                }}
+                onClick={() => { setLoading(true); setPage(page - 1); }}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted border border-border hover:text-foreground hover:border-border-hover transition-all disabled:opacity-30 disabled:pointer-events-none"
               >
-                Previous
+                Oldingi
               </button>
               <span className="text-xs text-muted px-2">
                 {page} / {pagination.totalPages}
               </span>
               <button
                 disabled={page >= pagination.totalPages}
-                onClick={() => {
-                  setLoading(true);
-                  setPage(page + 1);
-                }}
+                onClick={() => { setLoading(true); setPage(page + 1); }}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted border border-border hover:text-foreground hover:border-border-hover transition-all disabled:opacity-30 disabled:pointer-events-none"
               >
-                Next
+                Keyingi
               </button>
             </div>
           </div>

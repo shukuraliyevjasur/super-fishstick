@@ -3,15 +3,15 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OpenReply - Open source Instagram comment-to-DM automation",
+  title: "replie - Instagram izohlarini DM ga aylantirish",
   description:
-    "A free, self-hosted ManyChat alternative. Send an Instagram DM automatically when someone comments a keyword on your post or reel, using the official Meta API.",
+    "Instagram izohlariga avtomatik DM yuboring. Rasmiy Meta API orqali ishlaydigan, kuchli kampaniya boshqaruv tizimi.",
   keywords: [
-    "instagram automation",
-    "comment to DM",
-    "instagram private replies",
-    "social commerce",
-    "manychat alternative",
+    "instagram avtomatlashtirish",
+    "izoh to DM",
+    "instagram xususiy javoblar",
+    "ijtimoiy savdo",
+    "DM avtomatlashtirish",
   ],
 };
 
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full dark">
+    <html lang="uz" className="h-full">
       <body className="min-h-full bg-background text-foreground font-sans antialiased">
         {children}
         <Analytics />

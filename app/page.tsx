@@ -1,71 +1,54 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import PublicSiteHeader from "@/components/public-site-header";
 
 export const metadata: Metadata = {
-  title: "OpenReply - Open source Instagram comment-to-DM automation",
+  title: "replie - Instagram izohlarini DM ga aylantiring",
   description:
-    "A free, self-hosted ManyChat alternative. Turn Instagram keyword comments into automatic private replies using the official Meta API.",
+    "Instagram post yoki reelga kalit so'z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Meta API orqali.",
 };
-
-const GITHUB_URL = "https://github.com/diwenne/openreply";
-
-function formatStars(count: number): string {
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`;
-  }
-  return count.toLocaleString();
-}
-
-const githubIconPath =
-  "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z";
-
-const heroStats = [
-  { value: "24/7", label: "Comment monitoring" },
-  { value: "1", label: "DM per matched comment" },
-  { value: "0", label: "Scraping required" },
-];
 
 const flowSteps = [
   {
-    eyebrow: "Connect",
-    title: "Link your Instagram professional account",
+    number: "01",
+    eyebrow: "Ulang",
+    title: "Instagram akkauntingizni ulang",
     description:
-      "Sign in by email and connect Instagram once. No password sharing, no browser automation.",
+      "Email orqali kiring va Instagram professional akkauntingizni bir marta ulang. Parol almashish yoki brauzer avtomatizatsiyasi yo'q.",
   },
   {
-    eyebrow: "Build",
-    title: "Pick a post, keywords, and the DM",
+    number: "02",
+    eyebrow: "Yarating",
+    title: "Post, kalit so'z va DM matnini belgilang",
     description:
-      "Create a campaign for a reel or post: the keyword to watch, the public reply, and the DM to send.",
+      "Reel yoki post uchun campaign yarating: kuzatiladigan kalit so'z, ommaviy javob va yuboriladigan DM matni.",
   },
   {
-    eyebrow: "Deliver",
-    title: "Replies go out through the official API",
+    number: "03",
+    eyebrow: "Ishga tushiring",
+    title: "Javoblar API orqali avtomatik yuboriladi",
     description:
-      "Webhooks catch comments instantly and a polling sweep catches the ones Instagram never pushes, so nothing is missed. Every send is queued, rate-limited, and logged.",
+      "Webhook izohlarni darhol ushlaydi, polling esa o'tkazib yuborilganlarini to'ldiradi. Har bir yuboruv navbatga olinadi, cheklangan va jurnallanadi.",
   },
 ];
 
 const features = [
-  "Email magic-link sign-in",
-  "Multiple Instagram accounts",
-  "Encrypted tokens at rest",
-  "Webhook + polling reconciliation",
-  "Queue-backed delivery worker",
-  "Per-account rate limiting",
-  "Tracked links with click stats",
-  "DM logs with full status",
-  "No plan limits, fully self-hosted",
+  "Email magic-link orqali kirish",
+  "Bir nechta Instagram akkaunt",
+  "Tokenlar xavfsiz saqlanadi",
+  "Webhook + polling monitoring",
+  "Kalit so'zlar bo'yicha avto-DM",
+  "Follow gate — obunaga taklif",
+  "Kuzatuvchi havolalar va klik statistikasi",
+  "DM jurnali to'liq holda",
+  "Jamoaviy workspace",
 ];
-
-/* Static, faithful copies of the real Overview and Dashboard screens, built in
-   the app's own design tokens so what visitors see is what the app looks like. */
 
 function AppWindow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-background shadow-2xl shadow-black/50">
-      <div className="flex items-center gap-2 border-b border-border bg-surface px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
+      <div className="flex items-center gap-2 border-b border-border bg-background px-4 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
@@ -78,71 +61,81 @@ function AppWindow({ label, children }: { label: string; children: ReactNode }) 
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-border bg-surface p-4">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
+    <div className="rounded-lg border border-border bg-background p-4">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }
 
-const overviewStats = [
-  ["Views", "847.2K"],
-  ["Reach", "612.4K"],
-  ["Likes", "38.1K"],
-  ["Comments", "4,204"],
-  ["Saved", "9,712"],
-  ["Shares", "2,340"],
+const dashboardStats = [
+  ["Faol Campaign", "8"],
+  ["DM Yuborilgan", "1,284"],
+  ["O'tkazib yuborilgan", "42"],
+  ["Muvaffaqiyatsiz", "3"],
+  ["Kliklar", "356"],
+  ["CTR", "27.7%"],
 ];
 
-const overviewPosts = [
-  ["Spring drop reel", "214.8K", "9.1K", "Apr 3"],
-  ["Restock haul", "88.4K", "5.2K", "Mar 28"],
-  ["Behind the studio", "51.3K", "3.4K", "Mar 21"],
+const dashboardChart: [string, number][] = [
+  ["Du", 42],
+  ["Se", 68],
+  ["Ch", 51],
+  ["Pa", 94],
+  ["Ju", 120],
+  ["Sh", 86],
+  ["Ya", 73],
 ];
 
-function OverviewPreview() {
+const dashboardActivity = [
+  ["@maya.co", "Mahsulot yo'riqnomasi", "Yuborildi", "text-success"],
+  ["@founder.ray", "Narx so'rovi", "Yuborildi", "text-success"],
+  ["@shop.ava", "Lead magnet", "Navbatda", "text-warning"],
+];
+
+function DashboardPreview() {
+  const maxDM = Math.max(...dashboardChart.map(([, n]) => n));
   return (
-    <AppWindow label="app / overview">
-      <div className="flex items-end justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-foreground">Overview</h3>
-          <p className="mt-1 text-xs text-muted">
-            Recent — 24 posts from @studio.store
-          </p>
-        </div>
-        <span className="rounded border border-border px-2 py-1 text-xs text-muted">
-          Last 50
-        </span>
-      </div>
+    <AppWindow label="app / bosh sahifa">
+      <h3 className="text-sm font-semibold text-foreground">Salom, Maya!</h3>
+      <p className="mt-0.5 text-xs text-muted">2 ta ulangan akkaunt · 340 ta kontakt</p>
 
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {overviewStats.map(([label, value]) => (
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {dashboardStats.map(([label, value]) => (
           <Stat key={label} label={label} value={value} />
         ))}
       </div>
 
-      <div className="mt-4 rounded border border-border bg-surface p-4">
-        <p className="text-sm font-semibold text-foreground">Posts</p>
-        <table className="mt-3 w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-zinc-500">
-              <th className="pb-2 pr-3 font-medium">Post</th>
-              <th className="pb-2 px-3 text-right font-medium">Views</th>
-              <th className="pb-2 px-3 text-right font-medium">Likes</th>
-              <th className="pb-2 pl-3 text-right font-medium">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {overviewPosts.map(([post, views, likes, date]) => (
-              <tr key={post} className="border-b border-border last:border-0">
-                <td className="py-2 pr-3 text-foreground">{post}</td>
-                <td className="py-2 px-3 text-right text-muted">{views}</td>
-                <td className="py-2 px-3 text-right text-muted">{likes}</td>
-                <td className="py-2 pl-3 text-right text-zinc-500">{date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-4 rounded-lg border border-border bg-background p-4">
+        <p className="text-xs font-semibold text-foreground">DM — Oxirgi 7 kun</p>
+        <div className="mt-3 flex h-24 items-end gap-1.5">
+          {dashboardChart.map(([day, n]) => (
+            <div key={day} className="flex flex-1 flex-col items-center gap-1">
+              <span className="text-[9px] text-muted">{n}</span>
+              <div
+                className="w-full rounded-sm bg-accent"
+                style={{ height: `${Math.max((n / maxDM) * 100, 4)}%` }}
+              />
+              <span className="text-[9px] text-muted">{day}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-border bg-background p-4">
+        <p className="text-xs font-semibold text-foreground">So'nggi faoliyat</p>
+        <div className="mt-2 space-y-2">
+          {dashboardActivity.map(([user, automation, status, color]) => (
+            <div
+              key={user}
+              className="flex items-center justify-between gap-3 border-b border-border py-1.5 text-xs last:border-0"
+            >
+              <span className="truncate text-foreground font-medium">{user}</span>
+              <span className="truncate text-muted">{automation}</span>
+              <span className={color}>{status}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </AppWindow>
   );
@@ -150,248 +143,106 @@ function OverviewPreview() {
 
 function MatchedCommentCard() {
   return (
-    <div className="w-64 rounded-lg border border-border bg-surface p-4 shadow-2xl shadow-black/50">
-      <p className="text-xs text-muted">New comment</p>
+    <div className="w-56 rounded-xl border border-border bg-surface p-4 shadow-lg">
+      <p className="text-[10px] text-muted">Yangi izoh</p>
       <p className="mt-1 text-sm font-semibold text-foreground">@maya.co</p>
-      <p className="mt-1 text-sm text-muted">LINK please</p>
+      <p className="mt-0.5 text-sm text-muted">HAVOLA pls</p>
       <div className="mt-3 border-t border-border pt-3">
-        <p className="text-xs text-muted">
-          Matched <span className="text-accent">GUIDE</span>
+        <p className="text-[10px] text-muted">
+          Mos keldi: <span className="text-accent font-medium">GUIDE</span>
         </p>
-        <p className="mt-1 text-sm font-medium text-success">
-          Queued private reply
+        <p className="mt-1 text-xs font-semibold text-success">
+          Xususiy javob navbatda
         </p>
       </div>
     </div>
   );
 }
 
-const dashboardStats = [
-  ["Active Campaigns", "8"],
-  ["DMs Sent", "1,284"],
-  ["Skipped", "42"],
-  ["Failed", "3"],
-  ["Clicks", "356"],
-  ["CTR", "27.7%"],
-];
-
-const dashboardChart: [string, number][] = [
-  ["Mon", 42],
-  ["Tue", 68],
-  ["Wed", 51],
-  ["Thu", 94],
-  ["Fri", 120],
-  ["Sat", 86],
-  ["Sun", 73],
-];
-
-const dashboardActivity = [
-  ["@maya.co", "Product guide reply", "Sent", "text-success"],
-  ["@founder.ray", "Price request", "Sent", "text-success"],
-  ["@shop.ava", "Lead magnet", "Queued", "text-warning"],
-];
-
-function DashboardPreview() {
-  const maxDM = Math.max(...dashboardChart.map(([, n]) => n));
-  return (
-    <AppWindow label="app / dashboard">
-      <h3 className="text-base font-semibold text-foreground">Hello, Maya!</h3>
-      <p className="mt-1 text-xs text-muted">2 connected accounts · 340 contacts</p>
-
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {dashboardStats.map(([label, value]) => (
-          <Stat key={label} label={label} value={value} />
-        ))}
-      </div>
-
-      <div className="mt-4 rounded border border-border bg-surface p-4">
-        <p className="text-sm font-semibold text-foreground">DMs — Last 7 Days</p>
-        <div className="mt-4 flex h-32 items-end gap-2">
-          {dashboardChart.map(([day, n]) => (
-            <div key={day} className="flex flex-1 flex-col items-center gap-2">
-              <span className="text-[10px] text-muted">{n}</span>
-              <div
-                className="w-full rounded-sm bg-accent"
-                style={{ height: `${Math.max((n / maxDM) * 100, 4)}%` }}
-              />
-              <span className="text-[10px] text-zinc-500">{day}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4 rounded border border-border bg-surface p-4">
-        <p className="text-sm font-semibold text-foreground">Recent Activity</p>
-        <div className="mt-3 space-y-2">
-          {dashboardActivity.map(([user, automation, status, color]) => (
-            <div
-              key={user}
-              className="flex items-center justify-between gap-3 border-b border-border py-2 text-sm last:border-0"
-            >
-              <span className="truncate text-foreground">{user}</span>
-              <span className="truncate text-muted">{automation}</span>
-              <span className={`text-sm ${color}`}>{status}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </AppWindow>
-  );
-}
-
-async function getGitHubStars(): Promise<number | null> {
-  try {
-    const res = await fetch("https://api.github.com/repos/diwenne/openreply", {
-      headers: { Accept: "application/vnd.github+json" },
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { stargazers_count?: number };
-    return typeof data.stargazers_count === "number" ? data.stargazers_count : null;
-  } catch {
-    return null;
-  }
-}
-
-export default async function Home() {
-  const stars = await getGitHubStars();
+export default function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3" aria-label="OpenReply home">
-            <span className="text-lg font-bold text-white">OpenReply</span>
-          </Link>
+      <PublicSiteHeader />
 
-          <div className="flex items-center gap-4">
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-400 transition hover:text-white"
-              aria-label="View OpenReply on GitHub"
-            >
-              <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4 fill-current">
-                <path d={githubIconPath} />
-              </svg>
-              {stars !== null && <span>{formatStars(stars)}</span>}
-            </a>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-cyan-300 px-4 py-2 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
-            >
-              Get started
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 pb-16 pt-12 sm:px-6 sm:pt-18 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:pb-24">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-zinc-300">
-            Open source · Official Meta API
+      {/* Hero */}
+      <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[1fr_1fr] lg:px-8 lg:pb-24 lg:pt-20">
+        <div>
+          <div className="inline-flex items-center gap-2 border border-accent/20 bg-accent/5 px-3 py-1.5 rounded-full text-xs font-semibold text-accent">
+            Rasmiy Meta API · 24/7 monitoring
           </div>
 
-          <h1 className="mt-7 text-balance text-5xl font-black leading-[1.02] text-white sm:text-6xl lg:text-7xl">
-            Make every comment start the right DM
+          <h1 className="mt-6 text-balance text-4xl font-black leading-tight text-foreground sm:text-5xl lg:text-6xl">
+            Izohlaringiz o'zi ishlaydi
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-300">
-            Open-sourced ManyChat. When someone comments your keyword on a post
-            or reel, they get your DM a second later. Free, self-hosted, and
-            built on the official Instagram API.
+          <p className="mt-5 max-w-lg text-base leading-7 text-muted">
+            Instagram post yoki reelga kalit so'z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram API orqali, xavfsiz va ishonchli.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-cyan-300 px-6 py-3 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
+              className="inline-flex items-center justify-center gap-2 bg-accent px-6 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors"
             >
-              Get started
+              Boshlash
             </Link>
             <a
-              href="#how"
-              className="inline-flex items-center justify-center border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/[0.08]"
+              href="https://t.me/ceo_syr"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center border border-border bg-surface px-6 py-3 text-sm font-semibold text-foreground rounded-lg hover:bg-surface-hover transition-colors"
             >
-              See how it works
+              Telegram orqali so&apos;rash
             </a>
           </div>
-
-          <dl className="mt-10 grid max-w-xl grid-cols-3 gap-3">
-            {heroStats.map((stat) => (
-              <div key={stat.label} className="border border-white/10 bg-white/[0.035] p-4">
-                <dt className="text-2xl font-black text-white">{stat.value}</dt>
-                <dd className="mt-1 text-xs leading-5 text-zinc-500">{stat.label}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
 
         <div className="relative">
-          <OverviewPreview />
-          <div className="absolute -bottom-8 -left-6 hidden lg:block">
+          <DashboardPreview />
+          <div className="absolute -bottom-6 -left-4 hidden lg:block">
             <MatchedCommentCard />
           </div>
         </div>
       </section>
 
-      <section id="how" className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
-          <div>
-            <p className="text-sm font-bold uppercase text-cyan-200">How it works</p>
-            <h2 className="mt-3 text-4xl font-black leading-tight text-white sm:text-5xl">
-              A comment in, a DM out
+      {/* How it works */}
+      <section id="how" className="border-y border-border bg-surface py-20">
+        <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="max-w-xl">
+            <p className="text-xs font-bold uppercase tracking-widest text-accent">Qanday ishlaydi</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight text-foreground sm:text-4xl">
+              Izoh keldi — DM ketdi
             </h2>
-            <p className="mt-5 text-base leading-8 text-zinc-400">
-              Three steps. Connect an account, build a campaign, and let it run.
-              The webhook handles it live and the poll sweeps up whatever the
-              webhook misses.
+            <p className="mt-4 text-base leading-7 text-muted">
+              Uch qadam. Akkaunt ulang, campaign yarating va ishga tushiring.
             </p>
           </div>
 
-          <div className="grid gap-4">
+          <div className="mt-12 grid gap-4 sm:grid-cols-3">
             {flowSteps.map((step) => (
-              <article
+              <div
                 key={step.title}
-                className="grid gap-4 border border-white/10 bg-white/[0.035] p-5 sm:grid-cols-[120px_1fr]"
+                className="rounded-xl border border-border bg-background p-6"
               >
-                <p className="text-sm font-bold text-cyan-200">{step.eyebrow}</p>
-                <div>
-                  <h3 className="text-xl font-bold text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">{step.description}</p>
-                </div>
-              </article>
+                <p className="text-2xl font-black text-accent/30">{step.number}</p>
+                <p className="mt-3 text-xs font-bold uppercase tracking-widest text-accent">{step.eyebrow}</p>
+                <h3 className="mt-2 text-base font-bold text-foreground">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">{step.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.025] py-20">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:px-8 lg:items-center">
-          <DashboardPreview />
-
-          <div>
-            <p className="text-sm font-bold uppercase text-cyan-200">The dashboard</p>
-            <h2 className="mt-3 text-4xl font-black leading-tight text-white sm:text-5xl">
-              See exactly what happened
-            </h2>
-            <p className="mt-5 text-base leading-8 text-zinc-400">
-              Every comment event is traceable: queued, matched, sent, skipped,
-              failed, or rate-limited. No black box.
-            </p>
-          </div>
-        </div>
-      </section>
-
+      {/* Features */}
       <section id="features" className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <p className="text-sm font-bold uppercase text-cyan-200">What&rsquo;s included</p>
-          <h2 className="mt-3 text-4xl font-black leading-tight text-white sm:text-5xl">
-            Everything, no tiers
+        <div className="max-w-xl">
+          <p className="text-xs font-bold uppercase tracking-widest text-accent">Imkoniyatlar</p>
+          <h2 className="mt-3 text-3xl font-black leading-tight text-foreground sm:text-4xl">
+            Kerakli hamma narsa
           </h2>
-          <p className="mt-5 text-base leading-8 text-zinc-400">
-            It is self-hosted and open source, so there is nothing to unlock. You
-            run it, you own it.
+          <p className="mt-4 text-base leading-7 text-muted">
+            Campaign boshqaruvi, DM jurnali, kuzatuvchi havolalar va jamoaviy workspace — hammasi bitta joyda.
           </p>
         </div>
 
@@ -399,59 +250,59 @@ export default async function Home() {
           {features.map((feature) => (
             <div
               key={feature}
-              className="border border-white/10 bg-white/[0.035] p-4 text-sm font-semibold text-zinc-200"
+              className="flex items-center gap-3 rounded-lg border border-border bg-surface p-4"
             >
-              {feature}
+              <div className="shrink-0 w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center">
+                <svg className="w-3 h-3 text-accent" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="2 6 5 9 10 3"/>
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-foreground">{feature}</span>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-6 lg:px-8">
-        <div className="grid gap-8 border border-white/10 bg-surface p-6 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <h2 className="max-w-3xl text-4xl font-black leading-tight text-white sm:text-5xl">
-              Turn your next reel&rsquo;s comments into DMs
+      {/* CTA */}
+      <section className="border-t border-border bg-surface py-20">
+        <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-accent/20 bg-accent/5 px-8 py-14 text-center">
+            <h2 className="text-3xl font-black text-foreground sm:text-4xl">
+              Keyingi reelingizni biznes vositasiga aylantiring
             </h2>
-            <p className="mt-4 text-base text-zinc-400">
-              Free and open source. Star it if it saves you a subscription.
+            <p className="mt-4 text-base text-muted">
+              Birinchi campaign yaratish bepul. Savol bo&apos;lsa — Telegram orqali javob beramiz.
             </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-cyan-300 px-6 py-3 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
-            >
-              Get started
-            </Link>
-            <a
-              href={GITHUB_URL}
-              className="inline-flex items-center justify-center border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/[0.08]"
-            >
-              View on GitHub
-            </a>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center bg-accent px-8 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors"
+              >
+                Boshlash
+              </Link>
+              <a
+                href="https://t.me/ceo_syr"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center border border-border bg-surface px-8 py-3 text-sm font-semibold text-foreground rounded-lg hover:bg-surface-hover transition-colors"
+              >
+                Telegram orqali so&apos;rash
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/10 py-8">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 text-sm text-zinc-500 sm:px-6 lg:px-8">
-          <span className="font-semibold text-zinc-300">OpenReply</span>
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 transition hover:text-white"
-          >
-            <svg
-              viewBox="0 0 16 16"
-              aria-hidden="true"
-              className="h-4 w-4 fill-current"
-            >
-              <path d={githubIconPath} />
-            </svg>
-            {stars !== null && <span>{formatStars(stars)}</span>}
-          </a>
+      <footer className="border-t border-border py-8">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 text-sm text-muted sm:px-6 lg:px-8">
+          <span className="font-semibold text-foreground">replie</span>
+          <div className="flex items-center gap-4">
+            <Link href="/pricing" className="hover:text-foreground transition-colors">Narxlar</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Maxfiylik</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Shartlar</Link>
+            <Link href="/data-deletion" className="hover:text-foreground transition-colors">Ma&apos;lumotlarni o&apos;chirish</Link>
+          </div>
+          <span>© 2026 replie</span>
         </div>
       </footer>
     </main>

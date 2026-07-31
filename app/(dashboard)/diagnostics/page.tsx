@@ -124,42 +124,42 @@ export default function DiagnosticsPage() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Production Diagnostics
+            Diagnostika
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Health, queues, webhook failures, billing events, and worker alerts.
+            Tizim holati, navbatlar, webhook xatoliklari va worker ogohlantirishlari.
           </p>
         </div>
         <button
           onClick={() => void refreshDiagnostics()}
           className="rounded border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover"
         >
-          Refresh
+          Yangilash
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="panel rounded p-5">
           <p className="text-xs font-semibold uppercase text-muted">
-            Worker health
+            Worker holati
           </p>
           <p
             className={`mt-3 text-2xl font-bold ${
               data?.workerHealth.healthy ? "text-success" : "text-warning"
             }`}
           >
-            {data?.workerHealth.healthy ? "Healthy" : "Needs attention"}
+            {data?.workerHealth.healthy ? "Sogʿlom" : "Eʿtibor talab qiladi"}
           </p>
           <p className="mt-2 text-xs text-muted">
             {workerAgeSeconds == null
-              ? "No heartbeat found"
-              : `Last heartbeat ${workerAgeSeconds}s ago`}
+              ? "Yurak urishi topilmadi"
+              : `Soʿnggi yurak urishi ${workerAgeSeconds}s oldin`}
           </p>
         </div>
         {["waiting", "active", "delayed", "failed"].map((key) => (
           <div key={key} className="panel rounded p-5">
             <p className="text-xs font-semibold uppercase text-muted">
-              Queue {key}
+              Navbat: {key}
             </p>
             <p className="mt-3 text-2xl font-bold text-foreground">
               {data?.queueCounts[key] ?? 0}
@@ -168,7 +168,7 @@ export default function DiagnosticsPage() {
         ))}
       </div>
 
-      <Section title="Recent Worker Alerts">
+      <Section title="Worker ogohlantirishlari">
         {data?.workerAlerts.length ? (
           <div className="space-y-3">
             {data.workerAlerts.map((alert) => (
@@ -192,12 +192,12 @@ export default function DiagnosticsPage() {
             ))}
           </div>
         ) : (
-          <EmptyState label="No worker alerts recorded." />
+          <EmptyState label="Ogohlantirishlar yoʿq." />
         )}
       </Section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Campaign DM Failures And Skips">
+        <Section title="DM xatoliklari">
           {data?.dmFailures.length ? (
             <div className="space-y-3">
               {data.dmFailures.map((item) => (
@@ -218,11 +218,11 @@ export default function DiagnosticsPage() {
               ))}
             </div>
           ) : (
-            <EmptyState label="No DM failures or skips." />
+            <EmptyState label="DM xatoliklari yoʿq." />
           )}
         </Section>
 
-        <Section title="Webhook Failures">
+        <Section title="Webhook xatoliklari">
           {data?.webhookFailures.length ? (
             <div className="space-y-3">
               {data.webhookFailures.map((event) => (
@@ -240,13 +240,13 @@ export default function DiagnosticsPage() {
               ))}
             </div>
           ) : (
-            <EmptyState label="No failed webhook events." />
+            <EmptyState label="Webhook xatoligi yoʿq." />
           )}
         </Section>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Token Refresh Failures">
+        <Section title="Token yangilash xatoliklari">
           {data?.tokenRefreshFailures.length ? (
             <div className="space-y-3">
               {data.tokenRefreshFailures.map((event) => (
@@ -261,13 +261,13 @@ export default function DiagnosticsPage() {
               ))}
             </div>
           ) : (
-            <EmptyState label="No token refresh failures." />
+            <EmptyState label="Token xatoliklari yoʿq." />
           )}
         </Section>
 
       </div>
 
-      <Section title="Operational Event Timeline">
+      <Section title="Operatsion voqealar">
         {data?.operationalEvents.length ? (
           <div className="space-y-3">
             {data.operationalEvents.map((event) => (
@@ -279,7 +279,7 @@ export default function DiagnosticsPage() {
             ))}
           </div>
         ) : (
-          <EmptyState label="No operational events recorded." />
+          <EmptyState label="Voqealar yoʿq." />
         )}
       </Section>
     </div>

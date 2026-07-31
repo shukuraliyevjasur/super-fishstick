@@ -212,7 +212,7 @@ export default function CampaignsPage() {
   }
 
   async function deleteAutomation(id: string) {
-    if (!confirm("Delete this campaign? This cannot be undone.")) return;
+    if (!confirm("Bu campaignni o'chirasizmi? Bu amalni qaytarib bo'lmaydi.")) return;
     try {
       await fetch(`/api/automations?id=${id}`, { method: "DELETE" });
       setAutomations((prev) => prev.filter((a) => a.id !== id));
@@ -293,7 +293,7 @@ export default function CampaignsPage() {
             {filtered.length !== automations.length
               ? ` of ${automations.length}`
               : ""}{" "}
-            campaign{automations.length !== 1 ? "s" : ""}
+            ta campaign
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -312,9 +312,9 @@ export default function CampaignsPage() {
           </Link>
           <Link
             href="/campaigns/new"
-            className="px-4 py-2 rounded bg-accent text-sm font-medium text-white hover:bg-accent-hover"
+            className="px-4 py-2 rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
           >
-            New Campaign
+            Yangi Campaign
           </Link>
         </div>
       </div>
@@ -325,24 +325,27 @@ export default function CampaignsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search campaigns by name, keyword, or message…"
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+            placeholder="Nomi, kalit so'z yoki matn bo'yicha qidirish…"
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
           />
           <div className="inline-flex shrink-0 rounded-lg bg-surface p-1">
-            {(["all", "active", "paused"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatusFilter(s)}
-                className={`rounded-md px-3 py-1.5 text-sm capitalize transition-colors ${
-                  statusFilter === s
-                    ? "bg-background font-medium text-foreground ring-1 ring-accent/40"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+            {(["all", "active", "paused"] as const).map((s) => {
+              const labels = { all: "Barchasi", active: "Faol", paused: "To'xtatilgan" };
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                    statusFilter === s
+                      ? "bg-background font-medium text-foreground ring-1 ring-accent/40"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {labels[s]}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -350,15 +353,15 @@ export default function CampaignsPage() {
       {/* Empty state */}
       {automations.length === 0 && (
         <div className="panel rounded p-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
+          <h3 className="text-lg font-semibold mb-2">Hali campaign yo&apos;q</h3>
           <p className="text-sm text-muted mb-6 max-w-sm mx-auto">
-            Create your first comment-to-DM campaign to turn a post or reel into a measurable conversation flow.
+            Birinchi campaign yarating va post yoki reelingizga izoh yozganlarга avtomatik DM yuboring.
           </p>
           <Link
             href="/campaigns/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
           >
-            Create Campaign
+            Campaign yaratish
           </Link>
         </div>
       )}
@@ -366,7 +369,7 @@ export default function CampaignsPage() {
       {/* No matches for the current filter */}
       {automations.length > 0 && filtered.length === 0 && (
         <div className="panel rounded p-8 text-center text-sm text-muted">
-          No campaigns match your search.
+          Qidiruv bo&apos;yicha campaign topilmadi.
         </div>
       )}
 
@@ -432,14 +435,14 @@ export default function CampaignsPage() {
                     className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       auto.isActive
                         ? "bg-success/10 text-success"
-                        : "bg-zinc-500/10 text-zinc-400"
+                        : "bg-muted/15 text-muted"
                     }`}
                   >
-                    {auto.isActive ? "Active" : "Paused"}
+                    {auto.isActive ? "Faol" : "To'xtatilgan"}
                   </span>
                   {auto.pendingNextReel && (
                     <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400">
-                      Waiting for next reel
+                      Keyingi reel kutilmoqda
                     </span>
                   )}
                   {auto.requireFollow && (
@@ -449,7 +452,7 @@ export default function CampaignsPage() {
                   )}
                   {auto.trackedLinks.length >= 2 && (
                     <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                      2 links
+                      2 ta havola
                     </span>
                   )}
                 </div>
@@ -470,9 +473,9 @@ export default function CampaignsPage() {
                 <p className="text-sm text-muted truncate">&ldquo;{auto.dmMessage}&rdquo;</p>
 
                 {/* Stats */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-zinc-500">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-muted">
                   <span className="font-medium text-foreground">
-                    {auto._count.dmLogs} runs
+                    {auto._count.dmLogs} ta yuborish
                   </span>
                   <span>·</span>
                   <span className="font-medium text-foreground">
@@ -512,7 +515,7 @@ export default function CampaignsPage() {
                   onClick={() => toggleActive(auto.id, auto.isActive)}
                   className={`
                     relative w-11 h-6 rounded-full transition-colors
-                    ${auto.isActive ? "bg-accent" : "bg-zinc-700"}
+                    ${auto.isActive ? "bg-accent" : "bg-border"}
                   `}
                 >
                   <span
@@ -545,7 +548,7 @@ export default function CampaignsPage() {
                           onClick={() => void duplicateAutomation(auto)}
                           className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
                         >
-                          Duplicate
+                          Nusxa olish
                         </button>
                         <button
                           onClick={() => {
@@ -554,7 +557,7 @@ export default function CampaignsPage() {
                           }}
                           className="block w-full px-3 py-2 text-left text-sm text-error hover:bg-surface-hover"
                         >
-                          Delete
+                          O&apos;chirish
                         </button>
                       </div>
                     </>
@@ -583,17 +586,17 @@ export default function CampaignsPage() {
                   href={playingVideo.postUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-zinc-300 hover:text-white"
+                  className="text-white/70 hover:text-white"
                 >
-                  Open on Instagram
+                  Instagramda ochish
                 </a>
               )}
               <button
                 type="button"
                 onClick={() => setPlayingVideo(null)}
-                className="text-zinc-300 hover:text-white"
+                className="text-white/70 hover:text-white"
               >
-                Close
+                Yopish
               </button>
             </div>
             <video
