@@ -115,6 +115,45 @@ any duplicate. Prefer letting `prisma migrate deploy` do the work.
 
 ---
 
+## Dependencies — do not commit a Windows-regenerated lockfile
+
+**Running `npm install` on Windows silently breaks CI.** It floats the hoisted
+`@emnapi/core` and `@emnapi/runtime` off 1.10.0. `@rolldown/binding-wasm32-wasi`
+pins those at *exactly* 1.10.0, so once the hoisted copy moves, Linux npm needs a
+nested 1.10.0 pair — and npm on Windows never emits it, because it does not
+expand that package's subtree (its `cpu: wasm32` constraint doesn't apply
+locally). The result installs fine on the machine that wrote it and fails
+everywhere else:
+
+```
+npm error `npm ci` can only install packages when your package.json and
+npm error package-lock.json ... are in sync.
+npm error Missing: @emnapi/core@1.10.0 from lock file
+```
+
+**Before committing `package-lock.json`, run `git diff package-lock.json`.** If
+you did not intend a dependency change, discard it:
+
+```bash
+git checkout HEAD -- package-lock.json
+```
+
+Regenerating is *not* the fix — every regeneration on Windows reproduces the same
+unsatisfiable tree, and `npm ci --dry-run` passes locally while still failing on
+Linux. If the lockfile genuinely needs updating, generate it on Linux (the GCP
+VM, WSL, or a CI job), not on Windows.
+
+This cost a debugging cycle on 2026-07-31 — including a wrong fix (bumping CI to
+Node 24) that changed nothing. Node 24 was kept for unrelated reasons, below.
+
+### Node version
+
+CI and the `Dockerfile` both run **Node 24**. Prisma 7 pulls
+`@prisma/streams-local`, which requires `node >=22` and logs `EBADENGINE` on
+anything older; Node 20 is also past its GitHub Actions deprecation.
+
+---
+
 ## Design system
 
 Tokens live in `app/globals.css` under `@theme inline`. The scales are **closed
