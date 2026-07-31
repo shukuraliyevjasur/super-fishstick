@@ -123,7 +123,7 @@ function DashboardPreview() {
       </div>
 
       <div className="mt-4 rounded-lg border border-border bg-background p-4">
-        <p className="text-xs font-semibold text-foreground">So'nggi faoliyat</p>
+        <p className="text-xs font-semibold text-foreground">So&apos;nggi faoliyat</p>
         <div className="mt-2 space-y-2">
           {dashboardActivity.map(([user, automation, status, color]) => (
             <div
@@ -172,11 +172,11 @@ export default function Home() {
           </div>
 
           <h1 className="mt-6 text-balance text-4xl font-black leading-tight text-foreground sm:text-5xl lg:text-6xl">
-            Izohlaringiz o'zi ishlaydi
+            Izohlaringiz o&apos;zi ishlaydi
           </h1>
 
           <p className="mt-5 max-w-lg text-base leading-7 text-muted">
-            Instagram post yoki reelga kalit so'z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram API orqali, xavfsiz va ishonchli.
+            Instagram post yoki reelga kalit so&apos;z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram API orqali, xavfsiz va ishonchli.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
