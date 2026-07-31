@@ -72,9 +72,23 @@ docker run -d --name replie-worker --restart always \
 
 3. Confirm: `docker logs replie-worker` → `[DM Worker] Started`.
 
-`--restart always` means it survives VM reboots. Secret values are not in this
-repo — read them off the existing `docker run` (`docker inspect replie-worker`)
-or the Vercel env settings.
+`--restart always` means it survives VM reboots.
+
+**Recovering the env values for step 2.** They are not in this repo. Read them
+off the container that is already running, *before* you remove it:
+
+```bash
+docker inspect replie-worker --format '{{range .Config.Env}}{{println .}}{{end}}'
+```
+
+Copy that output somewhere before `docker rm`, or you will have to re-derive
+each value from the Vercel env settings (Project → Settings → Environment
+Variables).
+
+> **The running container is older than the image on GHCR.** As of 2026-07-31 it
+> still runs the Node 20 base; the current image is Node 24. Same application
+> code — only the base image differs — so this is not urgent, but the VM has not
+> pulled since. The steps above bring it current.
 
 ---
 
