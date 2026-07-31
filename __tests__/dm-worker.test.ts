@@ -476,7 +476,7 @@ describe("DM Worker — Full Pipeline", () => {
     expect(mockSendPrivateReply).not.toHaveBeenCalled();
   });
 
-  it("should use 'there' when commenter name is not available", async () => {
+  it("should use 'do’stim' when commenter name is not available", async () => {
     const processor = getProcessor();
     const jobDataWithoutName = {
       instagramAccountId: mockJobData.instagramAccountId,
@@ -492,7 +492,7 @@ describe("DM Worker — Full Pipeline", () => {
       "decrypted_token",
       "ig_456",
       "comment_555",
-      "Hey there! Here is the link: https://example.com"
+      "Hey do'stim! Here is the link: https://example.com"
     );
   });
 
