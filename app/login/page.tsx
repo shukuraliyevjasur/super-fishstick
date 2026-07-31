@@ -46,7 +46,7 @@ export default async function LoginPage({
           </p>
         </div>
 
-        <div className="bg-surface border border-border rounded-xl p-8 shadow-sm">
+        <div className="bg-surface border border-border rounded-lg p-8 shadow-sm">
           {selectedTemplate && !checkEmail && (
             <div className="mb-5 border border-accent/20 bg-accent/5 rounded-lg p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-accent">

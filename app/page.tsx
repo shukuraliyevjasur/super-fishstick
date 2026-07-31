@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import PublicSiteHeader from "@/components/public-site-header";
+import PublicSiteFooter from "@/components/public-site-footer";
 
 export const metadata: Metadata = {
   title: "replie - Instagram izohlarini DM ga aylantiring",
@@ -22,7 +23,7 @@ const flowSteps = [
     eyebrow: "Yarating",
     title: "Post, kalit so'z va DM matnini belgilang",
     description:
-      "Reel yoki post uchun campaign yarating: kuzatiladigan kalit so'z, ommaviy javob va yuboriladigan DM matni.",
+      "Reel yoki post uchun kampaniya yarating: kuzatiladigan kalit so'z, ommaviy javob va yuboriladigan DM matni.",
   },
   {
     number: "03",
@@ -47,7 +48,7 @@ const features = [
 
 function AppWindow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
       <div className="flex items-center gap-2 border-b border-border bg-background px-4 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
@@ -69,7 +70,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const dashboardStats = [
-  ["Faol Campaign", "8"],
+  ["Faol kampaniya", "8"],
   ["DM Yuborilgan", "1,284"],
   ["O'tkazib yuborilgan", "42"],
   ["Muvaffaqiyatsiz", "3"],
@@ -111,12 +112,12 @@ function DashboardPreview() {
         <div className="mt-3 flex h-24 items-end gap-1.5">
           {dashboardChart.map(([day, n]) => (
             <div key={day} className="flex flex-1 flex-col items-center gap-1">
-              <span className="text-[9px] text-muted">{n}</span>
+              <span className="text-xs text-muted">{n}</span>
               <div
-                className="w-full rounded-sm bg-accent"
+                className="w-full rounded-t-md bg-accent"
                 style={{ height: `${Math.max((n / maxDM) * 100, 4)}%` }}
               />
-              <span className="text-[9px] text-muted">{day}</span>
+              <span className="text-xs text-muted">{day}</span>
             </div>
           ))}
         </div>
@@ -143,12 +144,12 @@ function DashboardPreview() {
 
 function MatchedCommentCard() {
   return (
-    <div className="w-56 rounded-xl border border-border bg-surface p-4 shadow-lg">
-      <p className="text-[10px] text-muted">Yangi izoh</p>
+    <div className="w-56 rounded-lg border border-border bg-surface p-4 shadow-lg">
+      <p className="text-xs text-muted">Yangi izoh</p>
       <p className="mt-1 text-sm font-semibold text-foreground">@maya.co</p>
       <p className="mt-0.5 text-sm text-muted">HAVOLA pls</p>
       <div className="mt-3 border-t border-border pt-3">
-        <p className="text-[10px] text-muted">
+        <p className="text-xs text-muted">
           Mos keldi: <span className="text-accent font-medium">GUIDE</span>
         </p>
         <p className="mt-1 text-xs font-semibold text-success">
@@ -171,7 +172,7 @@ export default function Home() {
             Rasmiy Meta API · 24/7 monitoring
           </div>
 
-          <h1 className="mt-6 text-balance text-4xl font-black leading-tight text-foreground sm:text-5xl lg:text-6xl">
+          <h1 className="mt-6 text-balance text-4xl font-bold leading-tight text-foreground sm:text-5xl lg:text-6xl">
             Izohlaringiz o&apos;zi ishlaydi
           </h1>
 
@@ -210,11 +211,11 @@ export default function Home() {
         <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-xl">
             <p className="text-xs font-bold uppercase tracking-widest text-accent">Qanday ishlaydi</p>
-            <h2 className="mt-3 text-3xl font-black leading-tight text-foreground sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-bold leading-tight text-foreground sm:text-4xl">
               Izoh keldi — DM ketdi
             </h2>
             <p className="mt-4 text-base leading-7 text-muted">
-              Uch qadam. Akkaunt ulang, campaign yarating va ishga tushiring.
+              Uch qadam. Akkaunt ulang, kampaniya yarating va ishga tushiring.
             </p>
           </div>
 
@@ -222,9 +223,9 @@ export default function Home() {
             {flowSteps.map((step) => (
               <div
                 key={step.title}
-                className="rounded-xl border border-border bg-background p-6"
+                className="rounded-lg border border-border bg-background p-6"
               >
-                <p className="text-2xl font-black text-accent/30">{step.number}</p>
+                <p className="text-2xl font-bold text-accent/30">{step.number}</p>
                 <p className="mt-3 text-xs font-bold uppercase tracking-widest text-accent">{step.eyebrow}</p>
                 <h3 className="mt-2 text-base font-bold text-foreground">{step.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted">{step.description}</p>
@@ -238,11 +239,11 @@ export default function Home() {
       <section id="features" className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 lg:px-8">
         <div className="max-w-xl">
           <p className="text-xs font-bold uppercase tracking-widest text-accent">Imkoniyatlar</p>
-          <h2 className="mt-3 text-3xl font-black leading-tight text-foreground sm:text-4xl">
+          <h2 className="mt-3 text-3xl font-bold leading-tight text-foreground sm:text-4xl">
             Kerakli hamma narsa
           </h2>
           <p className="mt-4 text-base leading-7 text-muted">
-            Campaign boshqaruvi, DM jurnali, kuzatuvchi havolalar va jamoaviy workspace — hammasi bitta joyda.
+            Kampaniya boshqaruvi, DM jurnali, kuzatuvchi havolalar va jamoaviy workspace — hammasi bitta joyda.
           </p>
         </div>
 
@@ -266,12 +267,12 @@ export default function Home() {
       {/* CTA */}
       <section className="border-t border-border bg-surface py-20">
         <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-accent/20 bg-accent/5 px-8 py-14 text-center">
-            <h2 className="text-3xl font-black text-foreground sm:text-4xl">
+          <div className="rounded-lg border border-accent/20 bg-accent/5 px-8 py-14 text-center">
+            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
               Keyingi reelingizni biznes vositasiga aylantiring
             </h2>
             <p className="mt-4 text-base text-muted">
-              Birinchi campaign yaratish bepul. Savol bo&apos;lsa — Telegram orqali javob beramiz.
+              Birinchi kampaniya yaratish bepul. Savol bo&apos;lsa — Telegram orqali javob beramiz.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
@@ -293,18 +294,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-8">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 text-sm text-muted sm:px-6 lg:px-8">
-          <span className="font-semibold text-foreground">replie</span>
-          <div className="flex items-center gap-4">
-            <Link href="/pricing" className="hover:text-foreground transition-colors">Narxlar</Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Maxfiylik</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Shartlar</Link>
-            <Link href="/data-deletion" className="hover:text-foreground transition-colors">Ma&apos;lumotlarni o&apos;chirish</Link>
-          </div>
-          <span>© 2026 replie</span>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </main>
   );
 }

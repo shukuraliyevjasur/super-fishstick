@@ -371,7 +371,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
     if (!selectedAccountId) return setError("Avval Instagram akkauntingizni ulang.");
     if (triggerScope === "specific" && !postId)
-      return setError("Campaign uchun post yoki reel tanlang.");
+      return setError("Kampaniya uchun post yoki reel tanlang.");
     if (matchMode === "specific" && keywords.length === 0)
       return setError("Kamida bitta kalit so'z kiriting yoki 'har qanday so'z' rejimini tanlang.");
     if (!dmMessage.trim()) return setError("DM xabarini kiriting.");
@@ -381,7 +381,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     setSaving(true);
 
     const payload = {
-      name: name.trim() || `@${username} campaign`,
+      name: name.trim() || `@${username} kampaniyasi`,
       instagramAccountId: selectedAccountId,
       postId: triggerScope === "specific" ? postId : null,
       postUrl: triggerScope === "specific" ? postUrl : null,
@@ -471,13 +471,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         setError(
           firstField
             ? `${firstField}: ${fieldErrors[firstField][0]}`
-            : data.error ?? "Campaignni saqlash muvaffaqiyatsiz"
+            : data.error ?? "Kampaniyani saqlash muvaffaqiyatsiz"
         );
         if (typeof window !== "undefined")
           window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
-      setError("Campaignni saqlash muvaffaqiyatsiz");
+      setError("Kampaniyani saqlash muvaffaqiyatsiz");
     } finally {
       setSaving(false);
     }
@@ -512,18 +512,18 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   }
 
   if (loading) {
-    return <div className="panel h-64 rounded" />;
+    return <div className="panel h-64 rounded-md" />;
   }
 
   if (notFound) {
     return (
-      <div className="panel rounded p-8 text-center">
-        <p className="text-sm text-muted">Campaign topilmadi.</p>
+      <div className="panel rounded-md p-8 text-center">
+        <p className="text-sm text-muted">Kampaniya topilmadi.</p>
         <button
           onClick={() => router.push("/campaigns")}
-          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+          className="mt-4 rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
         >
-          Campaignlarga qaytish
+          Kampaniyalarga qaytish
         </button>
       </div>
     );
@@ -532,7 +532,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   return (
     <div className="space-y-6">
       {importQueue && (
-        <div className="rounded border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
+        <div className="rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
           <span className="font-medium text-foreground">
             {importTotal - importQueue.length + 1} / {importTotal} import qilinmoqda.
           </span>{" "}
@@ -548,10 +548,10 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           {mode === "edit" ? (
             <>
               <span className="truncate text-sm font-semibold text-foreground">
-                {name || "Nomsiz campaign"}
+                {name || "Nomsiz kampaniya"}
               </span>
               <span
-                className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
                   isActive ? "bg-success/15 text-success" : "bg-muted/15 text-muted"
                 }`}
               >
@@ -559,7 +559,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               </span>
             </>
           ) : (
-            <span className="text-sm text-muted">Yangi campaign</span>
+            <span className="text-sm text-muted">Yangi kampaniya</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -608,14 +608,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       {/* Left: controls */}
       <div className="space-y-8">
         {error && (
-          <div className="rounded border border-error/20 bg-error/10 p-3 text-sm text-error">
+          <div className="rounded-md border border-error/20 bg-error/10 p-3 text-sm text-error">
             {error}
           </div>
         )}
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-foreground">
-            Campaign nomi{" "}
+            Kampaniya nomi{" "}
             <span className="font-normal text-muted">(ixtiyoriy)</span>
           </label>
           <input

@@ -4,10 +4,10 @@ import { usePathname } from "next/navigation";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Bosh sahifa",
-  "/campaigns": "Campaigns",
-  "/campaigns/new": "Yangi Campaign",
-  "/automations": "Campaigns",
-  "/automations/new": "Yangi Campaign",
+  "/campaigns": "Kampaniyalar",
+  "/campaigns/new": "Yangi kampaniya",
+  "/automations": "Kampaniyalar",
+  "/automations/new": "Yangi kampaniya",
   "/logs": "DM Jurnali",
   "/settings": "Sozlamalar",
   "/diagnostics": "Diagnostika",

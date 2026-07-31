@@ -42,7 +42,7 @@ export default function ImportCampaignsPage() {
     setError(null);
     const parsed = parseCsv(csv);
     if (parsed.length === 0) {
-      setError("Sarlavha qatori va kamida bitta campaign bilan CSV joylashtiring.");
+      setError("Sarlavha qatori va kamida bitta kampaniya bilan CSV joylashtiring.");
       return;
     }
 
@@ -85,9 +85,9 @@ export default function ImportCampaignsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-lg font-semibold">Campaignlarni import qilish</h1>
+        <h1 className="text-lg font-semibold">Kampaniyalarni import qilish</h1>
         <p className="text-sm text-muted mt-1">
-          Har bir campaign uchun bir qator bo&apos;lgan CSV joylashtiring. Har bir qator
+          Har bir kampaniya uchun bir qator bo&apos;lgan CSV joylashtiring. Har bir qator
           builder da oldindan to&apos;ldirilgan holda ochiladi — ko&apos;rib chiqib, reel
           tanlang va saqlang. Majburiy ustunlar:{" "}
           <code className="text-accent">keywords</code> va{" "}
@@ -103,7 +103,7 @@ export default function ImportCampaignsPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded bg-error/10 border border-error/20 text-error text-sm">
+        <div className="p-4 rounded-md bg-error/10 border border-error/20 text-error text-sm">
           {error}
         </div>
       )}
@@ -130,7 +130,7 @@ export default function ImportCampaignsPage() {
           onChange={(e) => setCsv(e.target.value)}
           placeholder={SAMPLE}
           rows={10}
-          className="w-full px-4 py-3 rounded bg-surface border border-border text-sm font-mono text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-y"
+          className="w-full px-4 py-3 rounded-md bg-surface border border-border text-sm font-mono text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-y"
         />
         <button
           type="button"
@@ -144,13 +144,13 @@ export default function ImportCampaignsPage() {
       <div className="flex items-center gap-4">
         <button
           onClick={startImport}
-          className="px-5 py-2 rounded bg-accent text-sm font-medium text-white hover:bg-accent-hover"
+          className="px-5 py-2 rounded-md bg-accent text-sm font-medium text-white hover:bg-accent-hover"
         >
           Ko&apos;rib chiqib import qilish
         </button>
         <button
           onClick={() => router.push("/campaigns")}
-          className="px-5 py-2 rounded text-sm text-muted hover:text-foreground border border-border"
+          className="px-5 py-2 rounded-md text-sm text-muted hover:text-foreground border border-border"
         >
           Bekor qilish
         </button>

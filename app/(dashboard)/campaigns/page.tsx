@@ -265,7 +265,7 @@ export default function CampaignsPage() {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="panel rounded p-6 h-36" />
+          <div key={i} className="panel rounded-md p-6 h-36" />
         ))}
       </div>
     );
@@ -293,7 +293,7 @@ export default function CampaignsPage() {
             {filtered.length !== automations.length
               ? ` of ${automations.length}`
               : ""}{" "}
-            ta campaign
+            ta kampaniya
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -306,7 +306,7 @@ export default function CampaignsPage() {
           )}
           <Link
             href="/campaigns/import"
-            className="px-4 py-2 rounded border border-border text-sm font-medium text-muted hover:text-foreground"
+            className="px-4 py-2 rounded-md border border-border text-sm font-medium text-muted hover:text-foreground"
           >
             Import
           </Link>
@@ -314,7 +314,7 @@ export default function CampaignsPage() {
             href="/campaigns/new"
             className="px-4 py-2 rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
           >
-            Yangi Campaign
+            Yangi kampaniya
           </Link>
         </div>
       </div>
@@ -352,24 +352,24 @@ export default function CampaignsPage() {
 
       {/* Empty state */}
       {automations.length === 0 && (
-        <div className="panel rounded p-12 text-center">
-          <h3 className="text-lg font-semibold mb-2">Hali campaign yo&apos;q</h3>
+        <div className="panel rounded-md p-12 text-center">
+          <h3 className="text-lg font-semibold mb-2">Hali kampaniya yo&apos;q</h3>
           <p className="text-sm text-muted mb-6 max-w-sm mx-auto">
-            Birinchi campaign yarating va post yoki reelingizga izoh yozganlarга avtomatik DM yuboring.
+            Birinchi kampaniya yarating va post yoki reelingizga izoh yozganlarga avtomatik DM yuboring.
           </p>
           <Link
             href="/campaigns/new"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
           >
-            Campaign yaratish
+            Kampaniya yaratish
           </Link>
         </div>
       )}
 
       {/* No matches for the current filter */}
       {automations.length > 0 && filtered.length === 0 && (
-        <div className="panel rounded p-8 text-center text-sm text-muted">
-          Qidiruv bo&apos;yicha campaign topilmadi.
+        <div className="panel rounded-md p-8 text-center text-sm text-muted">
+          Qidiruv bo&apos;yicha kampaniya topilmadi.
         </div>
       )}
 
@@ -381,7 +381,7 @@ export default function CampaignsPage() {
           <div
             key={auto.id}
             onClick={() => router.push(`/campaigns/${auto.id}`)}
-            className="panel rounded p-4 hover:border-border-hover transition-all cursor-pointer"
+            className="panel rounded-md p-4 hover:border-border-hover transition-all cursor-pointer"
           >
             <div className="flex items-start justify-between gap-4">
               {auto.postId && thumbnails[auto.postId] && (
@@ -398,8 +398,8 @@ export default function CampaignsPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={thumbnails[auto.postId]}
-                      alt="Campaign reel"
-                      className="w-12 h-12 rounded object-cover border border-border hover:border-border-hover"
+                      alt="Kampaniya reeli"
+                      className="w-12 h-12 rounded-md object-cover border border-border hover:border-border-hover"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -416,8 +416,8 @@ export default function CampaignsPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={thumbnails[auto.postId]}
-                      alt="Campaign post"
-                      className="w-12 h-12 rounded object-cover border border-border"
+                      alt="Kampaniya posti"
+                      className="w-12 h-12 rounded-md object-cover border border-border"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -533,7 +533,7 @@ export default function CampaignsPage() {
                       setMenuOpenId((cur) => (cur === auto.id ? null : auto.id))
                     }
                     aria-label="More actions"
-                    className="px-2 py-1 rounded text-lg leading-none text-muted hover:text-foreground"
+                    className="px-2 py-1 rounded-md text-lg leading-none text-muted hover:text-foreground"
                   >
                     ⋯
                   </button>

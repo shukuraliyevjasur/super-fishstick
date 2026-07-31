@@ -163,7 +163,7 @@ export default function SettingsPage() {
           <div className="space-y-3 py-3">
             {accounts.length === 0 && (
               <p className="text-sm text-muted">
-                Campaign ishga tushirish uchun Instagram professional akkauntingizni ulang.
+                Kampaniya ishga tushirish uchun Instagram professional akkauntingizni ulang.
               </p>
             )}
             {accounts.map((account) => (

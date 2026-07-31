@@ -1,26 +1,36 @@
 /**
  * Stat Card
  *
- * Metric panel with label, value, and optional trend.
+ * Metric panel. `emphasis: "primary"` renders headline metrics larger — the
+ * grid mixes both sizes so the eye has somewhere to land instead of scanning
+ * six identical boxes.
  */
 
 interface StatCardProps {
   label: string;
   value: string | number;
-  trend?: string;
-  trendUp?: boolean;
+  emphasis?: "primary" | "secondary";
 }
 
-export default function StatCard({ label, value, trend, trendUp }: StatCardProps) {
+export default function StatCard({
+  label,
+  value,
+  emphasis = "secondary",
+}: StatCardProps) {
+  const isPrimary = emphasis === "primary";
+
   return (
-    <div className="panel rounded p-4">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="text-2xl font-semibold text-foreground mt-1">{value}</p>
-      {trend && (
-        <p className={`text-xs mt-1 ${trendUp ? "text-success" : "text-error"}`}>
-          {trendUp ? "Up" : "Down"} {trend}
-        </p>
-      )}
+    <div className={`panel rounded-lg ${isPrimary ? "p-5" : "p-4"}`}>
+      <p className={isPrimary ? "text-sm text-muted" : "text-xs text-subtle"}>
+        {label}
+      </p>
+      <p
+        className={`mt-1 font-bold tabular-nums text-foreground ${
+          isPrimary ? "text-3xl" : "text-xl"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

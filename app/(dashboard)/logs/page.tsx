@@ -127,7 +127,7 @@ export default function LogsPage() {
               <tr className="border-b border-border text-left bg-background">
                 <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Izoh yozuvchi</th>
                 <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Izoh</th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Campaign</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Kampaniya</th>
                 <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Akkaunt</th>
                 <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Holat</th>
                 <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Vaqt</th>
@@ -139,7 +139,7 @@ export default function LogsPage() {
                   {[...Array(5)].map((_, i) => (
                     <tr key={i}>
                       <td colSpan={6} className="px-6 py-4">
-                        <div className="h-4 bg-border rounded" />
+                        <div className="h-4 bg-border rounded-md" />
                       </td>
                     </tr>
                   ))}

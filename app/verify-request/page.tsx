@@ -15,7 +15,7 @@ export default function VerifyRequestPage() {
           </Link>
         </div>
 
-        <div className="bg-surface border border-border rounded-xl p-8 text-center shadow-sm">
+        <div className="bg-surface border border-border rounded-lg p-8 text-center shadow-sm">
           <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>

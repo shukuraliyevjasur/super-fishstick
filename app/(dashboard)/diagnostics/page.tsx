@@ -68,7 +68,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="panel rounded p-6">
+    <section className="panel rounded-md p-6">
       <h2 className="text-base font-semibold text-foreground">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -111,7 +111,7 @@ export default function DiagnosticsPage() {
   }, []);
 
   if (loading && !data) {
-    return <div className="panel rounded p-8 h-64" />;
+    return <div className="panel rounded-md p-8 h-64" />;
   }
 
   const workerAgeSeconds =
@@ -132,14 +132,14 @@ export default function DiagnosticsPage() {
         </div>
         <button
           onClick={() => void refreshDiagnostics()}
-          className="rounded border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover"
         >
           Yangilash
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="panel rounded p-5">
+        <div className="panel rounded-md p-5">
           <p className="text-xs font-semibold uppercase text-muted">
             Worker holati
           </p>
@@ -157,7 +157,7 @@ export default function DiagnosticsPage() {
           </p>
         </div>
         {["waiting", "active", "delayed", "failed"].map((key) => (
-          <div key={key} className="panel rounded p-5">
+          <div key={key} className="panel rounded-md p-5">
             <p className="text-xs font-semibold uppercase text-muted">
               Navbat: {key}
             </p>
@@ -174,7 +174,7 @@ export default function DiagnosticsPage() {
             {data.workerAlerts.map((alert) => (
               <div
                 key={`${alert.createdAt}-${alert.jobId ?? alert.message}`}
-                className="rounded border border-border bg-surface/50 p-4"
+                className="rounded-md border border-border bg-surface/50 p-4"
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-foreground">

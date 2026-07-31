@@ -52,8 +52,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${report.campaign.name} — Campaign hisoboti`,
-    description: `${report.campaign.name} campaign uchun faqat o'qish uchun hisobot.`,
+    title: `${report.campaign.name} — Kampaniya hisoboti`,
+    description: `${report.campaign.name} kampaniya uchun faqat o'qish uchun hisobot.`,
     robots: { index: false, follow: false },
   };
 }
@@ -94,8 +94,8 @@ export default async function ReportPage({ params }: ReportPageProps) {
                 <span>·</span>
                 <span>
                   {report.campaign.isActive
-                    ? "Faol campaign"
-                    : "To'xtatilgan campaign"}
+                    ? "Faol kampaniya"
+                    : "To'xtatilgan kampaniya"}
                 </span>
               </div>
             </div>
@@ -113,7 +113,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
               {report.branded && (
                 <Link
                   href="/"
-                  className="mt-4 inline-flex items-center justify-center rounded border border-border bg-surface-hover px-3 py-2 text-xs font-semibold text-muted transition hover:text-foreground"
+                  className="mt-4 inline-flex items-center justify-center rounded-md border border-border bg-surface-hover px-3 py-2 text-xs font-semibold text-muted transition hover:text-foreground"
                 >
                   replie tomonidan
                 </Link>
@@ -192,7 +192,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
                       title={`${day.clicks} klik`}
                     />
                   </div>
-                  <p className="truncate text-center text-[11px] text-muted">
+                  <p className="truncate text-center text-xs text-muted">
                     {day.date}
                   </p>
                 </div>
@@ -200,11 +200,11 @@ export default async function ReportPage({ params }: ReportPageProps) {
             </div>
             <div className="mt-5 flex flex-wrap gap-4 text-xs text-muted">
               <span className="inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-sm bg-accent" />
+                <span className="h-2 w-2 rounded-full bg-accent" />
                 Yuborildi
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-sm bg-success" />
+                <span className="h-2 w-2 rounded-full bg-success" />
                 Kliklar
               </span>
             </div>
@@ -265,7 +265,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
 
         <section className="mt-8 rounded-lg border border-border bg-surface p-6">
           <h2 className="text-xl font-bold text-foreground">
-            Campaign sozlamalari
+            Kampaniya sozlamalari
           </h2>
           <div className="mt-5 grid gap-5 md:grid-cols-3">
             <div>
@@ -276,7 +276,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
                 {report.campaign.keywords.map((keyword) => (
                   <span
                     key={keyword}
-                    className="rounded border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground"
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground"
                   >
                     {keyword}
                   </span>

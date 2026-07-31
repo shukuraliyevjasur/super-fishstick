@@ -36,7 +36,7 @@ const navItems = [
     ),
   },
   {
-    label: "Campaigns",
+    label: "Kampaniyalar",
     href: "/campaigns",
     icon: (
       <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">

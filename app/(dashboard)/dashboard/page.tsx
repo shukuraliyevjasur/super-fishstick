@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import StatCard from "@/components/stat-card";
 import StatusBadge from "@/components/status-badge";
@@ -60,13 +61,27 @@ export default function DashboardPage() {
   }
 
   if (loading) {
+    // Mirrors the loaded layout (greeting + 2 primary + 4 secondary stats) so
+    // nothing jumps when data arrives.
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="panel rounded-lg p-5 h-32">
-              <div className="w-10 h-3 rounded bg-border" />
-              <div className="mt-4 h-7 w-16 bg-border/60 rounded" />
+      <div className="space-y-8">
+        <div>
+          <div className="h-8 w-56 rounded-md bg-border/60" />
+          <div className="mt-2 h-4 w-72 rounded-md bg-border/40" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="panel rounded-lg p-5">
+              <div className="h-4 w-24 rounded-md bg-border" />
+              <div className="mt-2 h-9 w-20 rounded-md bg-border/60" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="panel rounded-lg p-4">
+              <div className="h-3 w-20 rounded-md bg-border" />
+              <div className="mt-2 h-7 w-14 rounded-md bg-border/60" />
             </div>
           ))}
         </div>
@@ -120,7 +135,7 @@ export default function DashboardPage() {
         return (
           <div className="panel rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground">Boshlash uchun 3 qadam</h2>
+              <h2 className="text-lg font-semibold text-foreground">Boshlash uchun 3 qadam</h2>
               <span className="text-xs text-muted">{doneCount} / 3 bajarildi</span>
             </div>
             <div className="space-y-3">
@@ -148,41 +163,75 @@ export default function DashboardPage() {
         );
       })()}
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard label="Faol Campaigns" value={stats?.activeAutomations ?? 0} />
-        <StatCard label="DM Yuborildi" value={stats?.dmsSentMonth ?? 0} />
+      {/* Headline metrics — the two numbers the business actually runs on. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StatCard
+          label="DM yuborildi (oy)"
+          value={stats?.dmsSentMonth ?? 0}
+          emphasis="primary"
+        />
+        <StatCard
+          label="CTR (oy)"
+          value={`${stats?.ctrThisMonth ?? 0}%`}
+          emphasis="primary"
+        />
+      </div>
+
+      {/* Supporting metrics — diagnostics, deliberately quieter. */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Faol kampaniyalar" value={stats?.activeAutomations ?? 0} />
+        <StatCard label="Kliklar" value={stats?.clicksThisMonth ?? 0} />
         <StatCard label="O'tkazib yuborildi" value={stats?.dmsSkippedMonth ?? 0} />
         <StatCard label="Muvaffaqiyatsiz" value={stats?.dmsFailedMonth ?? 0} />
-        <StatCard label="Kliklar" value={stats?.clicksThisMonth ?? 0} />
-        <StatCard label="CTR" value={`${stats?.ctrThisMonth ?? 0}%`} />
       </div>
 
       {/* Chart + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
         {/* 7-Day Chart */}
         <div className="lg:col-span-3 panel rounded-lg p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-6">DM — Oxirgi 7 kun</h2>
-          <div className="flex items-end gap-2 h-40">
+          <h2 className="text-lg font-semibold text-foreground mb-6">DM — oxirgi 7 kun</h2>
+          {/* Baseline + midpoint gridline: makes the bars read as measured data
+              rather than decoration. */}
+          <div className="relative h-40">
+            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-border" />
+            <div className="absolute inset-x-0 bottom-0 border-t border-border" />
+            <div className="relative flex h-full items-end gap-2">
+              {stats?.dailyDMs.map((day) => (
+                <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
+                  <span className="text-xs font-medium tabular-nums text-muted">
+                    {day.count}
+                  </span>
+                  <div
+                    className="w-full rounded-t-md bg-accent min-h-[4px]"
+                    style={{ height: `${Math.max((day.count / maxDM) * 100, 4)}%` }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-2 flex gap-2">
             {stats?.dailyDMs.map((day) => (
-              <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
-                <span className="text-xs text-muted font-medium">{day.count}</span>
-                <div
-                  className="w-full rounded-sm bg-accent min-h-[4px]"
-                  style={{ height: `${Math.max((day.count / maxDM) * 100, 4)}%` }}
-                />
-                <span className="text-[10px] text-muted">{day.date}</span>
-              </div>
+              <span key={day.date} className="flex-1 text-center text-xs text-subtle">
+                {day.date}
+              </span>
             ))}
           </div>
         </div>
 
         {/* Top Keywords */}
         <div className="lg:col-span-1 panel rounded-lg p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Top kalit so&apos;zlar</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Top kalit so&apos;zlar</h2>
           <div className="space-y-3">
             {stats?.topKeywords.length === 0 && (
-              <p className="text-sm text-muted py-8">Kalit so&apos;z mos keluvi yo&apos;q</p>
+              <div className="py-6">
+                <p className="text-sm text-muted">
+                  Hali mos kelgan kalit so&apos;z yo&apos;q.
+                </p>
+                <p className="mt-1 text-xs text-subtle">
+                  Izohlarda eng ko&apos;p ishlatilgan kalit so&apos;zlar shu yerda
+                  ko&apos;rinadi.
+                </p>
+              </div>
             )}
             {stats?.topKeywords.map((keyword) => (
               <div key={keyword.keyword} className="flex items-center justify-between gap-3">
@@ -197,10 +246,22 @@ export default function DashboardPage() {
 
         {/* Recent Activity */}
         <div className="lg:col-span-2 panel rounded-lg p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">So&apos;nggi faoliyat</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">So&apos;nggi faoliyat</h2>
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {stats?.recentLogs.length === 0 && (
-              <p className="text-sm text-muted text-center py-8">Hali faoliyat yo&apos;q</p>
+              <div className="py-6">
+                <p className="text-sm text-muted">Hali faoliyat yo&apos;q.</p>
+                <p className="mt-1 text-xs text-subtle">
+                  Kimdir kalit so&apos;z bilan izoh yozganda, yuborilgan DM shu
+                  yerda paydo bo&apos;ladi.
+                </p>
+                <Link
+                  href="/campaigns/new"
+                  className="mt-3 inline-block text-xs font-semibold text-accent hover:underline"
+                >
+                  Kampaniya yaratish →
+                </Link>
+              </div>
             )}
             {stats?.recentLogs.map((log) => (
               <div

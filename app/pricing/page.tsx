@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import PublicSiteHeader from "@/components/public-site-header";
+import PublicSiteFooter from "@/components/public-site-footer";
 
 export const metadata: Metadata = {
-  title: "Narxlar - replie",
+  title: "Narxlar",
   description: "replie narxlari va imkoniyatlari haqida ma'lumot.",
-  robots: { index: false, follow: false },
 };
 
 const PLANS = [
@@ -15,12 +15,12 @@ const PLANS = [
     badge: null,
     features: [
       "1 ta Instagram akkaunt",
-      "5 ta faol campaign",
+      "5 ta faol kampaniya",
       "Kalit so'z trigger",
       "Avtomatik DM yuborish",
       "Ommaviy izoh javobi",
-      "Campaign analitikasi",
-      "Campaign tarixi (logs)",
+      "Kampaniya analitikasi",
+      "Kampaniya tarixi (logs)",
     ],
     highlighted: false,
   },
@@ -31,7 +31,7 @@ const PLANS = [
     badge: "Tavsiya etiladi",
     features: [
       "3 ta Instagram akkaunt",
-      "Cheksiz campaign",
+      "Cheksiz kampaniya",
       "Kirish DM + interaktiv tugma",
       "Follow gate (obuna tekshiruvi)",
       "Kuzatilgan havolalar va CTR",
@@ -48,19 +48,7 @@ const PLANS = [
 export default function PricingPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
-          <Link href="/" className="text-base font-bold text-foreground">
-            replie
-          </Link>
-          <Link
-            href="/login"
-            className="text-sm font-medium text-muted hover:text-foreground transition-colors"
-          >
-            Kirish
-          </Link>
-        </div>
-      </header>
+      <PublicSiteHeader />
 
       <section className="mx-auto max-w-4xl px-5 py-16 sm:py-24">
         <div className="mb-14 text-center">
@@ -76,7 +64,7 @@ export default function PricingPage() {
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`flex flex-col rounded-xl border p-8 ${
+              className={`flex flex-col rounded-lg border p-8 ${
                 plan.highlighted
                   ? "border-accent bg-accent/5"
                   : "border-border bg-surface"
@@ -90,7 +78,7 @@ export default function PricingPage() {
               <h2 className="text-xl font-bold text-foreground">{plan.name}</h2>
               <p className="mt-1 text-sm text-muted">{plan.description}</p>
               <div className="mt-5 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-foreground">
+                <span className="text-4xl font-bold text-foreground">
                   {plan.price}
                 </span>
                 <span className="text-base text-muted">so&apos;m/oy</span>
@@ -149,22 +137,7 @@ export default function PricingPage() {
         </p>
       </section>
 
-      <footer className="border-t border-border py-8">
-        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-muted">
-          <Link
-            href="/"
-            className="font-semibold text-foreground hover:text-accent transition-colors"
-          >
-            replie
-          </Link>
-          <span>© 2026 replie</span>
-          <div className="flex items-center gap-4">
-            <Link href="/privacy">Maxfiylik</Link>
-            <Link href="/terms">Shartlar</Link>
-            <Link href="/data-deletion">Ma&apos;lumotlarni o&apos;chirish</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </main>
   );
 }

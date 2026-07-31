@@ -96,7 +96,7 @@ export default function PostPicker({
     return (
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="aspect-square rounded bg-border" />
+          <div key={i} className="aspect-square rounded-md bg-border" />
         ))}
       </div>
     );
@@ -144,8 +144,8 @@ export default function PostPicker({
         <>
           {usedPostIds && Object.keys(usedPostIds).length > 0 && (
             <p className="flex items-center gap-2 px-1 text-xs text-muted">
-              <span className="inline-block h-3 w-3 rounded-sm border-2 border-warning" />
-              Boshqa campaign tomonidan ishlatilgan
+              <span className="inline-block h-3 w-3 rounded-full border-2 border-warning" />
+              Boshqa kampaniya tomonidan ishlatilgan
             </p>
           )}
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1">
@@ -169,7 +169,7 @@ export default function PostPicker({
             aria-pressed={isSelected}
             title={isUsed ? `Already used by "${usedByName}"` : undefined}
             className={`
-              relative aspect-square rounded overflow-hidden border-2
+              relative aspect-square rounded-md overflow-hidden border-2
               ${
                 isSelected
                   ? "border-accent"

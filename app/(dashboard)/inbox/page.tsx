@@ -270,7 +270,7 @@ export default function InboxPage() {
         )}
       </div>
 
-      <div className="grid h-[calc(100dvh-11rem)] grid-cols-1 overflow-hidden rounded border border-border sm:grid-cols-[300px_1fr]">
+      <div className="grid h-[calc(100dvh-11rem)] grid-cols-1 overflow-hidden rounded-md border border-border sm:grid-cols-[300px_1fr]">
         {/* Conversation list. On mobile it takes the full pane and is hidden
             once a thread is open (ManyChat-style); on sm+ it is always shown. */}
         <div
@@ -304,7 +304,7 @@ export default function InboxPage() {
                       <span className="truncate text-sm font-medium text-foreground">
                         @{c.contact.username ?? "unknown"}
                       </span>
-                      <span className="shrink-0 text-[11px] text-muted">
+                      <span className="shrink-0 text-xs text-muted">
                         {formatTime(c.updatedTime)}
                       </span>
                     </div>
@@ -336,7 +336,7 @@ export default function InboxPage() {
                 <button
                   type="button"
                   onClick={() => setActiveId(null)}
-                  className="-ml-1 rounded px-2 py-1 text-muted hover:text-foreground sm:hidden"
+                  className="-ml-1 rounded-md px-2 py-1 text-muted hover:text-foreground sm:hidden"
                   aria-label="Back to conversations"
                 >
                   Orqaga
@@ -366,7 +366,7 @@ export default function InboxPage() {
                       >
                         <p className="whitespace-pre-wrap break-words">{m.text}</p>
                         <p
-                          className={`mt-1 text-[10px] ${
+                          className={`mt-1 text-xs ${
                             m.fromMe ? "text-white/70" : "text-muted"
                           }`}
                         >
