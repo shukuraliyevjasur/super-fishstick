@@ -1,6 +1,6 @@
 # replie — Agent Handoff
 
-**Last updated:** 2026-07-31
+**Last updated:** 2026-08-01
 
 ## What this is
 
@@ -85,7 +85,7 @@ Copy that output somewhere before `docker rm`, or you will have to re-derive
 each value from the Vercel env settings (Project → Settings → Environment
 Variables).
 
-> **The running container is older than the image on GHCR.** As of 2026-07-31 it
+> **The running container is older than the image on GHCR.** As of 2026-08-01 it
 > still runs the Node 20 base; the current image is Node 24. Same application
 > code — only the base image differs — so this is not urgent, but the VM has not
 > pulled since. The steps above bring it current.
@@ -177,9 +177,9 @@ for a one-off value.
 - **Type:** `text-xs` (11px floor) → `text-6xl`. No arbitrary `text-[Npx]`.
 - **Radius:** `rounded-md` controls · `rounded-lg` cards · `rounded-full` pills. Nothing else.
 - **Neutrals:** `foreground` primary · `muted` secondary · `subtle` tertiary.
-- **Font:** Inter via `next/font` in `app/layout.tsx`. Headings are `font-bold`
-  (700) — do not use `font-black`, since the previous `system-ui` stack had no
-  900 weight and Windows synthesised it.
+- **Font:** Plus Jakarta Sans via `next/font/google` in `app/layout.tsx`
+  (CSS variable `--font-plus-jakarta`). Headings use weight 800
+  (`font-extrabold`). Do not use `font-black` (900).
 - Never use raw Tailwind colors (`bg-zinc-*`, `text-gray-*`). Use tokens.
 
 **Exception:** `components/campaign-preview.tsx` intentionally uses dark zinc and
@@ -189,9 +189,32 @@ for a one-off value.
 "campaign". The TypeScript type is still `Campaign` — that is correct, don't
 rename identifiers.
 
-See [DESIGN_REVIEW.md](DESIGN_REVIEW.md) for the full audit. P0 items are done;
-the remaining P2 items (10–11: landing-page composition) are editorial decisions,
-not token changes.
+See [DESIGN_REVIEW.md](DESIGN_REVIEW.md) for the full audit.
+
+---
+
+## Landing page (`app/page.tsx`)
+
+Redesigned 2026-07-31 / 2026-08-01. Key decisions:
+
+- **Logo:** Custom R glyph SVG (`public/replie-logo.svg`), rendered inline in
+  header and footer. The brand name reads as "[R]eplie" — the SVG is the R,
+  followed by "eplie" in text.
+- **Header:** Sticky with 4px accent-blue top bar, frosted-glass background,
+  hamburger menu on mobile.
+- **Hero:** Cinematic entrance animation — headline uses a blur-to-sharp focus
+  pull (700ms), mockup rises from below with scale + blur clearing at 40% of a
+  1s duration, description and CTAs cascade in with staggered delays. All
+  keyframes in `globals.css` (`heroTextIn`, `heroSupportIn`, `heroMockupIn`).
+  Classes: `.hero-enter`, `.hero-enter-d1`, `.hero-enter-d2`,
+  `.hero-enter-mockup`. Uses `animation-fill-mode: backwards` for safe
+  progressive enhancement; `prefers-reduced-motion` collapses all durations.
+- **Sections:** No card containers or decorative wrappers. Steps use 2px
+  accent-blue top border (ruled columns); features use 1px neutral top border.
+  No pill badges, eyebrow labels, or icon boxes.
+- **Pricing page (`app/pricing/page.tsx`):** Two-column grid, Standard vs Pro.
+  Pro card distinguished by `border-2 border-accent` only — no gradient, no
+  floating badge.
 
 ---
 
@@ -217,8 +240,10 @@ not token changes.
 
 | What | File |
 |------|------|
-| Design tokens | `app/globals.css` |
+| Design tokens + hero animations | `app/globals.css` |
 | Root layout / font | `app/layout.tsx` |
+| Landing page | `app/page.tsx` |
+| Pricing page | `app/pricing/page.tsx` |
 | Worker entry | `worker/dm-worker.ts` |
 | Worker job logic | `lib/queue/dm-worker.ts` |
 | Worker image CI | `.github/workflows/worker-image.yml` |
