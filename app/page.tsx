@@ -116,15 +116,15 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row items-center" style={{ gap: 56 }}>
 
             <div style={{ flex: 1, minWidth: 0, maxWidth: 560 }}>
-              <h1 style={{ margin: 0, fontSize: "clamp(2.5rem, 4vw + 1rem, 3.75rem)", fontWeight: 800, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#1A1A1A" }}>
+              <h1 className="hero-enter" style={{ margin: 0, fontSize: "clamp(2.5rem, 4vw + 1rem, 3.75rem)", fontWeight: 800, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#1A1A1A" }}>
                 Izohlaringiz o&apos;zi ishlaydi
               </h1>
 
-              <p style={{ margin: "20px 0 0", fontSize: 17, lineHeight: 1.65, color: "#5B6472", maxWidth: 480 }}>
+              <p className="hero-enter-d1" style={{ margin: "20px 0 0", fontSize: 17, lineHeight: 1.65, color: "#5B6472", maxWidth: 480 }}>
                 Instagram post yoki reelsga kalit so&apos;z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram orqali, xavfsiz va ishonchli.
               </p>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}>
+              <div className="hero-enter-d2" style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}>
                 <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#0145F2", color: "#fff", fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, textDecoration: "none", boxShadow: "0 4px 12px rgba(1,69,242,0.3)" }}>
                   Boshlash
                 </Link>
@@ -134,7 +134,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="w-full lg:max-w-[520px]" style={{ flex: 1, minWidth: 0 }}>
+            <div className="w-full lg:max-w-[520px] hero-enter-mockup" style={{ flex: 1, minWidth: 0 }}>
               <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 32px 64px -16px rgba(0,0,0,0.12), 0 16px 32px -8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 16px", background: "#F8F9FB", borderBottom: "1px solid #E2E8EF" }}>
                   {["", "", ""].map((_, i) => <span key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#E2E8EF", display: "inline-block" }} />)}
@@ -192,7 +192,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 32, marginTop: 48 }}>
             {steps.map((step) => (
-              <div key={step.n}>
+              <div key={step.n} style={{ borderTop: "2px solid #0145F2", paddingTop: 24 }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: "#0145F2", letterSpacing: "-0.02em", lineHeight: 1 }}>{step.n}</div>
                 <div style={{ fontSize: 17, fontWeight: 700, color: "#1A1A1A", marginTop: 16 }}>{step.title}</div>
                 <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.6, color: "#5B6472" }}>{step.desc}</p>
@@ -212,7 +212,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 32, marginTop: 48 }}>
             {mainFeatures.map((f) => (
-              <div key={f.title}>
+              <div key={f.title} style={{ borderTop: "1px solid #C8D0DA", paddingTop: 24 }}>
                 <div style={{ fontSize: 17, fontWeight: 700, color: "#1A1A1A" }}>{f.title}</div>
                 <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.6, color: "#5B6472" }}>{f.desc}</p>
               </div>

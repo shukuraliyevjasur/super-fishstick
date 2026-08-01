@@ -107,6 +107,49 @@ select:focus-visible {
   to   { opacity: 1; transform: translateY(0);    }
 }
 
+@keyframes heroTextIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(6px);
+  }
+}
+
+@keyframes heroSupportIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes heroMockupIn {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.96);
+    filter: blur(4px);
+  }
+  40% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hero-enter {
+  animation: heroTextIn 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.hero-enter-d1 {
+  animation: heroSupportIn 500ms cubic-bezier(0.16, 1, 0.3, 1) 200ms backwards;
+}
+.hero-enter-d2 {
+  animation: heroSupportIn 500ms cubic-bezier(0.16, 1, 0.3, 1) 300ms backwards;
+}
+.hero-enter-mockup {
+  animation: heroMockupIn 1000ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
