@@ -34,15 +34,30 @@ const flowSteps = [
   },
 ];
 
-const features = [
+const heroFeatures = [
+  {
+    title: "Follow gate",
+    description:
+      "Obuna bo’lmagan foydalanuvchi havolaga yetolmaydi. Bot tekshiradi — faqat obuna bo’lganda yuboradi.",
+  },
+  {
+    title: "Kuzatuvchi havolalar",
+    description:
+      "Har bir yuborilgan havolaga klik soni va CTR ko’rsatiladi — qaysi kampaniya ishlayotganini bilasiz.",
+  },
+  {
+    title: "DM jurnali",
+    description:
+      "Har bir yuboruv sababi bilan jurnallanadi: yuborildi, navbatda, muvaffaqiyatsiz.",
+  },
+];
+
+const supportingFeatures = [
   "Email magic-link orqali kirish",
   "Bir nechta Instagram akkaunt",
   "Tokenlar xavfsiz saqlanadi",
   "Webhook + polling monitoring",
-  "Kalit so'zlar bo'yicha avto-DM",
-  "Follow gate — obunaga taklif",
-  "Kuzatuvchi havolalar va klik statistikasi",
-  "DM jurnali to'liq holda",
+  "Kalit so’zlar bo’yicha avto-DM",
   "Jamoaviy workspace",
 ];
 
@@ -247,8 +262,25 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {heroFeatures.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-lg border border-accent/20 bg-accent/5 p-6"
+            >
+              <div className="w-8 h-8 rounded-md bg-accent/10 flex items-center justify-center mb-4">
+                <svg className="w-4 h-4 text-accent" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="2 6 5 9 10 3"/>
+                </svg>
+              </div>
+              <p className="text-base font-semibold text-foreground">{f.title}</p>
+              <p className="mt-2 text-sm leading-6 text-muted">{f.description}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {supportingFeatures.map((feature) => (
             <div
               key={feature}
               className="flex items-center gap-3 rounded-lg border border-border bg-surface p-4"
@@ -272,7 +304,7 @@ export default function Home() {
               Keyingi reelingizni biznes vositasiga aylantiring
             </h2>
             <p className="mt-4 text-base text-muted">
-              Birinchi kampaniya yaratish bepul. Savol bo&apos;lsa — Telegram orqali javob beramiz.
+              Oylik to&apos;lov. Istalgan vaqt bekor qilish mumkin. Savol bo&apos;lsa — Telegram orqali javob beramiz.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
