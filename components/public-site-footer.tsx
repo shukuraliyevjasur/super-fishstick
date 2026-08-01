@@ -1,40 +1,32 @@
 import Link from "next/link";
 
-function Logo({ className }: { className?: string }) {
+function Logo() {
   return (
-    <svg
-      viewBox="0 0 28 32"
-      width="18"
-      height="21"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path
-        fillRule="evenodd"
-        d="M0 32L5 0H24L21 15H13L23 32H15L10 17L7 32H0ZM11 4.5H19L17.5 11H10L11 4.5Z"
-      />
+    <svg viewBox="0 0 28 32" style={{ width: 18, height: 20 }} fill="#0145F2" aria-hidden="true">
+      <path fillRule="evenodd" d="M0 32L5 0H24L21 15H13L23 32H15L10 17L7 32H0ZM11 4.5H19L17.5 11H10L11 4.5Z" />
     </svg>
   );
 }
 
 export default function PublicSiteFooter() {
   return (
-    <footer className="border-t border-border py-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 text-sm text-muted sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 text-accent hover:opacity-80 transition-opacity">
+    <footer style={{ background: "#fff", borderTop: "1px solid #E2E8EF", padding: "32px 0" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <Logo />
-          <span className="font-semibold text-foreground">replie</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#1A1A1A" }}>replie</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/pricing" className="hover:text-foreground transition-colors">Narxlar</Link>
-          <Link href="/privacy" className="hover:text-foreground transition-colors">Maxfiylik</Link>
-          <Link href="/terms" className="hover:text-foreground transition-colors">Shartlar</Link>
-          <Link href="/data-deletion" className="hover:text-foreground transition-colors">
-            Ma&apos;lumotlarni o&apos;chirish
-          </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+          {[
+            { href: "/pricing", label: "Narxlar" },
+            { href: "/privacy", label: "Maxfiylik" },
+            { href: "/terms", label: "Shartlar" },
+            { href: "/data-deletion", label: "Ma'lumotlarni o'chirish" },
+          ].map(({ href, label }) => (
+            <Link key={href} href={href} style={{ fontSize: 13, color: "#5B6472", textDecoration: "none" }}>{label}</Link>
+          ))}
         </div>
-        <span className="text-subtle">© 2026 replie</span>
+        <span style={{ fontSize: 13, color: "#949CA9" }}>© 2026 replie</span>
       </div>
     </footer>
   );

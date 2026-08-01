@@ -3,20 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 
-function Logo({ className }: { className?: string }) {
+function Logo() {
   return (
-    <svg
-      viewBox="0 0 28 32"
-      width="20"
-      height="23"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path
-        fillRule="evenodd"
-        d="M0 32L5 0H24L21 15H13L23 32H15L10 17L7 32H0ZM11 4.5H19L17.5 11H10L11 4.5Z"
-      />
+    <svg viewBox="0 0 28 32" style={{ width: 24, height: 28 }} fill="#0145F2" aria-hidden="true">
+      <path fillRule="evenodd" d="M0 32L5 0H24L21 15H13L23 32H15L10 17L7 32H0ZM11 4.5H19L17.5 11H10L11 4.5Z" />
     </svg>
   );
 }
@@ -25,41 +15,28 @@ export default function PublicSiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-border">
+    <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #E2E8EF" }}>
       {/* Blue accent bar */}
-      <div className="h-1 bg-accent w-full" />
+      <div style={{ height: 4, background: "#0145F2", width: "100%" }} />
 
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-accent"
-          aria-label="replie bosh sahifa"
-        >
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+        <Link href="/" aria-label="replie bosh sahifa" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <Logo />
-          <span className="text-base font-bold text-foreground">replie</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.03em" }}>replie</span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/pricing"
-            className="text-sm font-medium text-muted hover:text-foreground transition-colors"
-          >
+        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 32 }}>
+          <Link href="/pricing" style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none" }}>
             Narxlar
           </Link>
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors"
-          >
+        <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
+          <Link href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none", padding: "10px 18px" }}>
             Kirish
           </Link>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center justify-center bg-accent px-4 py-2 text-sm font-semibold text-white rounded-md hover:bg-accent-hover transition-colors shadow-sm"
-          >
+          <Link href="/pricing" style={{ fontSize: 14, fontWeight: 600, color: "#fff", background: "#0145F2", padding: "10px 22px", borderRadius: 8, textDecoration: "none" }}>
             Boshlash
           </Link>
         </div>
@@ -67,20 +44,18 @@ export default function PublicSiteHeader() {
         {/* Mobile hamburger */}
         <button
           type="button"
-          className="inline-flex md:hidden items-center justify-center rounded-md p-2 text-muted hover:text-foreground transition-colors"
-          aria-label={open ? "Menyuni yopish" : "Menyuni ochish"}
           onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Menyuni yopish" : "Menyuni ochish"}
+          className="flex md:hidden"
+          style={{ alignItems: "center", justifyContent: "center", width: 40, height: 40, background: "none", border: "1px solid #E2E8EF", borderRadius: 8, cursor: "pointer", padding: 0 }}
         >
           {open ? (
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="4" y1="4" x2="16" y2="16" />
-              <line x1="16" y1="4" x2="4" y2="16" />
+            <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round">
+              <line x1="4" y1="4" x2="20" y2="20" /><line x1="20" y1="4" x2="4" y2="20" />
             </svg>
           ) : (
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="17" y2="6" />
-              <line x1="3" y1="10" x2="17" y2="10" />
-              <line x1="3" y1="14" x2="17" y2="14" />
+            <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           )}
         </button>
@@ -88,30 +63,10 @@ export default function PublicSiteHeader() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t border-border bg-surface">
-          <div className="mx-auto max-w-6xl space-y-1 px-5 pb-4 pt-2">
-            <Link
-              href="/pricing"
-              onClick={() => setOpen(false)}
-              className="block rounded-md px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-background transition-colors"
-            >
-              Narxlar
-            </Link>
-            <Link
-              href="/login"
-              onClick={() => setOpen(false)}
-              className="block rounded-md px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-background transition-colors"
-            >
-              Kirish
-            </Link>
-            <Link
-              href="/pricing"
-              onClick={() => setOpen(false)}
-              className="mt-2 flex items-center justify-center bg-accent px-4 py-2.5 text-sm font-semibold text-white rounded-md hover:bg-accent-hover transition-colors"
-            >
-              Boshlash
-            </Link>
-          </div>
+        <div className="md:hidden" style={{ position: "fixed", top: 68, left: 0, right: 0, zIndex: 49, background: "#fff", borderBottom: "1px solid #E2E8EF", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
+          <Link href="/pricing" onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>Narxlar</Link>
+          <Link href="/login" onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>Kirish</Link>
+          <Link href="/pricing" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: "#fff", background: "#0145F2", padding: 14, borderRadius: 8, textDecoration: "none", marginTop: 8 }}>Boshlash</Link>
         </div>
       )}
     </header>
