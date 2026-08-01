@@ -345,7 +345,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: `${workspace.plan === "STANDART" ? "Standart" : "Pro"} rejim ${limits.maxActiveAutomations} ta campaign bilan cheklangan`,
+        error: `${{ FREE: "Bepul", STANDART: "Standart", PRO: "Pro" }[workspace.plan]} rejim ${limits.maxActiveAutomations} ta kampaniya bilan cheklangan`,
       },
       { status: 403 }
     );

@@ -20,6 +20,8 @@ interface DashboardStats {
   clicksThisMonth: number;
   totalClicks: number;
   ctrThisMonth: number;
+  plan: string;
+  dmQuota: { used: number; limit: number | null } | null;
   instagramAccounts: AccountOption[];
   selectedInstagramAccountId: string | null;
   topKeywords: { keyword: string; count: number }[];
@@ -162,6 +164,42 @@ export default function DashboardPage() {
           </div>
         );
       })()}
+
+      {/* DM usage meter */}
+      {stats?.dmQuota && stats.dmQuota.limit !== null && (
+        <div className="panel rounded-lg p-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">
+              DM limiti (oylik)
+            </span>
+            <span className="text-sm tabular-nums text-muted">
+              {stats.dmQuota.used.toLocaleString()} / {stats.dmQuota.limit.toLocaleString()}
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-border">
+            <div
+              className={`h-2 rounded-full transition-all ${
+                stats.dmQuota.used / stats.dmQuota.limit > 0.9
+                  ? "bg-error"
+                  : stats.dmQuota.used / stats.dmQuota.limit > 0.7
+                    ? "bg-amber-500"
+                    : "bg-accent"
+              }`}
+              style={{
+                width: `${Math.min(100, (stats.dmQuota.used / stats.dmQuota.limit) * 100)}%`,
+              }}
+            />
+          </div>
+          {stats.dmQuota.used / stats.dmQuota.limit > 0.9 && (
+            <p className="mt-2 text-xs text-error">
+              Limitga yaqinlashyapsiz.{" "}
+              <a href="/pricing" className="font-medium underline">
+                Rejimni oshiring
+              </a>
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Headline metrics — the two numbers the business actually runs on. */}
       <div className="grid gap-4 sm:grid-cols-2">

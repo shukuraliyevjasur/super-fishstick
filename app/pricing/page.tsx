@@ -7,26 +7,99 @@ export const metadata: Metadata = {
   description: "replie narxlari va imkoniyatlari haqida ma'lumot.",
 };
 
-interface Feature {
-  standard: string | null;
-  pro: string;
+interface Plan {
+  name: string;
+  description: string;
+  price: string;
+  period: string;
+  features: string[];
+  excluded: string[];
+  cta: string;
+  ctaHref: string;
+  highlighted: boolean;
+  badge?: string;
 }
 
-const FEATURES: Feature[] = [
-  { standard: "1 ta Instagram akkaunt", pro: "3 ta Instagram akkaunt" },
-  { standard: "5 ta faol kampaniya", pro: "Cheksiz kampaniya" },
-  { standard: "Kalit so'z trigger", pro: "Kalit so'z trigger" },
-  { standard: "Avtomatik DM yuborish", pro: "Avtomatik DM yuborish" },
-  { standard: "Ommaviy izoh javobi", pro: "Ommaviy izoh javobi" },
-  { standard: "Kampaniya analitikasi", pro: "Kampaniya analitikasi" },
-  { standard: "Kampaniya tarixi (logs)", pro: "Kampaniya tarixi (logs)" },
-  { standard: null, pro: "Kirish DM + interaktiv tugma" },
-  { standard: null, pro: "Follow gate (obuna tekshiruvi)" },
-  { standard: null, pro: "Kuzatilgan havolalar va CTR" },
-  { standard: null, pro: "Ulashiladigan mijoz hisobotlari" },
-  { standard: null, pro: "CSV orqali import" },
-  { standard: null, pro: "Ko'p foydalanuvchi" },
-  { standard: null, pro: "Prioritet qo'llab-quvvatlash" },
+const PLANS: Plan[] = [
+  {
+    name: "Bepul",
+    description: "Sinab ko'rish uchun",
+    price: "0",
+    period: "so'm/oy",
+    features: [
+      "1 ta Instagram akkaunt",
+      "2 ta kampaniya",
+      "100 ta DM/oy",
+      "Kalit so'z trigger",
+      "Avtomatik DM yuborish",
+      "Ommaviy izoh javobi",
+      "Kampaniya analitikasi",
+    ],
+    excluded: [
+      "Kirish DM + interaktiv tugma",
+      "Follow gate (obuna tekshiruvi)",
+      "Kuzatilgan havolalar va CTR",
+      "Mijoz hisobotlari",
+      "CSV import",
+      "Ko'p foydalanuvchi",
+    ],
+    cta: "Bepul boshlash",
+    ctaHref: "/login",
+    highlighted: false,
+  },
+  {
+    name: "Standart",
+    description: "Kontentmaker va kichik biznes uchun",
+    price: "47 000",
+    period: "so'm/oy",
+    badge: "Mashhur",
+    features: [
+      "1 ta Instagram akkaunt",
+      "Cheksiz kampaniya",
+      "3 000 ta DM/oy",
+      "Kalit so'z trigger",
+      "Avtomatik DM yuborish",
+      "Ommaviy izoh javobi",
+      "Kampaniya analitikasi",
+      "Kirish DM + interaktiv tugma",
+      "Follow gate (obuna tekshiruvi)",
+      "Kuzatilgan havolalar va CTR",
+    ],
+    excluded: [
+      "Mijoz hisobotlari",
+      "CSV import",
+      "Ko'p foydalanuvchi",
+    ],
+    cta: "Standart rejani boshlash",
+    ctaHref: `https://t.me/ceo_syr?text=${encodeURIComponent("Standart rejani olmoqchiman")}`,
+    highlighted: true,
+  },
+  {
+    name: "Pro",
+    description: "Agentliklar va katta brendlar uchun",
+    price: "87 000",
+    period: "so'm/oy",
+    features: [
+      "5 ta Instagram akkaunt",
+      "Cheksiz kampaniya",
+      "Cheksiz DM",
+      "Kalit so'z trigger",
+      "Avtomatik DM yuborish",
+      "Ommaviy izoh javobi",
+      "Kampaniya analitikasi",
+      "Kirish DM + interaktiv tugma",
+      "Follow gate (obuna tekshiruvi)",
+      "Kuzatilgan havolalar va CTR",
+      "Mijoz hisobotlari",
+      "CSV import",
+      "Ko'p foydalanuvchi",
+      "Prioritet qo'llab-quvvatlash",
+    ],
+    excluded: [],
+    cta: "Pro rejani boshlash",
+    ctaHref: `https://t.me/ceo_syr?text=${encodeURIComponent("Pro rejani olmoqchiman")}`,
+    highlighted: false,
+  },
 ];
 
 function CheckIcon({ className }: { className: string }) {
@@ -64,92 +137,79 @@ export default function PricingPage() {
     <main className="min-h-screen bg-background text-foreground">
       <PublicSiteHeader />
 
-      <section className="mx-auto max-w-4xl px-5 py-16 sm:py-24">
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:py-24">
         <div className="mb-14 text-center">
           <h1 className="text-4xl font-bold text-foreground sm:text-5xl">
             Oddiy narx — kuchli natija
           </h1>
           <p className="mt-4 text-lg text-muted">
-            Har oy. Istalgan vaqt bekor qilish mumkin.
+            Bepul boshlang. Istalgan vaqt bekor qilish mumkin.
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          {/* Standard plan */}
-          <div className="flex flex-col rounded-lg border border-border bg-surface p-8">
-            <h2 className="text-xl font-bold text-foreground">Standart</h2>
-            <p className="mt-1 text-sm text-muted">
-              Yakka tadbirkor va kichik biznes uchun
-            </p>
-            <div className="mt-5 flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-foreground">19 000</span>
-              <span className="text-base text-muted">so&apos;m/oy</span>
-            </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {PLANS.map((plan) => (
+            <div
+              key={plan.name}
+              className={`relative flex flex-col rounded-lg p-8 ${
+                plan.highlighted
+                  ? "border-2 border-accent"
+                  : "border border-border bg-surface"
+              }`}
+            >
+              {plan.badge && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
+                  {plan.badge}
+                </span>
+              )}
 
-            <ul className="mt-8 flex-1 space-y-3">
-              {FEATURES.map((f) =>
-                f.standard !== null ? (
+              <h2 className="text-xl font-bold text-foreground">{plan.name}</h2>
+              <p className="mt-1 text-sm text-muted">{plan.description}</p>
+
+              <div className="mt-5 flex items-baseline gap-1">
+                <span className="text-4xl font-bold text-foreground">
+                  {plan.price}
+                </span>
+                <span className="text-base text-muted">{plan.period}</span>
+              </div>
+
+              <ul className="mt-8 flex-1 space-y-3">
+                {plan.features.map((f) => (
                   <li
-                    key={f.pro}
+                    key={f}
                     className="flex items-start gap-2.5 text-sm text-foreground"
                   >
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    {f.standard}
+                    {f}
                   </li>
-                ) : (
+                ))}
+                {plan.excluded.map((f) => (
                   <li
-                    key={f.pro}
+                    key={f}
                     className="flex items-start gap-2.5 text-sm text-muted opacity-50"
                   >
                     <XIcon className="mt-0.5 h-4 w-4 shrink-0 text-error" />
-                    {f.pro}
+                    {f}
                   </li>
-                )
-              )}
-            </ul>
+                ))}
+              </ul>
 
-            <a
-              href={`https://t.me/ceo_syr?text=${encodeURIComponent("Standart rejani olmoqchiman")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-hover px-6 py-3.5 text-sm font-semibold text-foreground transition-colors hover:border-border-hover"
-            >
-              Standart rejani boshlash
-            </a>
-          </div>
-
-          {/* Pro */}
-          <div className="flex flex-col rounded-lg border-2 border-accent p-8">
-            <h2 className="text-xl font-bold text-foreground">Pro</h2>
-            <p className="mt-1 text-sm text-muted">
-              Kengayib borayotgan biznes va agentliklar uchun
-            </p>
-            <div className="mt-5 flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-foreground">29 000</span>
-              <span className="text-base text-muted">so&apos;m/oy</span>
+              <a
+                href={plan.ctaHref}
+                target={plan.ctaHref.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  plan.ctaHref.startsWith("http") ? "noreferrer" : undefined
+                }
+                className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-colors ${
+                  plan.highlighted
+                    ? "bg-accent text-white hover:bg-accent-hover"
+                    : "border border-border bg-surface-hover text-foreground hover:border-border-hover"
+                }`}
+              >
+                {plan.cta}
+              </a>
             </div>
-
-            <ul className="mt-8 flex-1 space-y-3">
-              {FEATURES.map((f) => (
-                <li
-                  key={f.pro}
-                  className="flex items-start gap-2.5 text-sm text-foreground"
-                >
-                  <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                  {f.pro}
-                </li>
-              ))}
-            </ul>
-
-            <a
-              href={`https://t.me/ceo_syr?text=${encodeURIComponent("Pro rejani olmoqchiman")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
-            >
-              Pro rejani boshlash
-            </a>
-          </div>
+          ))}
         </div>
 
         <p className="mt-10 text-center text-sm text-muted">

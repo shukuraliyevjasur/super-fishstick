@@ -41,9 +41,9 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-// Mirrors MONTHLY_DM_LIMIT in lib/billing/usage.ts. Must stay within int4
-// range so the value can be compared against the dmsSentThisPeriod column.
+// PRO plan has Infinity maxDmsPerMonth, clamped to 2B for int4 compat.
 const LIMIT = 2_000_000_000;
+const PRO_PLAN = "PRO";
 
 describe("reserveWorkspaceDMSend", () => {
   it("atomically increments usage when the workspace is under its limit", async () => {
@@ -52,6 +52,7 @@ describe("reserveWorkspaceDMSend", () => {
       .mockResolvedValueOnce({ count: 0 })
       .mockResolvedValueOnce({ count: 1 });
     mockTx.workspace.findUnique.mockResolvedValueOnce({
+      plan: PRO_PLAN,
       usagePeriodStart: periodStart,
       dmsSentThisPeriod: 99,
     });
@@ -79,6 +80,7 @@ describe("reserveWorkspaceDMSend", () => {
     const periodStart = new Date("2026-05-01T00:00:00.000Z");
     mockTx.workspace.updateMany.mockResolvedValueOnce({ count: 0 });
     mockTx.workspace.findUnique.mockResolvedValueOnce({
+      plan: PRO_PLAN,
       usagePeriodStart: periodStart,
       dmsSentThisPeriod: LIMIT,
     });
@@ -98,6 +100,7 @@ describe("reserveWorkspaceDMSend", () => {
       .mockResolvedValueOnce({ count: 0 });
     mockTx.workspace.findUnique
       .mockResolvedValueOnce({
+        plan: PRO_PLAN,
         usagePeriodStart: periodStart,
         dmsSentThisPeriod: 99,
       })

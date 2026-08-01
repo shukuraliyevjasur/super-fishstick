@@ -6,6 +6,7 @@ import {
   normalizeTopKeywords,
   summarizeDmStatuses,
 } from "@/lib/tracking/analytics";
+import { getPlanLimits } from "@/lib/billing/plan";
 
 export async function GET(request: NextRequest) {
   const workspaceId = await getCurrentWorkspaceId();
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
       where: { id: workspaceId },
       select: {
         name: true,
+        plan: true,
         dmsSentThisPeriod: true,
       },
     }),
@@ -189,12 +191,19 @@ export async function GET(request: NextRequest) {
     user?.email?.split("@")[0] ||
     null;
 
+  const planLimits = workspace ? getPlanLimits(workspace.plan) : null;
+
   return NextResponse.json({
     success: true,
     data: {
       userName: firstName,
       contactsCount: contactRows.length,
       workspace,
+      plan: workspace?.plan ?? "FREE",
+      dmQuota: planLimits ? {
+        used: workspace!.dmsSentThisPeriod,
+        limit: planLimits.maxDmsPerMonth === Infinity ? null : planLimits.maxDmsPerMonth,
+      } : null,
       instagramAccount,
       instagramAccounts,
       selectedInstagramAccountId: selectedAccountId,

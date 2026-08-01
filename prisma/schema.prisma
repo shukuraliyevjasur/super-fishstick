@@ -72,7 +72,7 @@ model Workspace {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  plan              WorkspacePlan @default(STANDART)
+  plan              WorkspacePlan @default(FREE)
   usagePeriodStart  DateTime      @default(now())
   dmsSentThisPeriod Int           @default(0)
 
@@ -317,6 +317,7 @@ model OperationalEvent {
 }
 
 enum WorkspacePlan {
+  FREE
   STANDART
   PRO
 }
