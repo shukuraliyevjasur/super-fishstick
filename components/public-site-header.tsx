@@ -22,7 +22,7 @@ export default function PublicSiteHeader() {
             Kirish
           </Link>
           <Link
-            href="/login"
+            href="/pricing"
             className="inline-flex items-center justify-center bg-accent px-4 py-2 text-sm font-semibold text-white rounded-md hover:bg-accent-hover transition-colors"
           >
             Boshlash

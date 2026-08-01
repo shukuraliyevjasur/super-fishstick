@@ -182,7 +182,7 @@ export default function Home() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/login"
+              href="/pricing"
               className="inline-flex items-center justify-center gap-2 bg-accent px-6 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors"
             >
               Boshlash
@@ -276,7 +276,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
-                href="/login"
+                href="/pricing"
                 className="inline-flex items-center justify-center bg-accent px-8 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors"
               >
                 Boshlash
