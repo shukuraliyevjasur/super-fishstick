@@ -50,7 +50,9 @@ type Tab = "insights" | "preview";
 
 export default function CampaignDetailPage() {
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
+  const rawParams = useParams();
+  const id = rawParams.id as string;
+  const lang = (rawParams.lang as string) || "uz";
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +127,7 @@ export default function CampaignDetailPage() {
       <div className="panel rounded-md p-8 text-center">
         <p className="text-sm text-muted">Kampaniya topilmadi.</p>
         <button
-          onClick={() => router.push("/campaigns")}
+          onClick={() => router.push(`/${lang}/campaigns`)}
           className="mt-4 rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
         >
           Kampaniyalarga qaytish
@@ -165,7 +167,7 @@ export default function CampaignDetailPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-2">
           <Link
-            href="/campaigns"
+            href={`/${lang}/campaigns`}
             className="text-sm text-muted hover:text-foreground"
           >
             &larr; Kampaniyalar
@@ -259,7 +261,7 @@ export default function CampaignDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href={`/campaigns/${campaign.id}/edit`}
+              href={`/${lang}/campaigns/${campaign.id}/edit`}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-muted hover:text-foreground"
             >
               Tahrirlash

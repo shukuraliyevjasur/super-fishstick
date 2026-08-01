@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useDict } from "@/components/dictionary-provider";
 
 function Logo() {
   return (
@@ -13,39 +15,54 @@ function Logo() {
 
 export default function PublicSiteHeader() {
   const [open, setOpen] = useState(false);
+  const dict = useDict();
+  const params = useParams();
+  const lang = (params.lang as string) || "uz";
+  const pathname = usePathname();
+  const otherLang = lang === "uz" ? "ru" : "uz";
+  const switchPath = pathname.slice(1 + lang.length);
 
   return (
     <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #E2E8EF" }}>
-      {/* Blue accent bar */}
       <div style={{ height: 4, background: "#0145F2", width: "100%" }} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
-        <Link href="/" aria-label="replie bosh sahifa" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+        <Link href={`/${lang}`} aria-label="replie" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <Logo />
           <span style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.03em" }}>eplie</span>
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex" style={{ alignItems: "center", gap: 32 }}>
-          <Link href="/pricing" style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none" }}>
-            Narxlar
+          <Link href={`/${lang}/pricing`} style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none" }}>
+            {dict.nav.pricing}
           </Link>
         </nav>
 
         <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
-          <Link href="/login" style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none", padding: "10px 18px" }}>
-            Kirish
+          <div style={{ display: "flex", alignItems: "center", background: "#F1F5F9", borderRadius: 6, padding: 3, gap: 2, marginRight: 4 }}>
+            {lang === "uz" ? (
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#0145F2", background: "#fff", borderRadius: 4, padding: "3px 8px", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>UZ</span>
+            ) : (
+              <Link href={`/uz${switchPath}`} style={{ fontSize: 12, fontWeight: 500, color: "#8A94A0", padding: "3px 8px", textDecoration: "none" }}>UZ</Link>
+            )}
+            {lang === "ru" ? (
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#0145F2", background: "#fff", borderRadius: 4, padding: "3px 8px", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>RU</span>
+            ) : (
+              <Link href={`/ru${switchPath}`} style={{ fontSize: 12, fontWeight: 500, color: "#8A94A0", padding: "3px 8px", textDecoration: "none" }}>RU</Link>
+            )}
+          </div>
+          <Link href={`/${lang}/login`} style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none", padding: "10px 18px" }}>
+            {dict.nav.login}
           </Link>
-          <Link href="/pricing" style={{ fontSize: 14, fontWeight: 600, color: "#fff", background: "#0145F2", padding: "10px 22px", borderRadius: 8, textDecoration: "none" }}>
-            Boshlash
+          <Link href={`/${lang}/pricing`} style={{ fontSize: 14, fontWeight: 600, color: "#fff", background: "#0145F2", padding: "10px 22px", borderRadius: 8, textDecoration: "none" }}>
+            {dict.nav.start}
           </Link>
         </div>
 
-        {/* Mobile hamburger */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Menyuni yopish" : "Menyuni ochish"}
+          aria-label={open ? dict.nav.menuClose : dict.nav.menuOpen}
           className="flex md:hidden"
           style={{ alignItems: "center", justifyContent: "center", width: 40, height: 40, background: "none", border: "1px solid #E2E8EF", borderRadius: 8, cursor: "pointer", padding: 0 }}
         >
@@ -61,12 +78,22 @@ export default function PublicSiteHeader() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {open && (
         <div className="md:hidden" style={{ position: "fixed", top: 68, left: 0, right: 0, zIndex: 49, background: "#fff", borderBottom: "1px solid #E2E8EF", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
-          <Link href="/pricing" onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>Narxlar</Link>
-          <Link href="/login" onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>Kirish</Link>
-          <Link href="/pricing" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: "#fff", background: "#0145F2", padding: 14, borderRadius: 8, textDecoration: "none", marginTop: 8 }}>Boshlash</Link>
+          <Link href={`/${lang}/pricing`} onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>
+            {dict.nav.pricing}
+          </Link>
+          <Link href={`/${lang}/login`} onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>
+            {dict.nav.login}
+          </Link>
+          <Link href={`/${lang}/pricing`} onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: "#fff", background: "#0145F2", padding: 14, borderRadius: 8, textDecoration: "none", marginTop: 8 }}>
+            {dict.nav.start}
+          </Link>
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: "12px 0" }}>
+            <Link href={`/uz${switchPath}`} onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: lang === "uz" ? 700 : 500, color: lang === "uz" ? "#0145F2" : "#8A94A0", textDecoration: "none" }}>UZ</Link>
+            <span style={{ color: "#CBD5E1" }}>|</span>
+            <Link href={`/ru${switchPath}`} onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: lang === "ru" ? 700 : 500, color: lang === "ru" ? "#0145F2" : "#8A94A0", textDecoration: "none" }}>RU</Link>
+          </div>
         </div>
       )}
     </header>

@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import PostPicker from "@/components/post-picker";
 import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview";
@@ -122,6 +122,8 @@ function Toggle({
 
 export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderProps) {
   const router = useRouter();
+  const params = useParams();
+  const lang = (params.lang as string) || "uz";
 
   const [loading, setLoading] = useState(mode === "edit");
   const [notFound, setNotFound] = useState(false);
@@ -459,7 +461,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         }
         // refresh() busts the router cache so the list reflects the save
         // instead of landing on a stale (empty) campaigns page.
-        router.push("/campaigns");
+        router.push(`/${lang}/campaigns`);
         router.refresh();
       } else {
         // Surface the specific field that failed validation instead of a
@@ -507,7 +509,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     } catch {
       // ignore
     }
-    router.push("/campaigns");
+    router.push(`/${lang}/campaigns`);
     router.refresh();
   }
 

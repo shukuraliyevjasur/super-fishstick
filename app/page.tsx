@@ -4,60 +4,11 @@ import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
 export const metadata: Metadata = {
-  title: "replie - Instagram izohlarini DM ga aylantiring",
+  title: "replie — izoh yozildi, DM jo'natildi",
   description:
-    "Instagram post yoki reelga kalit so'z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram API orqali.",
+    "Kimdir 'link?' deb izoh yozdi — replie darhol DM jo'natadi. Siz uxlayotgan bo'lsangiz ham. Rasmiy Instagram API orqali, xavfsiz va ishonchli.",
 };
 
-const stdIncluded = [
-  "1 ta Instagram akkaunt",
-  "5 ta faol kampaniya",
-  "Kalit so'z aniqlash",
-  "Avtomatik DM yuborish",
-  "Ommaviy izoh javobi",
-  "Kampaniya analitikasi",
-  "Kampaniya tarixi",
-];
-const stdExcluded = [
-  "Kirish xabari va interaktiv tugma",
-  "Obuna tekshiruvi",
-  "Kuzatilgan havolalar",
-  "Ulashiladigan mijoz hisobotlari",
-  "CSV fayldan yuklash",
-  "Ko'p foydalanuvchi",
-  "Prioritet qo'llab-quvvatlash",
-];
-const proFeatures = [
-  "3 ta Instagram akkaunt",
-  "Cheksiz kampaniya",
-  "Kalit so'z aniqlash",
-  "Avtomatik DM yuborish",
-  "Ommaviy izoh javobi",
-  "Kampaniya analitikasi",
-  "Kampaniya tarixi",
-  "Kirish xabari va interaktiv tugma",
-  "Obuna tekshiruvi",
-  "Kuzatilgan havolalar",
-  "Ulashiladigan mijoz hisobotlari",
-  "CSV fayldan yuklash",
-  "Ko'p foydalanuvchi",
-  "Prioritet qo'llab-quvvatlash",
-];
-
-function CheckIcon() {
-  return (
-    <svg style={{ width: 16, height: 16, flexShrink: 0, color: "#16A34A" }} viewBox="0 0 16 16" fill="currentColor">
-      <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-function XIcon() {
-  return (
-    <svg style={{ width: 16, height: 16, flexShrink: 0, color: "#DC2626", opacity: 0.5 }} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-    </svg>
-  );
-}
 
 const dashboardStats = [
   { label: "Faol kampaniya", value: "8",     color: "#1A1A1A" },
@@ -85,15 +36,15 @@ const activityRows = [
 ];
 
 const steps = [
-  { n: "1", title: "Instagram akkauntingizni ulang", desc: "Email orqali kiring va Instagram professional akkauntingizni bir marta ulang. Parol almashish yoki brauzer avtomatizatsiyasi yo'q." },
-  { n: "2", title: "Post, kalit so'z va DM matnini belgilang", desc: "Reel yoki post uchun kampaniya yarating: kuzatiladigan kalit so'z, ommaviy javob va yuboriladigan DM matni." },
-  { n: "3", title: "Javoblar avtomatik yuboriladi", desc: "Webhook izohlarni darhol ushlaydi, polling esa o'tkazib yuborilganlarini to'ldiradi. Har bir yuboruv navbatga olinadi, cheklangan va jurnallanadi." },
+  { n: "1", title: "Akkauntingizni ulang", desc: "Instagram professional akkauntingizni bir marta ulang. Parol bermaysiz, bot o'rnatmaysiz — rasmiy API orqali." },
+  { n: "2", title: "Kampaniya yarating", desc: "Qaysi post, qaysi kalit so'z, qanday DM — bir sahifada sozlaysiz. 5 daqiqa." },
+  { n: "3", title: "Kontent yarating, replie ishlaydi", desc: "Yangi izoh keldi — DM jo'natildi. Siz yangi reel suratga olayapsiz, replie esa izoh yozganlarning har biriga javob beradi." },
 ];
 
 const mainFeatures = [
-  { title: "Obuna tekshiruvi", desc: "Obuna bo'lmagan foydalanuvchi havolaga yetolmaydi. Bot tekshiradi — faqat obuna bo'lganda yuboradi." },
-  { title: "Kuzatuvchi havolalar", desc: "Har bir yuborilgan havolaga klik soni va CTR ko'rsatiladi — qaysi kampaniya ishlayotganini bilasiz." },
-  { title: "Xabarlar tarixi", desc: "Har bir xabar holati bilan saqlanadi: yuborildi, navbatda, muvaffaqiyatsiz." },
+  { title: "Faqat obunachilarga link", desc: "\"Obuna bo'l, havolani ol\" — replie buni avtomatik tekshiradi. Siz qo'lda tekshirmaysiz, hech kim aldamaydi." },
+  { title: "Nechta klik? Kimdan?", desc: "Yuborgan havolangizni necha kishi ochdi — real vaqtda ko'rasiz. Qaysi kampaniya pul topayotganini bilasiz." },
+  { title: "Tun o'rtasida ham, dam olishda ham", desc: "Tun o'rtasida, dam olish kunlari — farqi yo'q. Izoh yozildi, DM jo'natildi. Siz hech narsa qilmaysiz." },
 ];
 
 const supportingFeatures = [
@@ -117,20 +68,20 @@ export default function Home() {
 
             <div style={{ flex: 1, minWidth: 0, maxWidth: 560 }}>
               <h1 className="hero-enter" style={{ margin: 0, fontSize: "clamp(2.5rem, 4vw + 1rem, 3.75rem)", fontWeight: 800, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#1A1A1A" }}>
-                Izohlaringiz o&apos;zi ishlaydi
+                Izoh yozildi —<br />DM jo&apos;natildi,<br />siz uxlayotgan bo&apos;lsangiz ham. :)
               </h1>
 
               <p className="hero-enter-d1" style={{ margin: "20px 0 0", fontSize: 17, lineHeight: 1.65, color: "#5B6472", maxWidth: 480 }}>
-                Instagram post yoki reelsga kalit so&apos;z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram orqali, xavfsiz va ishonchli.
+                Kimdir &quot;link?&quot; yoki &quot;narx?&quot; deb izoh yozdi — replie darhol DM jo&apos;natadi. Tun o&apos;rtasida ham, dam olish kunlari ham. Siz hech narsa qilmaysiz.
               </p>
 
               <div className="hero-enter-d2" style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}>
-                <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#0145F2", color: "#fff", fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, textDecoration: "none", boxShadow: "0 4px 12px rgba(1,69,242,0.3)" }}>
-                  Boshlash
+                <Link href="/login" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#0145F2", color: "#fff", fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, textDecoration: "none", boxShadow: "0 4px 12px rgba(1,69,242,0.3)" }}>
+                  Bepul boshlash
                 </Link>
-                <a href="https://t.me/ceo_syr" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#fff", color: "#1A1A1A", fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, border: "1px solid #E2E8EF", textDecoration: "none" }}>
-                  Telegram orqali so&apos;rash
-                </a>
+                <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#fff", color: "#1A1A1A", fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, border: "1px solid #E2E8EF", textDecoration: "none" }}>
+                  Narxlarni ko&apos;rish
+                </Link>
               </div>
             </div>
 
@@ -187,8 +138,8 @@ export default function Home() {
       <section style={{ background: "#fff", padding: "96px 0" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
           <div style={{ maxWidth: 560 }}>
-            <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A" }}>Izoh keldi, DM ketdi</h2>
-            <p style={{ margin: "14px 0 0", fontSize: 16, lineHeight: 1.6, color: "#5B6472" }}>Uch qadam. Akkaunt ulang, kampaniya yarating va ishga tushiring.</p>
+            <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A" }}>3 qadam. Keyin unutib yuboring.</h2>
+            <p style={{ margin: "14px 0 0", fontSize: 16, lineHeight: 1.6, color: "#5B6472" }}>Bir marta sozlang — replie ishlay beradi. Siz kontent yaratishda davom eting.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 32, marginTop: 48 }}>
             {steps.map((step) => (
@@ -206,8 +157,8 @@ export default function Home() {
       <section style={{ background: "#EDF1F5", padding: "96px 0" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
           <div style={{ maxWidth: 560 }}>
-            <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A" }}>Kerakli hamma narsa</h2>
-            <p style={{ margin: "14px 0 0", fontSize: 16, lineHeight: 1.6, color: "#5B6472" }}>Kampaniyalar, xabarlar tarixi, kuzatuvchi havolalar va jamoa boshqaruvi. Hammasi bitta joyda.</p>
+            <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A" }}>Birorta izoh javobsiz qolmaydi</h2>
+            <p style={{ margin: "14px 0 0", fontSize: 16, lineHeight: 1.6, color: "#5B6472" }}>Javob kechiksa — mijoz ketadi. Siz uxlab yotganingizda ham replie bir soniyada javob beradi.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 32, marginTop: 48 }}>
@@ -236,63 +187,29 @@ export default function Home() {
       <section style={{ background: "#fff", padding: "96px 0" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.75rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A" }}>Oddiy narx, kuchli natija</h2>
-            <p style={{ margin: "14px 0 0", fontSize: 16, color: "#5B6472" }}>Har oy. Istalgan vaqt bekor qilish mumkin.</p>
+            <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.75rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A" }}>Avtomatik DM uchun oyligingizni yarmini berish shart emas.</h2>
+            <p style={{ margin: "14px 0 0", fontSize: 16, color: "#5B6472" }}>replie bepuldan boshlanadi — yoqsa, oyiga 4 somsani puli.</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row" style={{ gap: 24 }}>
-            {/* Standard */}
-            <div style={{ flex: 1, background: "#fff", border: "1px solid #E2E8EF", borderRadius: 16, padding: "36px 32px", display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A" }}>Standart</div>
-              <div style={{ fontSize: 14, color: "#5B6472", marginTop: 4 }}>Yakka tadbirkor va kichik biznes uchun</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 24 }}>
-                <span style={{ fontSize: 42, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.02em" }}>19 000</span>
-                <span style={{ fontSize: 15, color: "#5B6472" }}>so&apos;m/oy</span>
+          <div className="flex flex-col sm:flex-row" style={{ gap: 16 }}>
+            {[
+              { tier: "Bepul", price: "0", note: "Sinab ko'rish uchun", color: "#5B6472" },
+              { tier: "Standart", price: "47 000", note: "so'm/oy · Kontentmakerlar uchun", color: "#0145F2" },
+              { tier: "Pro", price: "87 000", note: "so'm/oy · Hamma narsa bor", color: "#0145F2" },
+            ].map(({ tier, price, note, color }) => (
+              <div key={tier} style={{ flex: 1, background: "#F8F9FB", border: "1px solid #E2E8EF", borderRadius: 12, padding: "24px", display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#949CA9", textTransform: "uppercase", letterSpacing: "0.05em" }}>{tier}</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: "-0.02em" }}>{price}</div>
+                <div style={{ fontSize: 13, color: "#5B6472" }}>{note}</div>
               </div>
-              <div style={{ marginTop: 28, flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                {stdIncluded.map((feat) => (
-                  <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#1A1A1A" }}>
-                    <CheckIcon /><span>{feat}</span>
-                  </div>
-                ))}
-                {stdExcluded.map((feat) => (
-                  <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#949CA9" }}>
-                    <XIcon /><span>{feat}</span>
-                  </div>
-                ))}
-              </div>
-              <a href={`https://t.me/ceo_syr?text=${encodeURIComponent("Standart rejani olmoqchiman")}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 28, padding: "14px 24px", borderRadius: 10, fontSize: 15, fontWeight: 600, color: "#1A1A1A", background: "#F3F6F9", border: "1px solid #E2E8EF", textDecoration: "none" }}>
-                Standart rejani boshlash
-              </a>
-            </div>
-
-            {/* Pro */}
-            <div style={{ flex: 1, background: "#fff", border: "2px solid #0145F2", borderRadius: 16, padding: "36px 32px", display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A" }}>Pro</div>
-              <div style={{ fontSize: 14, color: "#5B6472", marginTop: 4 }}>Kengayib borayotgan biznes va agentliklar uchun</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 24 }}>
-                <span style={{ fontSize: 42, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.02em" }}>29 000</span>
-                <span style={{ fontSize: 15, color: "#5B6472" }}>so&apos;m/oy</span>
-              </div>
-              <div style={{ marginTop: 28, flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                {proFeatures.map((feat) => (
-                  <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#1A1A1A" }}>
-                    <CheckIcon /><span>{feat}</span>
-                  </div>
-                ))}
-              </div>
-              <a href={`https://t.me/ceo_syr?text=${encodeURIComponent("Pro rejani olmoqchiman")}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 28, padding: "14px 24px", borderRadius: 10, fontSize: 15, fontWeight: 600, color: "#fff", background: "#0145F2", textDecoration: "none", boxShadow: "0 4px 12px rgba(1,69,242,0.3)" }}>
-                Pro rejani boshlash
-              </a>
-            </div>
+            ))}
           </div>
 
-          <p style={{ textAlign: "center", margin: "32px 0 0", fontSize: 14, color: "#5B6472" }}>
-            Savollar bormi?{" "}
-            <a href="https://t.me/ceo_syr" target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: "#0145F2", textDecoration: "none" }}>
-              Telegram orqali yozing
-            </a>.
-          </p>
+          <div style={{ textAlign: "center", marginTop: 28 }}>
+            <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", borderRadius: 10, fontSize: 15, fontWeight: 600, color: "#0145F2", background: "#EEF2FF", border: "1px solid #C7D2FE", textDecoration: "none" }}>
+              Batafsil narxlarni ko&apos;rish →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -300,17 +217,17 @@ export default function Home() {
       <section style={{ background: "#0145F2", padding: "96px 0" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
           <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.75rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#fff" }}>
-            Keyingi reelsingizni biznes vositasiga aylantiring
+            Keyingi reelingizdan birinchi mijozingizni qo&apos;ldan chiqarmang
           </h2>
           <p style={{ margin: "16px 0 0", fontSize: 17, lineHeight: 1.6, color: "rgba(255,255,255,0.75)" }}>
-            Oylik to&apos;lov. Istalgan vaqt bekor qilish mumkin. Savol bo&apos;lsa — Telegram orqali javob beramiz.
+            Hozir bepul boshlang. Kredit karta kerak emas. Ishlayotganini ko&apos;rsangiz — keyin o&apos;ylab ko&apos;rasiz.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 36, flexWrap: "wrap" }}>
-            <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#fff", color: "#0145F2", fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 10, textDecoration: "none" }}>
-              Boshlash
+            <Link href="/login" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#fff", color: "#0145F2", fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 10, textDecoration: "none" }}>
+              Bepul boshlash
             </Link>
             <a href="https://t.me/ceo_syr" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", color: "#fff", fontSize: 15, fontWeight: 600, padding: "14px 32px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.3)", textDecoration: "none" }}>
-              Telegram orqali so&apos;rash
+              Savol bormi? Yozing
             </a>
           </div>
         </div>

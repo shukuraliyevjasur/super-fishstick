@@ -1,4 +1,8 @@
+"use client";
+
+import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useDict } from "@/components/dictionary-provider";
 
 function Logo() {
   return (
@@ -9,21 +13,29 @@ function Logo() {
 }
 
 export default function PublicSiteFooter() {
+  const dict = useDict();
+  const params = useParams();
+  const lang = (params.lang as string) || "uz";
+
+  const links = [
+    { href: `/${lang}/pricing`,      label: dict.footer.pricing },
+    { href: `/${lang}/privacy`,      label: dict.footer.privacy },
+    { href: `/${lang}/terms`,        label: dict.footer.terms },
+    { href: `/${lang}/data-deletion`, label: dict.footer.dataDeletion },
+  ];
+
   return (
     <footer style={{ background: "#fff", borderTop: "1px solid #E2E8EF", padding: "32px 0" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+        <Link href={`/${lang}`} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <Logo />
           <span style={{ fontSize: 15, fontWeight: 700, color: "#1A1A1A" }}>eplie</span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-          {[
-            { href: "/pricing", label: "Narxlar" },
-            { href: "/privacy", label: "Maxfiylik" },
-            { href: "/terms", label: "Shartlar" },
-            { href: "/data-deletion", label: "Ma'lumotlarni o'chirish" },
-          ].map(({ href, label }) => (
-            <Link key={href} href={href} style={{ fontSize: 13, color: "#5B6472", textDecoration: "none" }}>{label}</Link>
+          {links.map(({ href, label }) => (
+            <Link key={href} href={href} style={{ fontSize: 13, color: "#5B6472", textDecoration: "none" }}>
+              {label}
+            </Link>
           ))}
         </div>
         <span style={{ fontSize: 13, color: "#949CA9" }}>© 2026 replie</span>

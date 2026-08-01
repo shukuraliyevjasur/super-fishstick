@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import { parseCsv } from "@/lib/utils/csv";
 import { IMPORT_QUEUE_KEY, IMPORT_ACCOUNT_KEY } from "@/lib/import-queue";
@@ -20,6 +20,8 @@ const SAMPLE = `keywords,dm_message,public_reply,tracked_url,opening_dm,opening_
 
 export default function ImportCampaignsPage() {
   const router = useRouter();
+  const params = useParams();
+  const lang = (params.lang as string) || "uz";
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [csv, setCsv] = useState("");
@@ -79,7 +81,7 @@ export default function ImportCampaignsPage() {
       setError("Import bu brauzerda saqlanmadi.");
       return;
     }
-    router.push("/campaigns/new");
+    router.push(`/${lang}/campaigns/new`);
   }
 
   return (
@@ -149,7 +151,7 @@ export default function ImportCampaignsPage() {
           Ko&apos;rib chiqib import qilish
         </button>
         <button
-          onClick={() => router.push("/campaigns")}
+          onClick={() => router.push(`/${lang}/campaigns`)}
           className="px-5 py-2 rounded-md text-sm text-muted hover:text-foreground border border-border"
         >
           Bekor qilish
