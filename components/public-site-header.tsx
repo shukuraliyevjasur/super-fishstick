@@ -22,7 +22,7 @@ export default function PublicSiteHeader() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
         <Link href="/" aria-label="replie bosh sahifa" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <Logo />
-          <span style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.03em" }}>replie</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.03em" }}>eplie</span>
         </Link>
 
         {/* Desktop nav */}

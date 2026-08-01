@@ -155,7 +155,7 @@ export default function Home() {
               </h1>
 
               <p style={{ margin: "20px 0 0", fontSize: 17, lineHeight: 1.65, color: "#5B6472", maxWidth: 480 }}>
-                Instagram post yoki reelga kalit so&apos;z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram orqali, xavfsiz va ishonchli.
+                Instagram post yoki reelsga kalit so&apos;z izoh yozilganda, foydalanuvchiga avtomatik DM yuboriladi. Rasmiy Instagram orqali, xavfsiz va ishonchli.
               </p>
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}>
@@ -366,7 +366,7 @@ export default function Home() {
       <section style={{ background: "#0145F2", padding: "96px 0" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
           <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.75rem)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#fff" }}>
-            Keyingi reelingizni biznes vositasiga aylantiring
+            Keyingi reelsingizni biznes vositasiga aylantiring
           </h2>
           <p style={{ margin: "16px 0 0", fontSize: 17, lineHeight: 1.6, color: "rgba(255,255,255,0.75)" }}>
             Oylik to&apos;lov. Istalgan vaqt bekor qilish mumkin. Savol bo&apos;lsa — Telegram orqali javob beramiz.
