@@ -52,7 +52,7 @@ export const uz: Dict = {
       "Kimdir 'link?' deb izoh yozdi — replie darhol DM jo'natadi. Siz uxlayotgan bo'lsangiz ham. Rasmiy Instagram API orqali, xavfsiz va ishonchli.",
     heroLine1: "Izoh yozildi —",
     heroLine2: "DM jo'natildi,",
-    heroLine3: "siz uxlayotgan bo'lsangiz ham. :)",
+    heroLine3: "siz uxlayotgan bo'lsangiz ham :)",
     heroSub:
       "Kimdir «link?» yoki «narx?» deb izoh yozdi — replie darhol DM jo’natadi. Tun o’rtasida ham, dam olish kunlari ham. Siz hech narsa qilmaysiz.",
     ctaPrimary: "Bepul boshlash",

@@ -18,12 +18,12 @@ GCP VM, database is migrated. Not yet open to real users — see
 
 | Layer | Where | Detail |
 |-------|-------|--------|
-| Web app | Vercel | `super-fishstick-gamma.vercel.app`, repo `shukuraliyevjasur/super-fishstick`, auto-deploys on push to `main` |
+| Web app | Vercel | `replie.uz` (custom domain) + `super-fishstick-gamma.vercel.app`, repo `shukuraliyevjasur/super-fishstick`, auto-deploys on push to `main` |
 | Database | Supabase Postgres | Session-mode pooler, port 5432 (IPv4-compatible; the direct connection is IPv6-only and fails from Vercel) |
 | Queue / cache | Redis Cloud | Essentials free tier, native TCP |
 | Worker | GCP Compute Engine | VM `replie`, zone `us-central1-a`, e2-micro, Debian 13, 30 GB standard disk — Always Free tier |
-| Email | Resend | Magic-link auth |
-| Domain | — | `replie.uz` not purchased yet |
+| Email | Resend | Magic-link auth via `login@replie.uz`. Domain verified 2026-08-01. |
+| Domain | Namecheap (or registrar) | `replie.uz` — A record → Vercel IP, CNAME www → Vercel. DNS also has Resend records (DKIM, SPF, DMARC on `send` subdomain). |
 
 **Cost: $0/month.** The GCP e2-micro is in the Always Free tier (`us-central1`,
 standard persistent disk — a balanced/SSD disk would bill). Fly.io was the
@@ -110,8 +110,8 @@ the repo.
 > rotated on 2026-07-31, which invalidated any previously stored tokens —
 > connected accounts must reconnect. Generate with `openssl rand -hex 32`.
 
-`APP_URL` builds the tracked links inside sent DMs. Set it wherever the app is
-actually reachable; swap both to `https://replie.uz` when the domain lands.
+`APP_URL` is `https://replie.uz`. It builds tracked links inside sent DMs and
+must be set on both Vercel and the worker docker run.
 
 ---
 
@@ -168,6 +168,55 @@ anything older; Node 20 is also past its GitHub Actions deprecation.
 
 ---
 
+## i18n — Uzbek and Russian
+
+Full locale routing added 2026-08-01. Every page now lives under `app/[lang]/`.
+
+### How it works
+
+- **Routes:** `/uz/*` serves Uzbek, `/ru/*` serves Russian. The root `/` and
+  `/pricing` are redirect-only stubs that forward to `/uz`.
+- **Middleware (`proxy.ts`):** On first visit to `/`, reads `Accept-Language` and
+  redirects to `/uz` or `/ru`. Subsequent navigations use the URL prefix.
+- **Dictionaries:** `lib/i18n/uz.ts` and `lib/i18n/ru.ts` implement the `Dict`
+  interface from `lib/i18n/types.ts`. `getDictionary(lang)` is for server
+  components; `useDict()` hook (via `DictionaryProvider` context) is for client
+  components.
+- **Template interpolation:** `t(str, { key: value })` replaces `{{key}}`
+  placeholders in dictionary strings.
+- **Language switcher:** `UZ | RU` pill in the public header (desktop + mobile)
+  and `UZ | RU` links in the sidebar bottom. Switches by replacing the `[lang]`
+  prefix in the current pathname.
+- **Font:** `cyrillic-ext` subset added to Plus Jakarta Sans (covers Russian
+  Cyrillic). `cyrillic` (without `-ext`) is not a valid subset for this font —
+  use `cyrillic-ext`.
+
+### Adding a new page
+
+Create it under `app/[lang]/your-page/page.tsx`. For simple server-component
+pages with no locale-specific logic, re-export the original:
+
+```ts
+export { default } from "@/app/your-page/page";
+// or with metadata:
+export { default, metadata } from "@/app/your-page/page";
+```
+
+### Adding a new string
+
+1. Add the key to `lib/i18n/types.ts` (`Dict` interface).
+2. Add the value to `lib/i18n/uz.ts` and `lib/i18n/ru.ts`.
+3. Use `dict.yourKey` in the component.
+
+### The DictionaryProvider rule
+
+`DictionaryProvider` wraps only `app/[lang]/` children (via `app/[lang]/layout.tsx`).
+Pages outside that tree (root `app/page.tsx`, `app/pricing/page.tsx`) **must not**
+render components that call `useDict()` — it throws at build time during static
+prerendering. Those stubs are now simple `redirect()` calls.
+
+---
+
 ## Design system
 
 Tokens live in `app/globals.css` under `@theme inline`. The scales are **closed
@@ -178,30 +227,26 @@ for a one-off value.
 - **Radius:** `rounded-md` controls · `rounded-lg` cards · `rounded-full` pills. Nothing else.
 - **Neutrals:** `foreground` primary · `muted` secondary · `subtle` tertiary.
 - **Font:** Plus Jakarta Sans via `next/font/google` in `app/layout.tsx`
-  (CSS variable `--font-plus-jakarta`). Headings use weight 800
-  (`font-extrabold`). Do not use `font-black` (900).
+  (CSS variable `--font-plus-jakarta`). Subsets: `latin`, `latin-ext`, `cyrillic-ext`.
+  Headings use weight 800 (`font-extrabold`). Do not use `font-black` (900).
 - Never use raw Tailwind colors (`bg-zinc-*`, `text-gray-*`). Use tokens.
 
 **Exception:** `components/campaign-preview.tsx` intentionally uses dark zinc and
 `rounded-2xl` bubbles to mimic the Instagram UI. Do not "fix" it.
 
-**UI language is Uzbek.** The product noun is **kampaniya / kampaniyalar**, not
-"campaign". The TypeScript type is still `Campaign` — that is correct, don't
-rename identifiers.
-
 See [DESIGN_REVIEW.md](DESIGN_REVIEW.md) for the full audit.
 
 ---
 
-## Landing page (`app/page.tsx`)
+## Landing page
 
-Redesigned 2026-07-31 / 2026-08-01. Key decisions:
+Content lives at `app/[lang]/page.tsx` (not `app/page.tsx` — that is now a
+redirect stub). Key decisions:
 
-- **Logo:** Custom R glyph SVG (`public/replie-logo.svg`), rendered inline in
-  header and footer. The brand name reads as "[R]eplie" — the SVG is the R,
-  followed by "eplie" in text.
+- **Logo:** Custom R glyph SVG, rendered inline in header and footer. Reads as
+  "[R]eplie" — SVG is the R, followed by "eplie" in text. Gap between them is 4px.
 - **Header:** Sticky with 4px accent-blue top bar, frosted-glass background,
-  hamburger menu on mobile.
+  hamburger menu on mobile. Includes `UZ | RU` language switcher.
 - **Hero:** Cinematic entrance animation — headline uses a blur-to-sharp focus
   pull (700ms), mockup rises from below with scale + blur clearing at 40% of a
   1s duration, description and CTAs cascade in with staggered delays. All
@@ -212,9 +257,8 @@ Redesigned 2026-07-31 / 2026-08-01. Key decisions:
 - **Sections:** No card containers or decorative wrappers. Steps use 2px
   accent-blue top border (ruled columns); features use 1px neutral top border.
   No pill badges, eyebrow labels, or icon boxes.
-- **Pricing page (`app/pricing/page.tsx`):** Two-column grid, Standard vs Pro.
-  Pro card distinguished by `border-2 border-accent` only — no gradient, no
-  floating badge.
+- **Pricing page:** Lives at `app/[lang]/pricing/page.tsx`. Three-plan grid
+  (Free, Standard, Pro). Standard card highlighted with `border-2 border-accent`.
 
 ---
 
@@ -223,16 +267,15 @@ Redesigned 2026-07-31 / 2026-08-01. Key decisions:
 1. **Meta app credentials** — confirm `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET`
    exist and the webhook is subscribed. Without them nobody can connect an
    account and the product does nothing.
-2. **`EMAIL_FROM`** is still `onboarding@resend.dev` (Resend's sandbox sender).
-   Deliverability will be poor. Move to a domain sender.
-3. **Domain** — buy `replie.uz`, point it at Vercel, then update `NEXTAUTH_URL`
-   and `APP_URL` in both places.
-4. **Redis eviction policy** — the worker logs
+2. **Redis eviction policy** — the worker logs
    `Eviction policy is volatile-lru. It should be "noeviction"` on boot. Under
    memory pressure Redis Cloud can evict queued jobs, silently losing DMs. Change
    it in the Redis Cloud console if the free tier allows.
-5. **Meta App Review** — needed only to let people outside your test users
+3. **Meta App Review** — needed only to let people outside your test users
    connect their own accounts. See [META_APP_REVIEW.md](META_APP_REVIEW.md).
+
+~~`EMAIL_FROM` using Resend sandbox sender~~ — fixed: `login@replie.uz` verified.
+~~Domain not purchased~~ — fixed: `replie.uz` live.
 
 ---
 
@@ -242,8 +285,12 @@ Redesigned 2026-07-31 / 2026-08-01. Key decisions:
 |------|------|
 | Design tokens + hero animations | `app/globals.css` |
 | Root layout / font | `app/layout.tsx` |
-| Landing page | `app/page.tsx` |
-| Pricing page | `app/pricing/page.tsx` |
+| Landing page | `app/[lang]/page.tsx` |
+| Pricing page | `app/[lang]/pricing/page.tsx` |
+| i18n dictionaries | `lib/i18n/uz.ts`, `lib/i18n/ru.ts`, `lib/i18n/types.ts` |
+| Dictionary context + hook | `components/dictionary-provider.tsx` |
+| Locale middleware | `proxy.ts` |
+| Dashboard layout (lang) | `app/[lang]/(dashboard)/layout.tsx` |
 | Worker entry | `worker/dm-worker.ts` |
 | Worker job logic | `lib/queue/dm-worker.ts` |
 | Worker image CI | `.github/workflows/worker-image.yml` |
@@ -252,6 +299,7 @@ Redesigned 2026-07-31 / 2026-08-01. Key decisions:
 | Prisma datasource | `prisma.config.ts` |
 | Plan limits | `lib/billing/plan.ts` |
 | Public header / footer | `components/public-site-header.tsx`, `components/public-site-footer.tsx` |
+| Sidebar | `components/sidebar.tsx` |
 
 **Dead code** — `seo-page-shell.tsx`, `template-visual.tsx`, `lib/seo-pages.ts`.
 The pages that used them now redirect to `/`, so they never render. Left in place

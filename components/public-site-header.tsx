@@ -27,7 +27,7 @@ export default function PublicSiteHeader() {
       <div style={{ height: 4, background: "#0145F2", width: "100%" }} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
-        <Link href={`/${lang}`} aria-label="replie" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+        <Link href={`/${lang}`} aria-label="replie" style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}>
           <Logo />
           <span style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.03em" }}>eplie</span>
         </Link>
