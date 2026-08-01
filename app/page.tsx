@@ -34,21 +34,38 @@ const flowSteps = [
   },
 ];
 
-const heroFeatures = [
+const heroFeatures: { title: string; description: string; icon: ReactNode }[] = [
   {
     title: "Follow gate",
     description:
       "Obuna bo’lmagan foydalanuvchi havolaga yetolmaydi. Bot tekshiradi — faqat obuna bo’lganda yuboradi.",
+    icon: (
+      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.25C16.5 22.15 20 17.25 20 12V6L12 2z"/>
+      </svg>
+    ),
   },
   {
     title: "Kuzatuvchi havolalar",
     description:
       "Har bir yuborilgan havolaga klik soni va CTR ko’rsatiladi — qaysi kampaniya ishlayotganini bilasiz.",
+    icon: (
+      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+    ),
   },
   {
     title: "DM jurnali",
     description:
       "Har bir yuboruv sababi bilan jurnallanadi: yuborildi, navbatda, muvaffaqiyatsiz.",
+    icon: (
+      <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+    ),
   },
 ];
 
@@ -184,7 +201,7 @@ export default function Home() {
       <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[1fr_1fr] lg:px-8 lg:pb-24 lg:pt-20">
         <div>
           <div className="inline-flex items-center gap-2 border border-accent/20 bg-accent/5 px-3 py-1.5 rounded-full text-xs font-semibold text-accent">
-            Rasmiy Meta API · 24/7 monitoring
+            Rasmiy Instagram · Doimo ishlaydi
           </div>
 
           <h1 className="mt-6 text-balance text-4xl font-bold leading-tight text-foreground sm:text-5xl lg:text-6xl">
@@ -198,7 +215,7 @@ export default function Home() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/pricing"
-              className="inline-flex items-center justify-center gap-2 bg-accent px-6 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-accent px-6 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors shadow-sm"
             >
               Boshlash
             </Link>
@@ -268,10 +285,8 @@ export default function Home() {
               key={f.title}
               className="rounded-lg border border-accent/20 bg-accent/5 p-6"
             >
-              <div className="w-8 h-8 rounded-md bg-accent/10 flex items-center justify-center mb-4">
-                <svg className="w-4 h-4 text-accent" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="2 6 5 9 10 3"/>
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
+                {f.icon}
               </div>
               <p className="text-base font-semibold text-foreground">{f.title}</p>
               <p className="mt-2 text-sm leading-6 text-muted">{f.description}</p>
@@ -285,7 +300,7 @@ export default function Home() {
               key={feature}
               className="flex items-center gap-3 rounded-lg border border-border bg-surface p-4"
             >
-              <div className="shrink-0 w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center">
+              <div className="shrink-0 w-5 h-5 rounded-md bg-accent/10 flex items-center justify-center">
                 <svg className="w-3 h-3 text-accent" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="2 6 5 9 10 3"/>
                 </svg>
@@ -297,31 +312,29 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-border bg-surface py-20">
-        <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8">
-          <div className="rounded-lg border border-accent/20 bg-accent/5 px-8 py-14 text-center">
-            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-              Keyingi reelingizni biznes vositasiga aylantiring
-            </h2>
-            <p className="mt-4 text-base text-muted">
-              Oylik to&apos;lov. Istalgan vaqt bekor qilish mumkin. Savol bo&apos;lsa — Telegram orqali javob beramiz.
-            </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center bg-accent px-8 py-3 text-sm font-semibold text-white rounded-lg hover:bg-accent-hover transition-colors"
-              >
-                Boshlash
-              </Link>
-              <a
-                href="https://t.me/ceo_syr"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center border border-border bg-surface px-8 py-3 text-sm font-semibold text-foreground rounded-lg hover:bg-surface-hover transition-colors"
-              >
-                Telegram orqali so&apos;rash
-              </a>
-            </div>
+      <section className="bg-accent py-24">
+        <div className="mx-auto w-full max-w-2xl px-5 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white sm:text-4xl">
+            Keyingi reelingizni biznes vositasiga aylantiring
+          </h2>
+          <p className="mt-4 text-base text-white/75">
+            Oylik to&apos;lov. Istalgan vaqt bekor qilish mumkin. Savol bo&apos;lsa — Telegram orqali javob beramiz.
+          </p>
+          <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold text-accent rounded-lg hover:bg-white/90 transition-colors shadow-sm"
+            >
+              Boshlash
+            </Link>
+            <a
+              href="https://t.me/ceo_syr"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center border border-white/30 px-8 py-3 text-sm font-semibold text-white rounded-lg hover:bg-white/10 transition-colors"
+            >
+              Telegram orqali so&apos;rash
+            </a>
           </div>
         </div>
       </section>

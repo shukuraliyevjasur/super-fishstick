@@ -30,7 +30,7 @@
   --color-warning: #D97706;
 
   /* Fonts */
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, monospace;
 
   /* Type scale — 11px floor. Nothing below is legible as body text. */

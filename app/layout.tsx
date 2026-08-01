@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 // latin-ext covers the Uzbek Latin diacritics (oʻ, gʻ, ch, sh).
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-inter",
+  variable: "--font-plus-jakarta",
   display: "swap",
 });
 
@@ -48,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="uz" className={`h-full ${inter.variable}`}>
+    <html lang="uz" className={`h-full ${plusJakartaSans.variable}`}>
       <body className="min-h-full bg-background text-foreground font-sans antialiased">
         {children}
         <Analytics />
