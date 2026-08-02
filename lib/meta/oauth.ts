@@ -107,10 +107,28 @@ export async function exchangeCodeForToken(
     );
   }
 
-  const data = await response.json();
+  const payload = await response.json();
+
+  // Instagram Business Login nests the result in a `data` array:
+  //   { "data": [ { "access_token": "...", "user_id": ..., "permissions": "..." } ] }
+  // Reading access_token off the top level yields undefined, which used to be
+  // passed silently into getLongLivedToken and surfaced there as a confusing
+  // code-100 "Unsupported request" — two calls away from the real cause.
+  // The flat shape is still accepted in case Meta returns either form.
+  const entry = Array.isArray(payload?.data) ? payload.data[0] : payload;
+  const accessToken = entry?.access_token;
+
+  if (typeof accessToken !== "string" || accessToken.length === 0) {
+    throw new Error(
+      `Token exchange returned no access_token (keys: ${Object.keys(
+        payload ?? {}
+      ).join(",")})`
+    );
+  }
+
   return {
-    accessToken: data.access_token,
-    userId: String(data.user_id),
+    accessToken,
+    userId: String(entry.user_id),
   };
 }
 

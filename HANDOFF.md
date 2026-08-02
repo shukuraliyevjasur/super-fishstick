@@ -1,6 +1,6 @@
 # replie — Agent Handoff
 
-**Last updated:** 2026-08-01
+**Last updated:** 2026-08-02
 
 ## What this is
 
@@ -104,6 +104,14 @@ the repo.
 
 **Worker (GCP):** `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `APP_URL`, `NODE_ENV`.
 
+Optional: `DATABASE_POOL_MAX` overrides the per-instance connection cap
+(default 1 — see [Database connections](#database-connections)).
+
+> `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` are the **Instagram-specific**
+> credentials from **Use cases → Instagram API setup** in the Meta dashboard, not
+> the top-level App ID and secret under App Settings → Basic. They are different
+> values, and the top-level pair does not work for Instagram Business Login.
+
 > **`ENCRYPTION_KEY` must be byte-for-byte identical on Vercel and the worker.**
 > It encrypts stored Instagram OAuth tokens: the web app writes them, the worker
 > decrypts them to send. A mismatch means every DM fails to decrypt. It was
@@ -112,6 +120,134 @@ the repo.
 
 `APP_URL` is `https://replie.uz`. It builds tracked links inside sent DMs and
 must be set on both Vercel and the worker docker run.
+
+---
+
+## Auth — password sign-in, magic link as fallback
+
+Added 2026-08-02. Before this, every sign-in required an email round-trip.
+
+| Screen | Path | What it does |
+|--------|------|--------------|
+| Sign up | `app/[lang]/signup/page.tsx` | Email + password in one form. Creates the user, provisions the workspace, sends a confirmation email best-effort, signs in, lands on the dashboard. |
+| Sign in | `app/[lang]/login/page.tsx` | Email + password, with `?mode=link` for the magic link. |
+| Set password | `app/[lang]/set-password/page.tsx` | For accounts with no password yet. |
+
+All signup-intent CTAs (hero, final CTA, pricing free plan) point at `/signup`.
+They previously pointed at `/login`, which showed new users a password form for
+an account they did not have.
+
+### Sessions are JWT — this is forced, not a preference
+
+`@auth/core`'s credentials branch always calls `jwt.encode` and **never writes a
+`Session` row**, and it does not check the configured strategy. Under
+`strategy: "database"` a password sign-in mints a cookie the session lookup
+cannot resolve. So `lib/auth.ts` uses `strategy: "jwt"`.
+
+Consequences:
+
+- The session callback reads `token.sub`, not `user.id`. Reverting that breaks
+  `session.user.id`, and with it every `getCurrentWorkspaceId()` call.
+- **Sessions are not revocable server-side.** Logout clears the cookie; a stolen
+  token stays valid until expiry. Worth addressing before real traffic.
+- The `Session` table is vestigial. Cookie names are unchanged, so `proxy.ts` is
+  unaffected.
+
+### Password hashing uses Node's built-in scrypt
+
+`lib/auth/password.ts`. Deliberately not bcrypt or argon2 — both are native
+modules, and installing one regenerates `package-lock.json`, which
+[breaks CI when done from Windows](#dependencies--do-not-commit-a-windows-regenerated-lockfile).
+scrypt ships with Node and adds no dependency.
+
+Hashes are self-describing (`scrypt$N$r$p$salt$hash`), so cost parameters can be
+raised later without invalidating existing passwords.
+
+### Rules that are not obvious
+
+- **An email that already exists never gets a password set through signup** —
+  including a legacy magic-link account that has none. Allowing it would let
+  anyone claim someone else's account by "signing up" as them. Those users are
+  sent to sign in, where the magic link still works as recovery.
+- Accounts without a password are routed to `/set-password` by the dashboard
+  layout. That page sits **outside** the `(dashboard)` group so the guard cannot
+  loop.
+- Confirming the email is not required to use the app; a banner offers a resend.
+  The send at signup is wrapped in try/catch so a Resend outage cannot cost
+  someone their account.
+
+---
+
+## Database connections
+
+`lib/db/client.ts` passes an explicit `pg.PoolConfig` with **`max: 1`**.
+
+Supabase's session-mode pooler caps the project at 15 clients while node-pg
+defaults to 10 per pool, so two warm Vercel instances could exhaust it and the
+whole app failed with:
+
+```
+(EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+```
+
+Serverless wants 1 — an instance serves one request at a time and holds
+connections open while warm. Override with `DATABASE_POOL_MAX` on the worker,
+which is a single long-running process, if queue throughput needs it.
+
+> `max: 1` is a **per-instance** cap, not a global one. Enough concurrent Vercel
+> instances can still reach 15. The durable fix is Supabase's transaction-mode
+> pooler on port 6543, which is built for serverless.
+
+---
+
+## Instagram Graph API — versioned vs unversioned hosts
+
+Instagram splits its endpoints and the distinction is invisible until a real
+token is involved:
+
+| Call | URL |
+|------|-----|
+| OAuth token exchange | `https://graph.instagram.com/access_token` — **no version** |
+| OAuth token refresh | `https://graph.instagram.com/refresh_access_token` — **no version** |
+| Graph nodes (`/me`, `/media`, …) | `https://graph.instagram.com/v25.0/…` — **versioned** |
+
+Prefixing the token endpoints with a version is wrong, though it was **not** what
+broke account linking — see below.
+
+### What actually broke linking: the code-exchange response is nested
+
+`POST https://api.instagram.com/oauth/access_token` returns the token inside a
+`data` array, not at the top level:
+
+```json
+{ "data": [ { "access_token": "...", "user_id": 178414, "permissions": "..." } ] }
+```
+
+`exchangeCodeForToken` read `payload.access_token`, which is `undefined`. That
+undefined was passed into `getLongLivedToken`, where Meta answered:
+
+```
+code 100 — Unsupported request - method type: get
+```
+
+The error therefore pointed at the **wrong call** — the failure was two steps
+upstream. `lib/meta/oauth.ts` now reads `payload.data[0]` (still accepting a flat
+response) and **throws immediately** if no token is present, rather than letting
+`undefined` travel downstream.
+
+**This class of bug cannot be reproduced with curl:** every malformed or missing
+token returns 190, and only a real token reaches code 100. Two earlier diagnoses
+were wrong because of it — one dropped the `user_id` field, one blamed the
+version prefix. If Instagram linking fails again, read the step name in the log
+before forming a theory.
+
+`getUserInfo` must keep requesting **`user_id`**. It is the professional account
+id that webhooks arrive under (`entry.id`); the app-scoped `id` is not
+interchangeable, and without it comment events cannot be matched to an account.
+
+`__tests__/meta-endpoints.test.ts` guards both facts. The OAuth callback records
+which step failed, so a failure logs `Failed at step "long_lived_token"` rather
+than a bare code-100 that could have come from any of three calls.
 
 ---
 
@@ -211,9 +347,65 @@ export { default, metadata } from "@/app/your-page/page";
 ### The DictionaryProvider rule
 
 `DictionaryProvider` wraps only `app/[lang]/` children (via `app/[lang]/layout.tsx`).
-Pages outside that tree (root `app/page.tsx`, `app/pricing/page.tsx`) **must not**
-render components that call `useDict()` — it throws at build time during static
-prerendering. Those stubs are now simple `redirect()` calls.
+Anything rendered outside that tree **must not** call `useDict()` — it throws at
+build time during static prerendering. Every page now lives under `app/[lang]/`,
+so in practice this only constrains new top-level routes.
+
+### `t()` must come from `lib/i18n/t.ts`, never from the provider
+
+`components/dictionary-provider.tsx` is a `"use client"` module. Anything exported
+from it — including a pure helper — becomes a client reference, so calling it from
+a **server** component throws at render time:
+
+```
+Attempted to call t() from the server but t is on the client.
+```
+
+This shipped undetected and 500'd `/[lang]/login?template=<slug>` (every "use this
+template" deep link) because the failing branch only runs when a template param is
+present. `t()` now lives in `lib/i18n/t.ts`, which carries neither `"use client"`
+nor a `server-only` import, so both sides can call it. `dictionary-provider`
+re-exports it for client callers.
+
+- **Server component:** `import { t } from "@/lib/i18n/t"`
+- **Client component:** either import works.
+
+The same trap applies to any future helper — a pure function in a `"use client"`
+file is still a client reference.
+
+---
+
+## Routing — one tree, and the routes that must stay locale-less
+
+Every page lives under `app/[lang]/`. There is no second copy; `app/` holds only
+what cannot take a locale prefix:
+
+```
+app/api/       app/r/       app/reports/
+app/robots.ts  app/sitemap.ts  app/layout.tsx  app/globals.css
+```
+
+Until 2026-08-02 `app/` carried a full duplicate of nearly every page, and 15
+files under `app/[lang]/` were one-line shims re-exporting from it. That tree was
+unreachable as *routes* but load-bearing as *modules* — deleting it looked safe
+and was not. It is now collapsed: the implementations moved into `app/[lang]/`.
+
+### The middleware matcher is load-bearing
+
+`proxy.ts` prefixes any unprefixed path with a locale. Anything with no page under
+`app/[lang]/` **must** be excluded from `config.matcher`, or it redirects into a
+404. Currently excluded — do not remove without adding a `[lang]` page first:
+
+| Path | Why it can never take a locale |
+|------|-------------------------------|
+| `/api/*` | API routes |
+| `/r/*` | Tracked links. `lib/tracking/message.ts` bakes `${APP_URL}/r/<slug>` into every DM, so these URLs are already in recipients' inboxes and cannot be changed retroactively. |
+| `/reports/*` | Public client-report share links handed to third parties |
+| `/robots.txt`, `/sitemap.xml` | Crawlers fetch these at the domain root |
+
+This regressed once: the i18n migration sent `/r/<slug>` to `/uz/r/<slug>`, so
+every tracked-link click 404'd and **no clicks were recorded** until 2026-08-02.
+`__tests__/proxy-matcher.test.ts` guards it.
 
 ---
 
@@ -240,8 +432,8 @@ See [DESIGN_REVIEW.md](DESIGN_REVIEW.md) for the full audit.
 
 ## Landing page
 
-Content lives at `app/[lang]/page.tsx` (not `app/page.tsx` — that is now a
-redirect stub). Key decisions:
+Content lives at `app/[lang]/page.tsx`. There is no root `app/page.tsx`; `/`
+reaches `/uz` through the locale middleware. Key decisions:
 
 - **Logo:** Custom R glyph SVG, rendered inline in header and footer. Reads as
   "[R]eplie" — SVG is the R, followed by "eplie" in text. Gap between them is 4px.
@@ -264,18 +456,26 @@ redirect stub). Key decisions:
 
 ## Before real users
 
-1. **Meta app credentials** — confirm `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET`
-   exist and the webhook is subscribed. Without them nobody can connect an
-   account and the product does nothing.
-2. **Redis eviction policy** — the worker logs
+1. **Redis eviction policy** — the worker logs
    `Eviction policy is volatile-lru. It should be "noeviction"` on boot. Under
    memory pressure Redis Cloud can evict queued jobs, silently losing DMs. Change
    it in the Redis Cloud console if the free tier allows.
-3. **Meta App Review** — needed only to let people outside your test users
+2. **Meta App Review** — needed only to let people outside your test users
    connect their own accounts. See [META_APP_REVIEW.md](META_APP_REVIEW.md).
+3. **Session revocation** — sessions are JWT-backed and cannot be revoked
+   server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
+4. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
+   Vercel instances still reach Supabase's 15-client cap. Move to the
+   transaction-mode pooler (port 6543) before real traffic.
 
 ~~`EMAIL_FROM` using Resend sandbox sender~~ — fixed: `login@replie.uz` verified.
 ~~Domain not purchased~~ — fixed: `replie.uz` live.
+~~Meta app credentials~~ — fixed 2026-08-02: app `replie` created and
+**published**, Instagram-specific `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` set
+on Vercel (these differ from the top-level Meta App ID — take them from
+**Use cases → Instagram API setup**, not App Settings → Basic), webhook verified
+at `https://replie.uz/api/webhook`, redirect URI
+`https://replie.uz/api/instagram/callback`.
 
 ---
 
@@ -287,8 +487,15 @@ redirect stub). Key decisions:
 | Root layout / font | `app/layout.tsx` |
 | Landing page | `app/[lang]/page.tsx` |
 | Pricing page | `app/[lang]/pricing/page.tsx` |
+| Auth config (providers, JWT sessions) | `lib/auth.ts` |
+| Password hashing (scrypt) | `lib/auth/password.ts` |
+| Sign up / sign in / set password | `app/[lang]/signup/`, `app/[lang]/login/`, `app/[lang]/set-password/` |
+| Instagram OAuth callback | `app/api/instagram/callback/route.ts` |
+| Meta Graph client | `lib/meta/client.ts` |
+| DB client + pool config | `lib/db/client.ts` |
 | i18n dictionaries | `lib/i18n/uz.ts`, `lib/i18n/ru.ts`, `lib/i18n/types.ts` |
 | Dictionary context + hook | `components/dictionary-provider.tsx` |
+| `t()` interpolation (server-safe) | `lib/i18n/t.ts` |
 | Locale middleware | `proxy.ts` |
 | Dashboard layout (lang) | `app/[lang]/(dashboard)/layout.tsx` |
 | Worker entry | `worker/dm-worker.ts` |
@@ -301,7 +508,9 @@ redirect stub). Key decisions:
 | Public header / footer | `components/public-site-header.tsx`, `components/public-site-footer.tsx` |
 | Sidebar | `components/sidebar.tsx` |
 
-**Dead code** — `seo-page-shell.tsx`, `template-visual.tsx`, `lib/seo-pages.ts`.
-The pages that used them now redirect to `/`, so they never render. Left in place
-to avoid churn; they still contain raw zinc colors, so ignore them when auditing
-design tokens.
+**Known gap** — the dashboard pages under `app/[lang]/(dashboard)/` (settings,
+logs, inbox, overview, automations, campaigns, diagnostics) are hardcoded Uzbek
+and do not call `useDict()`, so `/ru/settings` renders Uzbek. This predates the
+route consolidation — the shims re-exported the same Uzbek implementation — but
+it is now visible in one place. Translating them is unfinished i18n work, not a
+regression.

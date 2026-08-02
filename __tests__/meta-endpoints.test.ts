@@ -4,6 +4,7 @@ import {
   getUserInfo,
   refreshLongLivedToken,
 } from "@/lib/meta/client";
+import { exchangeCodeForToken } from "@/lib/meta/oauth";
 
 /**
  * Instagram splits its hosts: the OAuth token endpoints sit at the root of
@@ -52,6 +53,47 @@ describe("Instagram OAuth token endpoints are unversioned", () => {
     expect(url.pathname).toBe("/refresh_access_token");
     expect(url.pathname).not.toContain("v25.0");
     expect(url.searchParams.get("grant_type")).toBe("ig_refresh_token");
+  });
+});
+
+describe("authorization-code exchange response shape", () => {
+  function mockExchange(body: unknown) {
+    vi.stubEnv("INSTAGRAM_APP_ID", "app-id");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => body }) as unknown as Response)
+    );
+  }
+
+  it("reads the token out of the data array Business Login returns", async () => {
+    // The documented shape. Reading access_token off the top level yields
+    // undefined, which used to surface two calls later as a code-100 error
+    // from the long-lived token exchange.
+    mockExchange({
+      data: [
+        { access_token: "IGAA-short-lived", user_id: 178414, permissions: "x" },
+      ],
+    });
+
+    const result = await exchangeCodeForToken("code", "https://replie.uz/cb");
+    expect(result.accessToken).toBe("IGAA-short-lived");
+    expect(result.userId).toBe("178414");
+  });
+
+  it("still accepts a flat response", async () => {
+    mockExchange({ access_token: "flat-token", user_id: 42 });
+
+    const result = await exchangeCodeForToken("code", "https://replie.uz/cb");
+    expect(result.accessToken).toBe("flat-token");
+    expect(result.userId).toBe("42");
+  });
+
+  it("throws instead of passing undefined downstream", async () => {
+    mockExchange({ data: [] });
+
+    await expect(
+      exchangeCodeForToken("code", "https://replie.uz/cb")
+    ).rejects.toThrow(/no access_token/);
   });
 });
 
