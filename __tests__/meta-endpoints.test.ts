@@ -60,6 +60,90 @@ describe("Instagram OAuth token endpoints are unversioned", () => {
   });
 });
 
+describe("token endpoints fall back to POST when GET is refused", () => {
+  // Meta documents these as GET, but with a real IGAA token it answers
+  // 400 IGApiException code 100 "Unsupported request - method type: get".
+  const code100 = {
+    error: {
+      message: "Unsupported request - method type: get",
+      type: "IGApiException",
+      code: 100,
+    },
+  };
+
+  function mockGetRefusedThenPostOk() {
+    const calls: { method: string; url: string; body?: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        calls.push({ method, url: String(input), body: init?.body as string });
+
+        if (method === "GET") {
+          return {
+            ok: false,
+            status: 400,
+            json: async () => code100,
+            text: async () => JSON.stringify(code100),
+          } as unknown as Response;
+        }
+        const body = { access_token: "long-lived", expires_in: 5184000 };
+        return {
+          ok: true,
+          status: 200,
+          json: async () => body,
+          text: async () => JSON.stringify(body),
+        } as unknown as Response;
+      })
+    );
+    return calls;
+  }
+
+  it("retries the exchange as POST and succeeds", async () => {
+    const calls = mockGetRefusedThenPostOk();
+
+    const result = await getLongLivedToken("IGAA-short-lived");
+
+    expect(result.accessToken).toBe("long-lived");
+    expect(calls.map((c) => c.method)).toEqual(["GET", "POST"]);
+    // The POST carries the same parameters, as a form body.
+    expect(calls[1].body).toContain("grant_type=ig_exchange_token");
+    expect(calls[1].body).toContain("access_token=IGAA-short-lived");
+    // ...and the query string is not duplicated onto the URL.
+    expect(calls[1].url).toBe("https://graph.instagram.com/access_token");
+  });
+
+  it("retries the refresh as POST too, so the unattended cron survives", async () => {
+    const calls = mockGetRefusedThenPostOk();
+
+    const result = await refreshLongLivedToken("IGAA-long-lived");
+
+    expect(result.accessToken).toBe("long-lived");
+    expect(calls.map((c) => c.method)).toEqual(["GET", "POST"]);
+    expect(calls[1].body).toContain("grant_type=ig_refresh_token");
+  });
+
+  it("does not retry when GET already works", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input: string | URL, init?: RequestInit) => {
+        calls.push((init?.method ?? "GET").toUpperCase());
+        const body = { access_token: "long-lived", expires_in: 5184000 };
+        return {
+          ok: true,
+          status: 200,
+          json: async () => body,
+          text: async () => JSON.stringify(body),
+        } as unknown as Response;
+      })
+    );
+
+    await getLongLivedToken("IGAA-short-lived");
+    expect(calls).toEqual(["GET"]);
+  });
+});
+
 describe("authorization-code exchange response shape", () => {
   function mockExchange(body: unknown) {
     vi.stubEnv("INSTAGRAM_APP_ID", "app-id");

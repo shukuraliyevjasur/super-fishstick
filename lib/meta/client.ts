@@ -652,6 +652,68 @@ export async function getMediaInsights(
   return result;
 }
 
+interface TokenAttempt {
+  ok: boolean;
+  status: number;
+  raw: string;
+  data: unknown;
+  method: "GET" | "POST";
+}
+
+async function callTokenEndpoint(
+  url: URL,
+  method: "GET" | "POST"
+): Promise<TokenAttempt> {
+  const response =
+    method === "GET"
+      ? await fetch(url.toString())
+      : await fetch(`${url.origin}${url.pathname}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams(url.searchParams).toString(),
+        });
+
+  const raw = await response.text();
+  let data: unknown = null;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    // non-JSON body; it is logged verbatim by the caller
+  }
+
+  const ok = response.ok && !(data as GraphApiError)?.error;
+  return { ok, status: response.status, raw, data, method };
+}
+
+/**
+ * Calls one of Instagram's OAuth token endpoints.
+ *
+ * The reference documents these as GET, but with a real `IGAA` token Meta
+ * answers 400 `IGApiException` code 100 "Unsupported request - method type:
+ * get" and only accepts POST. An invalid token is rejected by the OAuth layer
+ * first (code 190), so the method is never reached — which is why this is
+ * invisible to curl probes and took several passes to find.
+ *
+ * Tries the documented GET, then falls back to POST on code 100, so this keeps
+ * working whichever way Meta settles.
+ */
+async function requestToken(url: URL, label: string): Promise<TokenAttempt> {
+  const first = await callTokenEndpoint(url, "GET");
+  if (first.ok) return first;
+
+  if ((first.data as GraphApiError)?.error?.code === 100) {
+    console.warn(`[${label}] GET rejected with code 100 — retrying as POST`);
+    const second = await callTokenEndpoint(url, "POST");
+    if (second.ok) {
+      console.warn(`[${label}] POST succeeded`);
+      return second;
+    }
+    return second;
+  }
+
+  return first;
+}
+
 export async function getLongLivedToken(
   shortLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
@@ -661,34 +723,24 @@ export async function getLongLivedToken(
   url.searchParams.set("client_secret", secret);
   url.searchParams.set("access_token", shortLivedToken);
 
-  const response = await fetch(url.toString());
-  const raw = await response.text();
+  const attempt = await requestToken(url, "getLongLivedToken");
 
-  let data: unknown = null;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    // fall through — the body is logged below
-  }
-
-  if (!response.ok || (data as GraphApiError)?.error) {
-    // This call has been the hard one to diagnose: Meta returns code 100
-    // "Unsupported request" for several unrelated causes, and every malformed
-    // token returns 190 instead, so curl probes cannot reproduce it. Log enough
-    // to tell those causes apart — never the secret or the token itself.
+  if (!attempt.ok) {
+    // Never log the secret or the token themselves.
     console.error("[getLongLivedToken] exchange failed", {
-      status: response.status,
+      status: attempt.status,
+      method: attempt.method,
       endpoint: `${url.origin}${url.pathname}`,
       tokenPrefix: shortLivedToken.slice(0, 4),
       tokenLength: shortLivedToken.length,
       secretLength: secret.length,
       appId: process.env.INSTAGRAM_APP_ID,
-      body: raw.slice(0, 500),
+      body: attempt.raw.slice(0, 500),
     });
-    throwGraphError(data, response.status);
+    throwGraphError(attempt.data, attempt.status);
   }
 
-  const token = data as TokenResponse;
+  const token = attempt.data as TokenResponse;
   return {
     accessToken: token.access_token,
     expiresIn: token.expires_in ?? 5184000,
@@ -702,9 +754,22 @@ export async function refreshLongLivedToken(
   url.searchParams.set("grant_type", "ig_refresh_token");
   url.searchParams.set("access_token", longLivedToken);
 
-  const response = await fetch(url.toString());
-  const data = await handleResponse<TokenResponse>(response);
+  // Same GET/POST quirk as the exchange above — this endpoint is where it was
+  // first reported publicly. The refresh cron runs unattended, so a silent
+  // failure here expires every connected account after 60 days.
+  const attempt = await requestToken(url, "refreshLongLivedToken");
 
+  if (!attempt.ok) {
+    console.error("[refreshLongLivedToken] refresh failed", {
+      status: attempt.status,
+      method: attempt.method,
+      endpoint: `${url.origin}${url.pathname}`,
+      body: attempt.raw.slice(0, 500),
+    });
+    throwGraphError(attempt.data, attempt.status);
+  }
+
+  const data = attempt.data as TokenResponse;
   return {
     accessToken: data.access_token,
     expiresIn: data.expires_in ?? 5184000,
