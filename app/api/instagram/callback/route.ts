@@ -44,13 +44,15 @@ export async function GET(request: NextRequest) {
   // Named so a failure says which Meta call broke. Without this the log was a
   // bare code-100 that could have come from any of three requests.
   let step = "exchange_code";
+  let grantedPermissions = "";
 
   try {
     const redirectUri = `${baseUrl}/api/instagram/callback`;
-    const { accessToken: shortLivedToken } = await exchangeCodeForToken(
-      code,
-      redirectUri
-    );
+    const {
+      accessToken: shortLivedToken,
+      permissions,
+    } = await exchangeCodeForToken(code, redirectUri);
+    grantedPermissions = permissions;
 
     step = "long_lived_token";
     const { accessToken: longLivedToken, expiresIn } =
@@ -116,7 +118,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(`${baseUrl}/dashboard?connected=true`);
   } catch (err) {
-    console.error(`[Instagram Callback] Failed at step "${step}":`, err);
+    console.error(
+      `[Instagram Callback] Failed at step "${step}" (granted scopes: ${
+        grantedPermissions || "<none reported>"
+      }):`,
+      err
+    );
     return NextResponse.redirect(
       `${baseUrl}/settings?instagram=failed&step=${step}`
     );

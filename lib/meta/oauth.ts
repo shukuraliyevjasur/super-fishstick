@@ -85,7 +85,7 @@ export function getAuthorizationUrl(redirectUri: string, state: string): string 
 export async function exchangeCodeForToken(
   code: string,
   redirectUri: string
-): Promise<{ accessToken: string; userId: string }> {
+): Promise<{ accessToken: string; userId: string; permissions: string }> {
   const body = new URLSearchParams({
     client_id: requireEnv("INSTAGRAM_APP_ID"),
     client_secret: requireEnv("INSTAGRAM_APP_SECRET"),
@@ -129,6 +129,10 @@ export async function exchangeCodeForToken(
   return {
     accessToken,
     userId: String(entry.user_id),
+    // The long-lived exchange requires instagram_business_basic. Meta reports
+    // which scopes were actually granted here, so surfacing it distinguishes a
+    // missing scope from an account-level restriction.
+    permissions: String(entry.permissions ?? ""),
   };
 }
 
