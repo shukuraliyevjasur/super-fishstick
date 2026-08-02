@@ -177,6 +177,25 @@ export const ru: Dict = {
     emailLabel: "Ваш email",
     emailPlaceholder: "вы@компания.com",
     submitBtn: "Отправить ссылку на email",
+    passwordLabel: "Пароль",
+    passwordPlaceholder: "Введите пароль",
+    submitPassword: "Войти",
+    useLinkInstead: "Войти по ссылке на email вместо пароля",
+    usePasswordInstead: "Войти с паролем",
+    forgotPassword: "Забыли пароль?",
+    errInvalid: "Неверный email или пароль.",
+  },
+
+  setPassword: {
+    metaTitle: "Установить пароль — replie",
+    metaDesc: "Установите пароль, чтобы входить быстрее.",
+    h1: "Установите пароль",
+    sub: "После этого вы сможете входить с паролем, не дожидаясь ссылки на email.",
+    passwordLabel: "Новый пароль",
+    confirmLabel: "Подтвердите пароль",
+    submitBtn: "Сохранить пароль",
+    errTooShort: "Пароль должен содержать не менее {{n}} символов.",
+    errMismatch: "Пароли не совпадают.",
   },
 
   dashboard: {

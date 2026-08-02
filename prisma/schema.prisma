@@ -15,6 +15,10 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  // scrypt-derived, in the self-describing format written by lib/auth/password.ts.
+  // Null means the account predates passwords (or was created by a magic link and
+  // has not set one yet) — those users are sent to /set-password after signing in.
+  passwordHash  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

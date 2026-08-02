@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
 import { getCampaignTemplate } from "@/lib/templates/campaign-templates";
 import { getDictionary, hasLocale } from "@/lib/i18n";
@@ -28,12 +29,30 @@ export default async function LoginPage({
   const checkEmail = (sp as Record<string, string>)?.checkEmail === "1";
   const templateSlug = (sp as Record<string, string>)?.template;
   const callbackUrlParam = (sp as Record<string, string>)?.callbackUrl;
+  // Magic link stays reachable as a fallback — it is also the way a user who
+  // forgot their password gets back in, so there is no separate reset flow.
+  const linkMode = (sp as Record<string, string>)?.mode === "link";
+  const failed = (sp as Record<string, string>)?.error === "invalid";
 
   const selectedTemplate = getCampaignTemplate(templateSlug);
   const templateCallbackUrl = selectedTemplate
     ? `/${lang}/campaigns/new?template=${selectedTemplate.slug}`
     : null;
   const callbackUrl = callbackUrlParam ?? templateCallbackUrl ?? `/${lang}/dashboard`;
+
+  // Preserved across the password/link toggle and the failed-login redirect, so
+  // an invite or template deep link is not lost when someone mistypes.
+  const carried = new URLSearchParams();
+  if (templateSlug) carried.set("template", templateSlug);
+  if (callbackUrlParam) carried.set("callbackUrl", callbackUrlParam);
+  const carriedQs = carried.toString();
+
+  function loginHref(extra?: Record<string, string>) {
+    const qs = new URLSearchParams(carriedQs);
+    for (const [k, v] of Object.entries(extra ?? {})) qs.set(k, v);
+    const s = qs.toString();
+    return `/${lang}/login${s ? `?${s}` : ""}`;
+  }
 
   async function sendMagicLink(formData: FormData) {
     "use server";
@@ -42,6 +61,31 @@ export default async function LoginPage({
       redirectTo: callbackUrl,
     });
   }
+
+  async function loginWithPassword(formData: FormData) {
+    "use server";
+    try {
+      await signIn("password", {
+        email: String(formData.get("email") ?? ""),
+        password: String(formData.get("password") ?? ""),
+        redirectTo: callbackUrl,
+      });
+    } catch (error) {
+      // A successful signIn throws NEXT_REDIRECT, which must propagate. Only a
+      // genuine auth failure is turned into an error message.
+      if (error instanceof AuthError) {
+        const qs = new URLSearchParams(carriedQs);
+        qs.set("error", "invalid");
+        redirect(`/${lang}/login?${qs.toString()}`);
+      }
+      throw error;
+    }
+  }
+
+  const fieldClass =
+    "w-full px-4 py-2.5 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none transition-colors";
+  const submitClass =
+    "w-full inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors";
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
@@ -80,7 +124,7 @@ export default async function LoginPage({
               <h2 className="text-lg font-semibold text-foreground mb-2">{l.checkEmailH2}</h2>
               <p className="text-sm text-muted">{l.checkEmailSub}</p>
             </div>
-          ) : (
+          ) : linkMode ? (
             <form action={sendMagicLink} className="space-y-5">
               <div className="space-y-1.5">
                 <label htmlFor="email" className="block text-sm font-medium text-foreground">
@@ -93,15 +137,62 @@ export default async function LoginPage({
                   required
                   autoComplete="email"
                   placeholder={l.emailPlaceholder}
-                  className="w-full px-4 py-2.5 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none transition-colors"
+                  className={fieldClass}
                 />
               </div>
-              <button
-                type="submit"
-                className="w-full inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
-              >
+              <button type="submit" className={submitClass}>
                 {l.submitBtn}
               </button>
+              <p className="text-center">
+                <Link href={loginHref()} className="text-sm text-accent hover:underline">
+                  {l.usePasswordInstead}
+                </Link>
+              </p>
+            </form>
+          ) : (
+            <form action={loginWithPassword} className="space-y-5">
+              {failed && (
+                <p className="rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+                  {l.errInvalid}
+                </p>
+              )}
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                  {l.emailLabel}
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder={l.emailPlaceholder}
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                  {l.passwordLabel}
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  placeholder={l.passwordPlaceholder}
+                  className={fieldClass}
+                />
+              </div>
+              <button type="submit" className={submitClass}>
+                {l.submitPassword}
+              </button>
+              <p className="text-center text-sm text-muted">
+                {l.forgotPassword}{" "}
+                <Link href={loginHref({ mode: "link" })} className="text-accent hover:underline">
+                  {l.useLinkInstead}
+                </Link>
+              </p>
             </form>
           )}
         </div>

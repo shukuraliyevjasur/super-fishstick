@@ -148,6 +148,25 @@ export interface Dict {
     emailLabel: string
     emailPlaceholder: string
     submitBtn: string
+    passwordLabel: string
+    passwordPlaceholder: string
+    submitPassword: string
+    useLinkInstead: string
+    usePasswordInstead: string
+    forgotPassword: string
+    errInvalid: string
+  }
+
+  setPassword: {
+    metaTitle: string
+    metaDesc: string
+    h1: string
+    sub: string
+    passwordLabel: string
+    confirmLabel: string
+    submitBtn: string
+    errTooShort: string
+    errMismatch: string
   }
 
   dashboard: {

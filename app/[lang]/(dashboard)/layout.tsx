@@ -15,9 +15,20 @@ export default async function DashboardLayout({
   const { lang } = await params;
 
   const session = await auth();
+  const locale = hasLocale(lang) ? lang : "uz";
   if (!session?.user?.id) {
-    const locale = hasLocale(lang) ? lang : "uz";
     redirect(`/${locale}/login`);
+  }
+
+  // Accounts created by a magic link (and any predating password sign-in) have
+  // no password yet. Prompt once, so the next sign-in does not need an email.
+  // /set-password sits outside this layout, so this cannot loop.
+  const credentials = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { passwordHash: true },
+  });
+  if (!credentials?.passwordHash) {
+    redirect(`/${locale}/set-password`);
   }
 
   const workspace = await ensureWorkspaceForUser(

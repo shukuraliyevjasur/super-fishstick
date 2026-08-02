@@ -178,6 +178,25 @@ export const uz: Dict = {
     emailLabel: "Email manzilingiz",
     emailPlaceholder: "siz@kompaniya.com",
     submitBtn: "Havolani email ga yuborish",
+    passwordLabel: "Parol",
+    passwordPlaceholder: "Parolingizni kiriting",
+    submitPassword: "Kirish",
+    useLinkInstead: "Parol o'rniga email havolasi bilan kirish",
+    usePasswordInstead: "Parol bilan kirish",
+    forgotPassword: "Parolni unutdingizmi?",
+    errInvalid: "Email yoki parol noto'g'ri.",
+  },
+
+  setPassword: {
+    metaTitle: "Parol o'rnatish - replie",
+    metaDesc: "Keyingi safar tezroq kirish uchun parol o'rnating.",
+    h1: "Parol o'rnating",
+    sub: "Shundan so'ng har safar email havolasini kutmasdan, parol bilan kirasiz.",
+    passwordLabel: "Yangi parol",
+    confirmLabel: "Parolni tasdiqlang",
+    submitBtn: "Parolni saqlash",
+    errTooShort: "Parol kamida {{n}} ta belgidan iborat bo'lishi kerak.",
+    errMismatch: "Parollar mos kelmadi.",
   },
 
   dashboard: {

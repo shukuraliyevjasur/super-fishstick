@@ -12,6 +12,7 @@ const PROTECTED_PATHS = [
   "/inbox",
   "/overview",
   "/diagnostics",
+  "/set-password",
 ];
 
 function hasSessionCookie(request: NextRequest): boolean {
