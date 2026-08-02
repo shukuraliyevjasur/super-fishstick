@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
@@ -5,10 +6,12 @@ import { ensureWorkspaceForUser } from "@/lib/workspace";
 import { hasLocale } from "@/lib/i18n";
 import DashboardShell from "@/components/dashboard-shell";
 
+type Props = { children: ReactNode; params: Promise<{ lang: string }> };
+
 export default async function DashboardLayout({
   children,
   params,
-}: LayoutProps<"/[lang]">) {
+}: Props) {
   const { lang } = await params;
 
   const session = await auth();

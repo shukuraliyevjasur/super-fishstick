@@ -3,7 +3,9 @@ import { getDictionary, hasLocale } from "@/lib/i18n";
 import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
-export async function generateMetadata({ params }: PageProps<"/[lang]/pricing">) {
+type Props = { params: Promise<{ lang: string }> };
+
+export async function generateMetadata({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) return {};
   const d = await getDictionary(lang);
@@ -26,7 +28,7 @@ function XIcon({ className }: { className: string }) {
   );
 }
 
-export default async function PricingPage({ params }: PageProps<"/[lang]/pricing">) {
+export default async function PricingPage({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const d = await getDictionary(lang);

@@ -5,7 +5,9 @@ import { getCampaignTemplate } from "@/lib/templates/campaign-templates";
 import { getDictionary, hasLocale } from "@/lib/i18n";
 import { t } from "@/components/dictionary-provider";
 
-export async function generateMetadata({ params }: PageProps<"/[lang]/login">) {
+type Props = { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[]>> };
+
+export async function generateMetadata({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) return {};
   const d = await getDictionary(lang);
@@ -15,7 +17,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/login">) {
 export default async function LoginPage({
   params,
   searchParams,
-}: PageProps<"/[lang]/login">) {
+}: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
 

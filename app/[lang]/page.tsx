@@ -4,7 +4,9 @@ import { getDictionary, hasLocale } from "@/lib/i18n";
 import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
-export async function generateMetadata({ params }: PageProps<"/[lang]">) {
+type Props = { params: Promise<{ lang: string }> };
+
+export async function generateMetadata({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) return {};
   const d = await getDictionary(lang);
@@ -51,7 +53,7 @@ const dashboardStatColors = [
   "#1A1A1A", "#0145F2", "#D97706", "#DC2626", "#1A1A1A", "#16A34A",
 ];
 
-export default async function Home({ params }: PageProps<"/[lang]">) {
+export default async function Home({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const d = await getDictionary(lang);
