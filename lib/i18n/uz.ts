@@ -185,6 +185,32 @@ export const uz: Dict = {
     usePasswordInstead: "Parol bilan kirish",
     forgotPassword: "Parolni unutdingizmi?",
     errInvalid: "Email yoki parol noto'g'ri.",
+    noAccount: "Akkauntingiz yo'qmi?",
+    signUpLink: "Ro'yxatdan o'ting",
+  },
+
+  signup: {
+    metaTitle: "Ro'yxatdan o'tish - replie",
+    metaDesc: "replie akkauntini yarating va Instagram kampaniyalarini boshlang.",
+    h1: "Akkaunt yarating",
+    sub: "Email va parol kiriting — bir daqiqada boshlaysiz.",
+    emailLabel: "Email manzilingiz",
+    emailPlaceholder: "siz@kompaniya.com",
+    passwordLabel: "Parol",
+    passwordPlaceholder: "Parol o'ylab toping",
+    passwordHint: "Kamida {{n}} ta belgi.",
+    submitBtn: "Ro'yxatdan o'tish",
+    haveAccount: "Akkauntingiz bormi?",
+    signInLink: "Kirish",
+    errInvalidEmail: "Email manzil noto'g'ri.",
+    errTooShort: "Parol kamida {{n}} ta belgidan iborat bo'lishi kerak.",
+    errTaken: "Bu email allaqachon ro'yxatdan o'tgan. Kirishga urinib ko'ring.",
+  },
+
+  verifyEmail: {
+    banner: "Email manzilingizni tasdiqlang — tasdiqlash havolasini yubordik.",
+    resend: "Qayta yuborish",
+    sent: "Yuborildi",
   },
 
   setPassword: {

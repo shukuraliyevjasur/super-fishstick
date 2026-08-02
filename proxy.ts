@@ -53,7 +53,8 @@ export function proxy(request: NextRequest) {
   const isProtected = PROTECTED_PATHS.some(
     (p) => stripped === p || stripped.startsWith(`${p}/`)
   );
-  const isLogin = stripped === "/login";
+  // Both entry screens are pointless once signed in.
+  const isLogin = stripped === "/login" || stripped === "/signup";
   const isAuthenticated = hasSessionCookie(request);
 
   if (isProtected && !isAuthenticated) {

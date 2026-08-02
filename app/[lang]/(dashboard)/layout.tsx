@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { ensureWorkspaceForUser } from "@/lib/workspace";
 import { hasLocale } from "@/lib/i18n";
 import DashboardShell from "@/components/dashboard-shell";
+import VerifyEmailBanner from "@/components/verify-email-banner";
 
 type Props = { children: ReactNode; params: Promise<{ lang: string }> };
 
@@ -25,7 +26,7 @@ export default async function DashboardLayout({
   // /set-password sits outside this layout, so this cannot loop.
   const credentials = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { passwordHash: true },
+    select: { passwordHash: true, emailVerified: true },
   });
   if (!credentials?.passwordHash) {
     redirect(`/${locale}/set-password`);
@@ -47,6 +48,7 @@ export default async function DashboardLayout({
       instagramUsername={accounts[0]?.username ?? null}
       instagramAccountCount={accounts.length}
     >
+      {!credentials.emailVerified && <VerifyEmailBanner />}
       {children}
     </DashboardShell>
   );

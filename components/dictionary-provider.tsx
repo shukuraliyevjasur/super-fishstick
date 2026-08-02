@@ -25,10 +25,7 @@ export function useDict(): Dict {
   return ctx
 }
 
-/** Replace {{var}} placeholders in a template string. */
-export function t(
-  template: string,
-  vars: Record<string, string | number> = {}
-): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(vars[key] ?? ""))
-}
+// Re-exported so existing client-component imports keep working. The
+// implementation lives in lib/i18n/t.ts because a server component cannot call
+// a function exported from a "use client" module.
+export { t } from "@/lib/i18n/t"

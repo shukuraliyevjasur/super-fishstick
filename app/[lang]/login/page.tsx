@@ -4,7 +4,7 @@ import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
 import { getCampaignTemplate } from "@/lib/templates/campaign-templates";
 import { getDictionary, hasLocale } from "@/lib/i18n";
-import { t } from "@/components/dictionary-provider";
+import { t } from "@/lib/i18n/t";
 
 type Props = { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[]>> };
 
@@ -194,6 +194,18 @@ export default async function LoginPage({
                 </Link>
               </p>
             </form>
+          )}
+
+          {!checkEmail && (
+            <p className="mt-6 border-t border-border pt-6 text-center text-sm text-muted">
+              {l.noAccount}{" "}
+              <Link
+                href={`/${lang}/signup${carriedQs ? `?${carriedQs}` : ""}`}
+                className="font-medium text-accent hover:underline"
+              >
+                {l.signUpLink}
+              </Link>
+            </p>
           )}
         </div>
       </div>

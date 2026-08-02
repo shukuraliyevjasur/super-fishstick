@@ -7,7 +7,7 @@ import {
   validatePassword,
 } from "@/lib/auth/password";
 import { getDictionary, hasLocale } from "@/lib/i18n";
-import { t } from "@/components/dictionary-provider";
+import { t } from "@/lib/i18n/t";
 
 type Props = { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[]>> };
 

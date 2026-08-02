@@ -184,6 +184,32 @@ export const ru: Dict = {
     usePasswordInstead: "Войти с паролем",
     forgotPassword: "Забыли пароль?",
     errInvalid: "Неверный email или пароль.",
+    noAccount: "Нет аккаунта?",
+    signUpLink: "Зарегистрируйтесь",
+  },
+
+  signup: {
+    metaTitle: "Регистрация — replie",
+    metaDesc: "Создайте аккаунт replie и запустите Instagram-кампании.",
+    h1: "Создайте аккаунт",
+    sub: "Введите email и пароль — начнёте за минуту.",
+    emailLabel: "Ваш email",
+    emailPlaceholder: "вы@компания.com",
+    passwordLabel: "Пароль",
+    passwordPlaceholder: "Придумайте пароль",
+    passwordHint: "Минимум {{n}} символов.",
+    submitBtn: "Зарегистрироваться",
+    haveAccount: "Уже есть аккаунт?",
+    signInLink: "Войти",
+    errInvalidEmail: "Неверный email.",
+    errTooShort: "Пароль должен содержать не менее {{n}} символов.",
+    errTaken: "Этот email уже зарегистрирован. Попробуйте войти.",
+  },
+
+  verifyEmail: {
+    banner: "Подтвердите email — мы отправили ссылку для подтверждения.",
+    resend: "Отправить снова",
+    sent: "Отправлено",
   },
 
   setPassword: {

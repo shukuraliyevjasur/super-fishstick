@@ -47,7 +47,7 @@ export default async function PricingPage({ params }: Props) {
     {
       name: p.freeName, desc: p.freeDesc, price: "0", period: lang === "ru" ? "сум/мес" : "so'm/oy",
       features: freeFeatures, excluded: freeExcluded,
-      cta: p.freeCta, ctaHref: `/${lang}/login`, highlighted: false,
+      cta: p.freeCta, ctaHref: `/${lang}/signup`, highlighted: false,
     },
     {
       name: p.stdName, desc: p.stdDesc,

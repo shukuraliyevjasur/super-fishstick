@@ -119,7 +119,7 @@ export default async function Home({ params }: Props) {
                 style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}
               >
                 <Link
-                  href={`/${lang}/login`}
+                  href={`/${lang}/signup`}
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     background: "#0145F2", color: "#fff", fontSize: 15, fontWeight: 600,
@@ -354,7 +354,7 @@ export default async function Home({ params }: Props) {
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 36, flexWrap: "wrap" }}>
             <Link
-              href={`/${lang}/login`}
+              href={`/${lang}/signup`}
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 background: "#fff", color: "#0145F2", fontSize: 15, fontWeight: 700,

@@ -155,6 +155,32 @@ export interface Dict {
     usePasswordInstead: string
     forgotPassword: string
     errInvalid: string
+    noAccount: string
+    signUpLink: string
+  }
+
+  signup: {
+    metaTitle: string
+    metaDesc: string
+    h1: string
+    sub: string
+    emailLabel: string
+    emailPlaceholder: string
+    passwordLabel: string
+    passwordPlaceholder: string
+    passwordHint: string
+    submitBtn: string
+    haveAccount: string
+    signInLink: string
+    errInvalidEmail: string
+    errTooShort: string
+    errTaken: string
+  }
+
+  verifyEmail: {
+    banner: string
+    resend: string
+    sent: string
   }
 
   setPassword: {
