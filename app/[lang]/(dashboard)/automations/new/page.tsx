@@ -1,1 +1,5 @@
-export { default } from "@/app/(dashboard)/automations/new/page";
+import { redirect } from "next/navigation";
+
+export default function NewAutomationRedirectPage() {
+  redirect("/campaigns/new");
+}

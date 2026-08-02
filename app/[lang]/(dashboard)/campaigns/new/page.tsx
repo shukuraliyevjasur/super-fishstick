@@ -1,1 +1,5 @@
-export { default } from "@/app/(dashboard)/campaigns/new/page";
+import CampaignBuilder from "@/components/campaign-builder";
+
+export default function NewCampaignPage() {
+  return <CampaignBuilder mode="new" />;
+}
