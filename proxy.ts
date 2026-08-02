@@ -80,7 +80,16 @@ export const config = {
      * - _next/image (image optimisation)
      * - favicon.ico
      * - /api/* (API routes, no locale needed)
+     *
+     * The rest are locale-less by design and have no page under app/[lang],
+     * so prefixing them produced a 404:
+     * - /r/* tracked-link redirects. This URL is baked into every DM already
+     *   sent (lib/tracking/message.ts builds `${APP_URL}/r/<slug>`), so it can
+     *   never carry a locale — and a 404 here loses the click and strands the
+     *   recipient.
+     * - /reports/* public client-report share links, handed to third parties.
+     * - robots.txt and sitemap.xml, which crawlers fetch at the domain root.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/|r/|reports/|robots\\.txt|sitemap\\.xml).*)",
   ],
 };
