@@ -3,7 +3,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { getBaseUrl } from "@/lib/env";
 import { canConnectInstagramAccount } from "@/lib/instagram-accounts";
-import { getLongLivedToken, getUserInfo, subscribeInstagramAccountToWebhooks } from "@/lib/meta/client";
+import {
+  MetaApiError,
+  getLongLivedToken,
+  getUserInfo,
+  subscribeInstagramAccountToWebhooks,
+} from "@/lib/meta/client";
 import {
   encryptToken,
   exchangeCodeForToken,
@@ -55,8 +60,35 @@ export async function GET(request: NextRequest) {
     grantedPermissions = permissions;
 
     step = "long_lived_token";
-    const { accessToken: longLivedToken, expiresIn } =
-      await getLongLivedToken(shortLivedToken);
+    // Meta rejects the exchange for this app's tokens with code 100
+    // "Unsupported request" on every documented form — unversioned and
+    // versioned, GET and POST — while a fake token still gets the normal 190
+    // from the OAuth layer. The endpoint exists; the edge is just not offered
+    // for these tokens, which is what you would expect if the token returned
+    // by Business Login does not need exchanging.
+    //
+    // So this is no longer fatal: an account that cannot be connected at all
+    // is strictly worse than one holding the token Meta actually issued. Only
+    // "unsupported" is tolerated — a rejected or expired token (190) still
+    // fails loudly, because that is a real auth problem.
+    let longLivedToken = shortLivedToken;
+    let expiresIn = 3600; // documented short-lived lifetime, until proven otherwise
+    try {
+      const exchanged = await getLongLivedToken(shortLivedToken);
+      longLivedToken = exchanged.accessToken;
+      expiresIn = exchanged.expiresIn;
+    } catch (exchangeError) {
+      const unsupported =
+        exchangeError instanceof MetaApiError && exchangeError.code === 100;
+      if (!unsupported) throw exchangeError;
+
+      console.warn(
+        "[Instagram Callback] long-lived exchange unavailable (code 100) — " +
+          "continuing with the token from the code exchange. If this account " +
+          "keeps working past an hour, that token was already long-lived and " +
+          "the exchange step can be dropped."
+      );
+    }
 
     step = "get_user_info";
     const userInfo = await getUserInfo(longLivedToken);
