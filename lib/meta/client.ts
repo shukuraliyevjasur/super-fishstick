@@ -540,7 +540,7 @@ export async function getUserInfo(accessToken: string): Promise<InstagramUser> {
   const url = new URL(`${instagramGraphBase()}/me`);
   url.searchParams.set(
     "fields",
-    "id,user_id,username,name,profile_picture_url"
+    "id,username,name,profile_picture_url"
   );
   url.searchParams.set("access_token", accessToken);
 
