@@ -46,6 +46,7 @@ export default function TopBar({
             : `@${instagramUsername}`}
         </p>
       ) : (
+        // eslint-disable-next-line @next/next/no-html-link-for-pages -- API route, not a page: needs a full navigation so the server can 302 to Meta.
         <a
           href="/api/instagram/connect"
           className="text-sm font-semibold px-3.5 py-1.5 rounded-md bg-accent text-white hover:bg-accent-hover transition-colors"

@@ -108,8 +108,10 @@ export default function CampaignsPage() {
 
     const cached = readCache<{ thumbs: Record<string, string>; videos: Record<string, string> }>(cacheKey, 15 * 60 * 1000);
     if (cached.data) {
+      /* eslint-disable react-hooks/set-state-in-effect -- deliberate synchronous hydration from the localStorage cache, so cached thumbnails paint without a loading flash */
       setThumbnails(cached.data.thumbs);
       setVideos(cached.data.videos);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
 
     Promise.all(

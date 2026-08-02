@@ -108,9 +108,9 @@ export default function DashboardPage() {
             {" · "}
             {stats?.contactsCount ?? 0} ta kontakt
             {" · "}
-            <a href="/logs" className="text-accent hover:underline">
+            <Link href="/logs" className="text-accent hover:underline">
               Faoliyatni ko&apos;rish
-            </a>
+            </Link>
           </p>
         </div>
         {stats && stats.instagramAccounts.length > 1 && (
@@ -193,9 +193,9 @@ export default function DashboardPage() {
           {stats.dmQuota.used / stats.dmQuota.limit > 0.9 && (
             <p className="mt-2 text-xs text-error">
               Limitga yaqinlashyapsiz.{" "}
-              <a href="/pricing" className="font-medium underline">
+              <Link href="/pricing" className="font-medium underline">
                 Rejimni oshiring
-              </a>
+              </Link>
             </p>
           )}
         </div>

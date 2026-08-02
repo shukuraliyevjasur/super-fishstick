@@ -80,6 +80,7 @@ export default function OverviewPage() {
       <div className="panel rounded-lg p-8 text-center">
         <p className="text-sm text-error">{error}</p>
         {error.includes("connect") && (
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- API route, not a page: needs a full navigation so the server can 302 to Meta.
           <a href="/api/instagram/connect" className="mt-4 inline-block text-sm text-accent hover:underline">
             Instagram ulash
           </a>
@@ -137,6 +138,7 @@ export default function OverviewPage() {
           <p className="text-sm text-muted mt-1">
             Ruxsat berish uchun akkauntni qayta ulang — attendant likes va izohlar ko&apos;rinib turibdi.
           </p>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API route, not a page: needs a full navigation so the server can 302 to Meta. */}
           <a href="/api/instagram/connect" className="mt-3 inline-block text-sm text-accent hover:underline font-medium">
             Instagram qayta ulash
           </a>

@@ -196,6 +196,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6 pt-4 border-t border-border">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API route, not a page: needs a full navigation so the server can 302 to Meta. */}
           <a
             href="/api/instagram/connect"
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-colors"

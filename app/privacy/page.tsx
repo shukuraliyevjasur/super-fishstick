@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import LegalShell from "@/components/legal-shell";
 
 export const metadata: Metadata = {
@@ -70,7 +71,7 @@ export default function PrivacyPage() {
           Foydalanuvchilar sozlamalarda Instagramni uzishi mumkin, bu esa saqlangan ulanishni o&apos;chirib tashlaydi va kampaniyalarni to&apos;xtatadi. Akkaunt yoki ma&apos;lumotlarni to&apos;liq o&apos;chirish uchun pastdagi havoladan <em>Ma&apos;lumotlarni o&apos;chirish</em> sahifasiga o&apos;ting.
         </p>
         <p className="text-muted">
-          Users can disconnect Instagram from Settings, which removes the stored connection and stops campaigns. For full account or data deletion, visit the <a href="/data-deletion" className="text-accent hover:underline">Data Deletion</a> page linked in the footer.
+          Users can disconnect Instagram from Settings, which removes the stored connection and stops campaigns. For full account or data deletion, visit the <Link href="/data-deletion" className="text-accent hover:underline">Data Deletion</Link> page linked in the footer.
         </p>
       </section>
 

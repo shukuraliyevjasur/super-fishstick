@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface InvitationAcceptCardProps {
   token: string;
@@ -35,12 +36,12 @@ export default function InvitationAcceptCard({
 
   if (!isSignedIn) {
     return (
-      <a
+      <Link
         href="/login"
         className="inline-flex items-center justify-center rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-hover"
       >
         Qabul qilish uchun kiring
-      </a>
+      </Link>
     );
   }
 
