@@ -4,6 +4,20 @@ function instagramGraphBase() {
   return `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
 }
 
+/**
+ * The OAuth token endpoints (`access_token`, `refresh_access_token`) are NOT
+ * versioned — they live at the host root. Prefixing them with a version makes
+ * Meta answer code 100 "Unsupported request - method type: get" once a real
+ * token is involved, which is what broke Instagram account linking.
+ *
+ * A bad token returns 190 on either form, so this cannot be reproduced with a
+ * dummy token — only against a live OAuth callback.
+ * https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login
+ */
+function instagramOAuthBase() {
+  return "https://graph.instagram.com";
+}
+
 function facebookGraphBase() {
   return `https://graph.facebook.com/${getMetaGraphApiVersion()}`;
 }
@@ -538,9 +552,13 @@ export async function getConversationMessages(
 
 export async function getUserInfo(accessToken: string): Promise<InstagramUser> {
   const url = new URL(`${instagramGraphBase()}/me`);
+  // user_id is a documented field on this endpoint and is the professional
+  // account id that webhooks arrive under (entry.id) — the app-scoped `id` is
+  // not interchangeable with it. It was briefly dropped here while chasing the
+  // code-100 error, which actually came from the versioned token endpoint.
   url.searchParams.set(
     "fields",
-    "id,username,name,profile_picture_url"
+    "id,user_id,username,name,profile_picture_url"
   );
   url.searchParams.set("access_token", accessToken);
 
@@ -633,7 +651,7 @@ export async function getMediaInsights(
 export async function getLongLivedToken(
   shortLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
-  const url = new URL(`${instagramGraphBase()}/access_token`);
+  const url = new URL(`${instagramOAuthBase()}/access_token`);
   url.searchParams.set("grant_type", "ig_exchange_token");
   url.searchParams.set("client_secret", requireEnv("INSTAGRAM_APP_SECRET"));
   url.searchParams.set("access_token", shortLivedToken);
@@ -650,7 +668,7 @@ export async function getLongLivedToken(
 export async function refreshLongLivedToken(
   longLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
-  const url = new URL(`${instagramGraphBase()}/refresh_access_token`);
+  const url = new URL(`${instagramOAuthBase()}/refresh_access_token`);
   url.searchParams.set("grant_type", "ig_refresh_token");
   url.searchParams.set("access_token", longLivedToken);
 

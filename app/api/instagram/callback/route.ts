@@ -41,15 +41,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/settings?instagram=forbidden`);
   }
 
+  // Named so a failure says which Meta call broke. Without this the log was a
+  // bare code-100 that could have come from any of three requests.
+  let step = "exchange_code";
+
   try {
     const redirectUri = `${baseUrl}/api/instagram/callback`;
     const { accessToken: shortLivedToken } = await exchangeCodeForToken(
       code,
       redirectUri
     );
+
+    step = "long_lived_token";
     const { accessToken: longLivedToken, expiresIn } =
       await getLongLivedToken(shortLivedToken);
+
+    step = "get_user_info";
     const userInfo = await getUserInfo(longLivedToken);
+
+    step = "persist";
     // Webhooks and the messaging API key off the professional account ID
     // (user_id), not the app-scoped `id`. Store user_id so comment webhooks
     // can be matched back to this account. Fall back to id if user_id is
@@ -106,7 +116,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(`${baseUrl}/dashboard?connected=true`);
   } catch (err) {
-    console.error("[Instagram Callback] Error:", err);
-    return NextResponse.redirect(`${baseUrl}/settings?instagram=failed`);
+    console.error(`[Instagram Callback] Failed at step "${step}":`, err);
+    return NextResponse.redirect(
+      `${baseUrl}/settings?instagram=failed&step=${step}`
+    );
   }
 }
