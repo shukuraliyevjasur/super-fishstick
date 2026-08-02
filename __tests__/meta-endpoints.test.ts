@@ -123,6 +123,66 @@ describe("token endpoints fall back to POST when GET is refused", () => {
     expect(calls[1].body).toContain("grant_type=ig_refresh_token");
   });
 
+  it("falls through to the versioned path when the unversioned one is refused", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        calls.push(`${method} ${url.split("?")[0]}`);
+
+        // Only the versioned Graph path answers.
+        if (url.includes("/v25.0/")) {
+          const body = { access_token: "long-lived", expires_in: 5184000 };
+          return {
+            ok: true,
+            status: 200,
+            json: async () => body,
+            text: async () => JSON.stringify(body),
+          } as unknown as Response;
+        }
+        return {
+          ok: false,
+          status: 400,
+          json: async () => code100,
+          text: async () => JSON.stringify(code100),
+        } as unknown as Response;
+      })
+    );
+
+    const result = await getLongLivedToken("IGAA-short-lived");
+
+    expect(result.accessToken).toBe("long-lived");
+    expect(calls).toEqual([
+      "GET https://graph.instagram.com/access_token",
+      "POST https://graph.instagram.com/access_token",
+      "GET https://graph.instagram.com/v25.0/access_token",
+    ]);
+  });
+
+  it("stops probing on a non-100 error instead of hammering Meta", async () => {
+    const expired = {
+      error: { message: "Session expired", type: "OAuthException", code: 190 },
+    };
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input: string | URL, init?: RequestInit) => {
+        calls.push((init?.method ?? "GET").toUpperCase());
+        return {
+          ok: false,
+          status: 400,
+          json: async () => expired,
+          text: async () => JSON.stringify(expired),
+        } as unknown as Response;
+      })
+    );
+
+    await expect(getLongLivedToken("IGAA-expired")).rejects.toThrow(/Session expired/);
+    expect(calls).toEqual(["GET"]);
+  });
+
   it("does not retry when GET already works", async () => {
     const calls: string[] = [];
     vi.stubGlobal(
