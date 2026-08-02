@@ -119,30 +119,34 @@ interface TokenResponse {
   expires_in?: number;
 }
 
+function throwGraphError(data: unknown, status: number): never {
+  const err = (data as GraphApiError)?.error;
+  const code = err?.code ?? status;
+  const subcode = err?.error_subcode;
+  const traceId = err?.fbtrace_id;
+  const message = err?.message ?? "Unknown Meta API error";
+
+  switch (code) {
+    case 190:
+      throw new TokenExpiredError(message, traceId);
+    case 368:
+    case 4:
+    case 17:
+      throw new RateLimitError(message, traceId);
+    case 10:
+    case 100:
+    case 200:
+      throw new PermissionError(message, traceId);
+    default:
+      throw new MetaApiError(code, subcode, traceId, message);
+  }
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   const data = await response.json();
 
   if (!response.ok || (data as GraphApiError).error) {
-    const err = (data as GraphApiError).error;
-    const code = err?.code ?? response.status;
-    const subcode = err?.error_subcode;
-    const traceId = err?.fbtrace_id;
-    const message = err?.message ?? "Unknown Meta API error";
-
-    switch (code) {
-      case 190:
-        throw new TokenExpiredError(message, traceId);
-      case 368:
-      case 4:
-      case 17:
-        throw new RateLimitError(message, traceId);
-      case 10:
-      case 100:
-      case 200:
-        throw new PermissionError(message, traceId);
-      default:
-        throw new MetaApiError(code, subcode, traceId, message);
-    }
+    throwGraphError(data, response.status);
   }
 
   return data as T;
@@ -651,17 +655,43 @@ export async function getMediaInsights(
 export async function getLongLivedToken(
   shortLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
+  const secret = requireEnv("INSTAGRAM_APP_SECRET");
   const url = new URL(`${instagramOAuthBase()}/access_token`);
   url.searchParams.set("grant_type", "ig_exchange_token");
-  url.searchParams.set("client_secret", requireEnv("INSTAGRAM_APP_SECRET"));
+  url.searchParams.set("client_secret", secret);
   url.searchParams.set("access_token", shortLivedToken);
 
   const response = await fetch(url.toString());
-  const data = await handleResponse<TokenResponse>(response);
+  const raw = await response.text();
 
+  let data: unknown = null;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    // fall through — the body is logged below
+  }
+
+  if (!response.ok || (data as GraphApiError)?.error) {
+    // This call has been the hard one to diagnose: Meta returns code 100
+    // "Unsupported request" for several unrelated causes, and every malformed
+    // token returns 190 instead, so curl probes cannot reproduce it. Log enough
+    // to tell those causes apart — never the secret or the token itself.
+    console.error("[getLongLivedToken] exchange failed", {
+      status: response.status,
+      endpoint: `${url.origin}${url.pathname}`,
+      tokenPrefix: shortLivedToken.slice(0, 4),
+      tokenLength: shortLivedToken.length,
+      secretLength: secret.length,
+      appId: process.env.INSTAGRAM_APP_ID,
+      body: raw.slice(0, 500),
+    });
+    throwGraphError(data, response.status);
+  }
+
+  const token = data as TokenResponse;
   return {
-    accessToken: data.access_token,
-    expiresIn: data.expires_in ?? 5184000,
+    accessToken: token.access_token,
+    expiresIn: token.expires_in ?? 5184000,
   };
 }
 

@@ -19,7 +19,11 @@ let requestedUrls: string[] = [];
 function mockJson(body: unknown) {
   return {
     ok: true,
+    status: 200,
     json: async () => body,
+    // getLongLivedToken reads the body as text so it can log it verbatim on
+    // failure, so the mock has to answer both.
+    text: async () => JSON.stringify(body),
   } as unknown as Response;
 }
 
