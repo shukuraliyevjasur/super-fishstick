@@ -214,7 +214,40 @@ token is involved:
 Prefixing the token endpoints with a version is wrong, though it was **not** what
 broke account linking — see below.
 
-### What actually broke linking: the code-exchange response is nested
+### Code 100 "Unsupported request" means the account is not linked to the app
+
+**This is the one to read first.** If any `graph.instagram.com` call returns:
+
+```
+code 100 — Unsupported request - method type: get   (type: IGApiException)
+```
+
+the request is almost certainly fine and the **Instagram account is not attached
+to the Meta app**. Add it under **Use cases → Instagram API setup with Instagram
+login → 2. Generate access tokens → Add account**, sign in as that account, and
+retry. (There is no need to press *Generate token*; that only mints a token by
+hand for dashboard testing.)
+
+Until that linkage exists Meta will happily run the whole OAuth flow — issue an
+authorization code, exchange it for a valid `IGAA` token, report the full granted
+scope list — and then refuse **every** Graph call made with that token. The
+long-lived exchange and `/me` both fail identically.
+
+Two properties make this very easy to misdiagnose:
+
+- **A fake token returns 190, not 100.** The OAuth layer rejects it before the
+  account check runs, so the endpoint looks perfectly healthy to any curl probe.
+  Nothing short of a live callback reproduces it.
+- **The message names the HTTP verb**, which reads like a method problem. It is
+  not — POST returns the same error with `method type: post`. Four URL shapes
+  (unversioned/versioned × GET/POST) were tried before this was understood; none
+  of them was the issue.
+
+Diagnosing it cost several deploys. The order that would have worked: confirm the
+account appears under *Generate access tokens*, then read the step name in the
+callback log, then look at the request.
+
+### The code-exchange response is nested (a real, separate bug)
 
 `POST https://api.instagram.com/oauth/access_token` returns the token inside a
 `data` array, not at the top level:
@@ -235,11 +268,9 @@ upstream. `lib/meta/oauth.ts` now reads `payload.data[0]` (still accepting a fla
 response) and **throws immediately** if no token is present, rather than letting
 `undefined` travel downstream.
 
-**This class of bug cannot be reproduced with curl:** every malformed or missing
-token returns 190, and only a real token reaches code 100. Two earlier diagnoses
-were wrong because of it — one dropped the `user_id` field, one blamed the
-version prefix. If Instagram linking fails again, read the step name in the log
-before forming a theory.
+This was a genuine bug and is fixed, but note it was *masked* by the unlinked
+account above: both produce a code-100 error from the same call, so fixing the
+nesting changed nothing visible until the account was linked.
 
 `getUserInfo` must keep requesting **`user_id`**. It is the professional account
 id that webhooks arrive under (`entry.id`); the app-scoped `id` is not

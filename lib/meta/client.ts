@@ -657,25 +657,28 @@ interface TokenAttempt {
   status: number;
   raw: string;
   data: unknown;
-  method: "GET" | "POST";
-  base: string;
 }
 
-async function callTokenEndpoint(
-  base: string,
+/**
+ * Calls one of Instagram's unversioned OAuth token endpoints.
+ *
+ * If this returns code 100 "Unsupported request", the request is almost
+ * certainly fine and the *account* is the problem: Meta refuses every
+ * graph.instagram.com call — this endpoint and /me alike — for an Instagram
+ * account that has not been added to the app under
+ * **Use cases → Instagram API setup → Generate access tokens → Add account**.
+ * A malformed token returns 190 instead, so no probe made with a fake token
+ * can reproduce it. Chasing the URL shape here is a dead end; check that
+ * linkage first.
+ */
+async function requestToken(
   path: string,
-  params: Record<string, string>,
-  method: "GET" | "POST"
+  params: Record<string, string>
 ): Promise<TokenAttempt> {
   const query = new URLSearchParams(params);
-  const response =
-    method === "GET"
-      ? await fetch(`${base}${path}?${query.toString()}`)
-      : await fetch(`${base}${path}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: query.toString(),
-        });
+  const response = await fetch(
+    `${instagramOAuthBase()}${path}?${query.toString()}`
+  );
 
   const raw = await response.text();
   let data: unknown = null;
@@ -685,86 +688,36 @@ async function callTokenEndpoint(
     // non-JSON body; it is logged verbatim by the caller
   }
 
-  const ok = response.ok && !(data as GraphApiError)?.error;
-  return { ok, status: response.status, raw, data, method, base };
-}
-
-/**
- * Calls one of Instagram's OAuth token endpoints, trying each accepted form
- * until one works.
- *
- * Meta answers code 100 "Unsupported request - method type: <verb>" for both
- * GET and POST on the documented unversioned path, while an *invalid* token
- * gets a 190 from the OAuth layer instead — so the endpoint looks healthy to
- * any probe made with a fake token, and only a live callback reveals the
- * failure. That asymmetry burned several diagnosis attempts.
- *
- * Rather than spend one deploy per hypothesis, this walks the small space of
- * plausible forms (documented unversioned path first, then the versioned Graph
- * path) and logs whichever Meta accepts. Collapse this back to the single
- * working form once the logs name it.
- */
-async function requestToken(
-  path: string,
-  params: Record<string, string>,
-  label: string
-): Promise<TokenAttempt> {
-  const candidates: Array<{ base: string; method: "GET" | "POST" }> = [
-    { base: instagramOAuthBase(), method: "GET" }, // what the reference documents
-    { base: instagramOAuthBase(), method: "POST" },
-    { base: instagramGraphBase(), method: "GET" }, // versioned — never yet tried with a real token
-    { base: instagramGraphBase(), method: "POST" },
-  ];
-
-  let last: TokenAttempt | null = null;
-
-  for (const { base, method } of candidates) {
-    const attempt = await callTokenEndpoint(base, path, params, method);
-    if (attempt.ok) {
-      if (last) {
-        console.warn(`[${label}] accepted form: ${method} ${base}${path}`);
-      }
-      return attempt;
-    }
-
-    const code = (attempt.data as GraphApiError)?.error?.code;
-    console.warn(
-      `[${label}] ${method} ${base}${path} rejected (code ${code ?? attempt.status})`
-    );
-    last = attempt;
-
-    // Only "unsupported request" is worth retrying in another shape. A bad or
-    // expired token (190) or a rate limit will fail identically every time.
-    if (code !== 100) break;
-  }
-
-  return last as TokenAttempt;
+  return {
+    ok: response.ok && !(data as GraphApiError)?.error,
+    status: response.status,
+    raw,
+    data,
+  };
 }
 
 export async function getLongLivedToken(
   shortLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
   const secret = requireEnv("INSTAGRAM_APP_SECRET");
-  const attempt = await requestToken(
-    "/access_token",
-    {
-      grant_type: "ig_exchange_token",
-      client_secret: secret,
-      access_token: shortLivedToken,
-    },
-    "getLongLivedToken"
-  );
+  const attempt = await requestToken("/access_token", {
+    grant_type: "ig_exchange_token",
+    client_secret: secret,
+    access_token: shortLivedToken,
+  });
 
   if (!attempt.ok) {
     // Never log the secret or the token themselves.
     console.error("[getLongLivedToken] exchange failed", {
       status: attempt.status,
-      lastTried: `${attempt.method} ${attempt.base}/access_token`,
       tokenPrefix: shortLivedToken.slice(0, 4),
       tokenLength: shortLivedToken.length,
       secretLength: secret.length,
       appId: process.env.INSTAGRAM_APP_ID,
       body: attempt.raw.slice(0, 500),
+      hint:
+        "code 100 here usually means the Instagram account is not added to the " +
+        "app under Use cases -> Instagram API setup -> Generate access tokens.",
     });
     throwGraphError(attempt.data, attempt.status);
   }
@@ -779,19 +732,16 @@ export async function getLongLivedToken(
 export async function refreshLongLivedToken(
   longLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
-  // Same endpoint family as the exchange above — this is where the failure was
-  // first reported publicly. The refresh cron runs unattended, so a silent
-  // failure here expires every connected account after 60 days.
-  const attempt = await requestToken(
-    "/refresh_access_token",
-    { grant_type: "ig_refresh_token", access_token: longLivedToken },
-    "refreshLongLivedToken"
-  );
+  // The refresh cron runs unattended, so a silent failure here expires every
+  // connected account after 60 days — log the body rather than just the code.
+  const attempt = await requestToken("/refresh_access_token", {
+    grant_type: "ig_refresh_token",
+    access_token: longLivedToken,
+  });
 
   if (!attempt.ok) {
     console.error("[refreshLongLivedToken] refresh failed", {
       status: attempt.status,
-      lastTried: `${attempt.method} ${attempt.base}/refresh_access_token`,
       body: attempt.raw.slice(0, 500),
     });
     throwGraphError(attempt.data, attempt.status);
