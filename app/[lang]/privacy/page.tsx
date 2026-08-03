@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LegalShell from "@/components/legal-shell";
+import { localeAlternates } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Maxfiylik siyosati / Privacy Policy — replie",
-  description:
-    "How replie handles Instagram account data, webhook payloads, and customer campaign information.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  return {
+    title: "Maxfiylik siyosati / Privacy Policy — replie",
+    description:
+      "How replie handles Instagram account data, webhook payloads, and customer campaign information.",
+    alternates: localeAlternates("/privacy", lang),
+  };
+}
 
 export default function PrivacyPage() {
   return (

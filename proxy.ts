@@ -1,19 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+// Shared with app/robots.ts so a new protected page cannot stay advertised to
+// crawlers. lib/site.ts is pure — no server-only import — so it is safe here.
+import { PROTECTED_PATHS } from "@/lib/site";
 
 const LOCALES = ["uz", "ru"] as const;
 const DEFAULT_LOCALE = "uz";
-
-const PROTECTED_PATHS = [
-  "/dashboard",
-  "/campaigns",
-  "/automations",
-  "/logs",
-  "/settings",
-  "/inbox",
-  "/overview",
-  "/diagnostics",
-  "/set-password",
-];
 
 function hasSessionCookie(request: NextRequest): boolean {
   return (

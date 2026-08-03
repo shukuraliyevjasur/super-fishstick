@@ -5,9 +5,12 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 
 19 findings, 4 HIGH.
 
-**Status.** Fixed so far: **S1**, **S4**, **C1**, **C3**, **S3**, **S5**, **S2**
-(2026-08-03) — every security finding is closed. Each finding below carries its
-own status line. 12 open.
+**Status.** Fixed so far (all 2026-08-03): **S1 S2 S3 S4 S5** — every security
+finding is closed — plus **C1 C3** and **Q1 Q2 Q3 Q5 Q6**. **Q4** is code-complete
+but needs an operator action (which host is canonical).
+
+**Open: 6** — P1, P2, P3, P4, C2, C4. Each finding below carries its own status
+line.
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -422,7 +425,27 @@ obvious cause.
 **Fix.** Falls out of C1 — have the health/alert path also report recent
 `TOKEN_REFRESH` errors, or email on any refresh failure.
 
-## Q1 (MED) — `<html>` has no `lang` attribute
+## Q1 (MED) — `<html>` has no `lang` attribute — ✅ FIXED 2026-08-03
+
+**Fixed, but not by the header approach the brief suggested.** Setting `x-locale`
+in `proxy.ts` and reading it with `headers()` works, but `headers()` is a
+request-time API: it would have opted **every** page — landing and pricing
+included — into dynamic rendering, to add one attribute.
+
+Instead the root layout moved into `app/[lang]/layout.tsx`, which the Next docs
+name for exactly this case: *"The root layout can be under a dynamic segment,
+for example when implementing internationalization with `app/[lang]/layout.js`."*
+`lang` is then a route param, known statically.
+
+`app/reports/layout.tsx` is a second root layout for the share links that cannot
+carry a locale (multiple root layouts are supported when there is no
+`app/layout.tsx`). `app/layout.tsx` is deleted; `app/fonts.ts` holds the font so
+the two trees cannot drift.
+
+**Verified in build output**, not just by inspection: `.next/server/app/uz.html`
+has `<html lang="uz">`, `ru.html` has `<html lang="ru">`, and both pages are
+still `●` (SSG) in the build manifest — the static rendering was preserved.
+
 
 **Where:** `app/layout.tsx:22`.
 
@@ -436,7 +459,23 @@ it with `headers()` in the root layout and set `<html lang={locale}>`.
 
 **Verify:** `document.documentElement.lang` is `uz` on `/uz` and `ru` on `/ru`.
 
-## Q2 (MED) — No `og:image` while `twitter:card` promises one
+## Q2 (MED) — No `og:image` while `twitter:card` promises one — ✅ FIXED 2026-08-03
+
+**Fixed with a real 1200×630 card**, not the 512px icon. `next/og` ships with
+Next, so `app/[lang]/opengraph-image.tsx` generates one at build time with zero
+new dependencies.
+
+**The card is wordmark-only on purpose.** `ImageResponse` renders with its own
+bundled font, not Plus Jakarta Sans, and that font is not guaranteed to carry
+Cyrillic or the Uzbek `ʻ` (U+02BB). A card with tofu boxes in Russian would be
+worse than the bare text card it replaces. Brand name and domain render
+identically in both locales. To add localised copy, bundle a font file with the
+right subsets and pass it in `fonts`.
+
+**Verified in build output:** `og:image`, `og:image:width` 1200,
+`og:image:height` 630, `og:image:alt` and `twitter:image` all present in
+`.next/server/app/uz.html`.
+
 
 **Where:** `generateMetadata` in `app/[lang]/page.tsx` (and the other public pages).
 
@@ -451,7 +490,16 @@ works; a purpose-built 1200×630 card is better. Add it for both locales.
 **Verify:** `curl -s https://www.replie.uz/uz | grep og:image` returns a tag, and the
 URL it points at returns 200.
 
-## Q3 (MED) — No `canonical`, no `hreflang`
+## Q3 (MED) — No `canonical`, no `hreflang` — ✅ FIXED 2026-08-03
+
+**Fixed** via `localeAlternates()` in `lib/site.ts`, applied to the landing,
+pricing, privacy, terms and data-deletion pages. The three legal pages were
+converted from a static `metadata` export to `generateMetadata` so they can read
+`lang`. The sitemap carries the same alternates as `xhtml:link` elements.
+
+**Verified in build output:** `uz.html` has `canonical → /uz` plus both
+hreflangs; `ru.html` has `canonical → /ru` plus both.
+
 
 **Where:** `generateMetadata` in the public pages.
 
@@ -538,7 +586,29 @@ not fail a 200-row import.
 
 Closed by the S3 fix if you apply the shared validator to both routes.
 
-## Q4 (LOW) — Sitemap host does not match the canonical host
+## Q4 (LOW) — Sitemap host does not match the canonical host — ⚠️ NEEDS AN OPERATOR ACTION
+
+**Code side done; the actual fix is not a code change.** `lib/site.ts` is now the
+single source for the host used by `metadataBase`, the sitemap and robots.txt, so
+they can no longer disagree with each other. But which host is *correct* depends
+on what the deployment serves, and that is a Vercel setting.
+
+**Two options, and a recommendation.** Currently `www.replie.uz` is the primary
+domain, so the apex 308s to it:
+
+- **Recommended — make the apex `replie.uz` primary in Vercel.** `APP_URL` is
+  already the apex, so nothing in the repo changes, and tracked links in DMs stop
+  paying a redirect hop. Shorter links in a DM is also just better.
+- Or set `APP_URL` to `https://www.replie.uz`. This changes newly generated
+  tracked links; existing ones keep working via the 308.
+
+Do **not** leave it as-is: every sitemap URL currently costs crawlers two hops
+(308 to www, then 307 to the locale prefix). The second hop is now gone — sitemap
+entries are locale-prefixed (Q5) — so fixing the host removes the last one.
+
+`APP_URL` also builds tracked links inside sent DMs (`lib/tracking/message.ts`),
+so this value is load-bearing in two places at once.
+
 
 **Where:** `app/sitemap.ts`, `app/robots.ts`.
 
@@ -553,14 +623,30 @@ files build from `APP_URL` (the apex) while the deployment canonicalises to `www
 links keep working via the 308, so this is safe, but know that you are touching two
 things at once.
 
-## Q5 (LOW) — Sitemap omits the Russian locale
+## Q5 (LOW) — Sitemap omits the Russian locale — ✅ FIXED 2026-08-03
+
+**Fixed.** 10 URLs now (5 public paths × 2 locales), each locale-prefixed so it
+resolves directly instead of through a redirect, each carrying hreflang
+alternates. Paths: `/`, `/pricing`, `/privacy`, `/terms`, `/data-deletion`.
+
 
 **Where:** `app/sitemap.ts` lists only `/` and `/pricing`.
 
 **Fix.** Emit `/uz`, `/ru`, `/uz/pricing`, `/ru/pricing`, and any other public page
 worth indexing (`privacy`, `terms`, `data-deletion`).
 
-## Q6 (LOW) — `robots.txt` `Disallow: /dashboard/` never fires
+## Q6 (LOW) — `robots.txt` `Disallow: /dashboard/` never fires — ✅ FIXED 2026-08-03
+
+**Fixed, and the duplication that caused it is gone.** Rather than hand-writing
+`/*/dashboard`, the protected-path list moved to `PROTECTED_PATHS` in
+`lib/site.ts` and is now shared by `proxy.ts` (which enforces the auth redirect)
+and `app/robots.ts` (which maps each entry to `/*<path>`). Adding a protected
+page can no longer leave it advertised to crawlers.
+
+All nine protected paths are covered, where before only `/dashboard/` was listed
+and it matched nothing. `/reports/` is added too — share links are handed to
+specific clients and the reports layout also sets `robots: { index: false }`.
+
 
 **Where:** `app/robots.ts`.
 
@@ -640,7 +726,7 @@ itself.
 5. **P1** — decided (admin endpoint, D2 in DECISIONS.md); build the granting logic as a
    reusable function so the payment webhook can call it later. ← **next**.
    The admin gate it needs already exists: `isCurrentUserPlatformAdmin()`, D3.
-6. **Q1–Q6** — SEO and accessibility, independent of everything else, safe to batch.
+6. ~~**Q1–Q6**~~ — done 2026-08-03, except Q4's operator action.
 7. **P3** — dashboard translation, incremental, one page per commit.
 8. **P2, P4** — after P1 lands.
 

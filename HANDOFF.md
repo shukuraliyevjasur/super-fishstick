@@ -464,8 +464,28 @@ what cannot take a locale prefix:
 
 ```
 app/api/       app/r/       app/reports/
-app/robots.ts  app/sitemap.ts  app/layout.tsx  app/globals.css
+app/robots.ts  app/sitemap.ts  app/fonts.ts  app/globals.css
 ```
+
+### There are two root layouts, and no `app/layout.tsx`
+
+Since 2026-08-03 the root layout — the one rendering `<html>` and `<body>` —
+lives at **`app/[lang]/layout.tsx`**, so it can set `<html lang={lang}>` from the
+route param. `app/reports/layout.tsx` is a second root layout for the share links
+that cannot carry a locale. Next supports this when there is no `app/layout.tsx`.
+
+The alternative was a shared root layout reading an `x-locale` header via
+`headers()` — which works, but is a request-time API and would have made every
+page dynamically rendered, landing page included, to add one attribute.
+
+Two consequences:
+
+- **A new top-level route outside `app/[lang]/` and `app/reports/` needs its own
+  root layout**, or the build fails. Route handlers (`api/`, `r/`) do not.
+- Navigating between the two trees is a full page load. They are different
+  audiences and nothing links across, so this costs nothing today.
+
+`app/fonts.ts` holds the font so the two layouts cannot drift apart.
 
 Until 2026-08-02 `app/` carried a full duplicate of nearly every page, and 15
 files under `app/[lang]/` were one-line shims re-exporting from it. That tree was
@@ -557,6 +577,10 @@ reaches `/uz` through the locale middleware. Key decisions:
 5. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
    Vercel instances still reach Supabase's 15-client cap. Move to the
    transaction-mode pooler (port 6543) before real traffic.
+6. **Pick a canonical host.** `replie.uz` currently 308s to `www.replie.uz`, so
+   every advertised URL and every tracked link in a DM pays a redirect hop.
+   Recommended: make the apex primary in Vercel, which needs no code change since
+   `APP_URL` is already the apex. See Q4 in [FIX_BRIEF.md](FIX_BRIEF.md).
 
 ~~Open redirect on `replie.uz/r/*`~~ — fixed 2026-08-03 (S3/S5): `lib/validation/url.ts`
 allowlists http(s) at every write path, and `/r/[slug]` re-checks the stored value
@@ -632,7 +656,10 @@ while verification is pending.
 | What | File |
 |------|------|
 | Design tokens + hero animations | `app/globals.css` |
-| Root layout / font | `app/layout.tsx` |
+| Root layout (sets `<html lang>`) | `app/[lang]/layout.tsx` |
+| Second root layout, share links | `app/reports/layout.tsx` |
+| Shared font config | `app/fonts.ts` |
+| Canonical host, locales, protected paths | `lib/site.ts` |
 | Landing page | `app/[lang]/page.tsx` |
 | Pricing page | `app/[lang]/pricing/page.tsx` |
 | Auth config (providers, JWT sessions) | `lib/auth.ts` |

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDictionary, hasLocale } from "@/lib/i18n";
+import { localeAlternates } from "@/lib/site";
 import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
@@ -13,6 +14,9 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: d.home.metaTitle,
     description: d.home.metaDesc,
+    // Q3: without these, /uz and /ru compete as duplicates instead of being
+    // understood as locale variants of one page.
+    alternates: localeAlternates("", lang),
     openGraph: {
       title: d.home.metaTitle,
       description: d.home.metaDesc,
@@ -21,6 +25,8 @@ export async function generateMetadata({ params }: Props) {
       locale: lang === "ru" ? "ru_RU" : "uz_UZ",
       type: "website",
     },
+    // The image comes from app/[lang]/opengraph-image.tsx (Q2). Before it
+    // existed this card promised a large image and shipped none.
     twitter: {
       card: "summary_large_image",
       title: d.home.metaTitle,

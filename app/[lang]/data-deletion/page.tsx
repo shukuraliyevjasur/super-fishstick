@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
 import LegalShell from "@/components/legal-shell";
+import { localeAlternates } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Ma'lumotlarni o'chirish / Data Deletion — replie",
-  description:
-    "How to disconnect Instagram and request deletion of your replie account and campaign data.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  return {
+    title: "Ma'lumotlarni o'chirish / Data Deletion — replie",
+    description:
+      "How to disconnect Instagram and request deletion of your replie account and campaign data.",
+    alternates: localeAlternates("/data-deletion", lang),
+  };
+}
 
 export default function DataDeletionPage() {
   return (

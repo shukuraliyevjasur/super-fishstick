@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDictionary, hasLocale } from "@/lib/i18n";
+import { localeAlternates } from "@/lib/site";
 import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
@@ -9,7 +10,24 @@ export async function generateMetadata({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) return {};
   const d = await getDictionary(lang);
-  return { title: d.pricing.metaTitle, description: d.pricing.metaDesc };
+  return {
+    title: d.pricing.metaTitle,
+    description: d.pricing.metaDesc,
+    alternates: localeAlternates("/pricing", lang),
+    openGraph: {
+      title: d.pricing.metaTitle,
+      description: d.pricing.metaDesc,
+      url: `/${lang}/pricing`,
+      siteName: "replie",
+      locale: lang === "ru" ? "ru_RU" : "uz_UZ",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: d.pricing.metaTitle,
+      description: d.pricing.metaDesc,
+    },
+  };
 }
 
 function CheckIcon({ className }: { className: string }) {

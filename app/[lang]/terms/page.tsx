@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
 import LegalShell from "@/components/legal-shell";
+import { localeAlternates } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Foydalanish shartlari / Terms of Service — replie",
-  description:
-    "Terms for using replie's Instagram comment-to-DM automation service.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  return {
+    title: "Foydalanish shartlari / Terms of Service — replie",
+    description:
+      "Terms for using replie's Instagram comment-to-DM automation service.",
+    alternates: localeAlternates("/terms", lang),
+  };
+}
 
 export default function TermsPage() {
   return (
