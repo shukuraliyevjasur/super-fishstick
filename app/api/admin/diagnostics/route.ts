@@ -24,7 +24,7 @@ export async function GET() {
     tokenRefreshFailures,
     operationalEvents,
   ] = await Promise.all([
-    getDMQueue().getJobCounts("waiting", "active", "delayed", "failed"),
+    getDMQueue().getJobCounts("waiting", "active", "delayed", "failed").catch(() => ({ waiting: -1, active: -1, delayed: -1, failed: -1 })),
     getWorkerHealth(),
     getWorkerAlerts(10),
     prisma.webhookEvent.findMany({

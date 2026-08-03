@@ -10,6 +10,9 @@ import Redis from "ioredis";
 let connection: Redis | null = null;
 
 export function getRedisConnection(opts: { persistent?: boolean } = {}): Redis {
+  if (connection?.status === "end" || connection?.status === "close") {
+    connection = null;
+  }
   if (!connection) {
     const persistent = opts.persistent ?? false;
     connection = new Redis(process.env.REDIS_URL!, {
