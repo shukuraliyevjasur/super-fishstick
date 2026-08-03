@@ -11,6 +11,7 @@ import {
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
 import { canUseFeature, getPlanLimits } from "@/lib/billing/plan";
+import { httpUrlOrEmptySchema, httpUrlSchema } from "@/lib/validation/url";
 
 // This list is read-your-writes (created/imported campaigns must show up
 // immediately), so never cache it at the route or CDN layer.
@@ -22,7 +23,7 @@ const createAutomationSchema = z
     goal: z.string().min(1).max(120).optional().nullable(),
     instagramAccountId: z.string().min(1).optional().nullable(),
     postId: z.string().min(1).optional().nullable(),
-    postUrl: z.string().url().optional().nullable(),
+    postUrl: httpUrlSchema.optional().nullable(),
     pendingNextReel: z.boolean().optional().default(false),
     matchAnyPost: z.boolean().optional().default(false),
     keywords: z.array(z.string().min(1).max(50)).max(10).optional().default([]),
@@ -43,15 +44,9 @@ const createAutomationSchema = z
       .optional()
       .default([]),
     // Empty string means "no tracked link"; a URL sets one.
-    trackedDestinationUrl: z
-      .union([z.string().url(), z.literal("")])
-      .optional()
-      .nullable(),
+    trackedDestinationUrl: httpUrlOrEmptySchema.optional().nullable(),
     // Optional second tracked link, rendered as a second DM button.
-    secondaryDestinationUrl: z
-      .union([z.string().url(), z.literal("")])
-      .optional()
-      .nullable(),
+    secondaryDestinationUrl: httpUrlOrEmptySchema.optional().nullable(),
     secondaryButtonLabel: z.string().max(20).optional().nullable(),
     isActive: z.boolean().optional().default(true),
     wholeWordMatch: z.boolean().optional().default(true),
@@ -79,7 +74,7 @@ const updateAutomationSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   goal: z.string().min(1).max(120).optional().nullable(),
   postId: z.string().min(1).optional().nullable(),
-  postUrl: z.string().url().optional().nullable(),
+  postUrl: httpUrlSchema.optional().nullable(),
   pendingNextReel: z.boolean().optional(),
   matchAnyPost: z.boolean().optional(),
   keywords: z.array(z.string().min(1).max(50)).max(10).optional(),
@@ -100,15 +95,9 @@ const updateAutomationSchema = z.object({
   reportShareEnabled: z.boolean().optional(),
   // Empty string clears the tracked link; a URL updates/creates it; undefined
   // leaves it unchanged.
-  trackedDestinationUrl: z
-    .union([z.string().url(), z.literal("")])
-    .optional()
-    .nullable(),
+  trackedDestinationUrl: httpUrlOrEmptySchema.optional().nullable(),
   // Same semantics for the optional second tracked link / DM button.
-  secondaryDestinationUrl: z
-    .union([z.string().url(), z.literal("")])
-    .optional()
-    .nullable(),
+  secondaryDestinationUrl: httpUrlOrEmptySchema.optional().nullable(),
   secondaryButtonLabel: z.string().max(20).optional().nullable(),
 });
 

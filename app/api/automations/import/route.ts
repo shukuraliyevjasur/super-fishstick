@@ -9,16 +9,21 @@ import {
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
 import { canUseFeature } from "@/lib/billing/plan";
+import { httpUrlOrEmptySchema, isHttpUrl } from "@/lib/validation/url";
 
 const campaignSchema = z.object({
   postId: z.string().min(1),
-  postUrl: z.string().optional().nullable(),
+  // S5: was `z.string()`, so a CSV could set any scheme here while the JSON
+  // route required a URL. Both paths now use the same validator. Empty string
+  // is accepted and normalised to null below — blank cells are normal in a CSV
+  // and must not fail the whole import.
+  postUrl: httpUrlOrEmptySchema.optional().nullable(),
   keywords: z.array(z.string().min(1).max(50)).min(1).max(10),
   dmMessage: z.string().min(1).max(1000),
   name: z.string().max(100).optional().nullable(),
   goal: z.string().max(120).optional().nullable(),
   publicReplyMessage: z.string().max(1000).optional().nullable(),
-  trackedUrl: z.string().optional().nullable(),
+  trackedUrl: httpUrlOrEmptySchema.optional().nullable(),
   wholeWordMatch: z.boolean().optional().default(true),
   isActive: z.boolean().optional().default(true),
 });
@@ -92,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     const validTrackedUrl =
-      campaign.trackedUrl && /^https?:\/\//i.test(campaign.trackedUrl)
+      campaign.trackedUrl && isHttpUrl(campaign.trackedUrl)
         ? campaign.trackedUrl
         : null;
     const name =
@@ -105,7 +110,8 @@ export async function POST(request: NextRequest) {
         name,
         goal: (campaign.goal ?? "").trim().slice(0, 120) || null,
         postId: campaign.postId,
-        postUrl: campaign.postUrl ?? null,
+        // `|| null`, not `?? null`: a blank CSV cell arrives as "".
+        postUrl: campaign.postUrl || null,
         keywords: campaign.keywords,
         dmMessage: campaign.dmMessage.slice(0, 1000),
         publicReplyEnabled: Boolean(publicReply),

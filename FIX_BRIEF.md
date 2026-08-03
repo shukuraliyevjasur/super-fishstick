@@ -5,8 +5,8 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 
 19 findings, 4 HIGH.
 
-**Status.** Fixed so far: **S1**, **S4**, **C1**, **C3** (2026-08-03). Each
-finding below carries its own status line. 15 open.
+**Status.** Fixed so far: **S1**, **S4**, **C1**, **C3**, **S3**, **S5**
+(2026-08-03). Each finding below carries its own status line. 13 open.
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -272,7 +272,33 @@ refunds.
 
 # TIER 2 — before real users
 
-## S3 (MED) — Open redirect on `replie.uz/r/*`
+## S3 (MED) — Open redirect on `replie.uz/r/*` — ✅ FIXED 2026-08-03
+
+**Fixed.** `lib/validation/url.ts` holds `isHttpUrl` / `httpUrlSchema` /
+`httpUrlOrEmptySchema`, applied to `postUrl`, `trackedDestinationUrl` and
+`secondaryDestinationUrl` across the create schema, the update schema, and the
+CSV import route.
+
+**Also guarded at the redirect**, which the brief did not ask for and which
+matters: schema validation only protects *new* writes. Rows stored while
+`z.string().url()` accepted any scheme are still in the production database, and
+their `/r/<slug>` links are already in recipients' inboxes and cannot be
+recalled. `app/r/[slug]/route.ts` now re-checks the stored value and sends the
+visitor to the homepage instead. The click is still recorded — it is the
+customer's data and the visitor really did click.
+
+**Private / link-local hosts are deliberately not blocked.** The brief listed it
+as optional; it is declined because nothing server-side fetches these values —
+they go to the visitor's browser — so there is no SSRF to prevent. Reasoning is
+recorded in `lib/validation/url.ts`; revisit if any of these URLs ever becomes
+something the server fetches.
+
+Note that scheme validation does **not** stop the actual attack in the finding,
+and must not be mistaken for a fix that does: `https://evil.example/phish` is a
+valid http URL and is still accepted. What closes the phishing-laundering risk is
+host-level policy or abuse response, not this. This fix removes the non-http
+classes and makes the value type-safe at every entry point.
+
 
 **Where:** `app/api/automations/route.ts:46` and `:103` (create and update schemas),
 `app/api/automations/import/route.ts`, consumed at `app/r/[slug]/route.ts:42`.
@@ -466,7 +492,22 @@ goes missing the endpoint becomes public and returns raw DB/Redis error strings 
 **Fix.** Require the secret unconditionally; fail closed. Same shape as S1, and the
 shared `requireCronAuth` helper covers both.
 
-## S5 (LOW) — `postUrl` unvalidated on the CSV import path
+## S5 (LOW) — `postUrl` unvalidated on the CSV import path — ✅ FIXED 2026-08-03
+
+**Fixed** by the S3 validator, as predicted. Two things found while doing it:
+
+- `trackedUrl` on that route was **already** scheme-checked by a
+  `/^https?:\/\//i` regex, so the import path was never an open-redirect vector.
+  Only `postUrl` was unguarded. The regex is now the shared `isHttpUrl` instead.
+- **The bulk import endpoint has no caller in the app.** The CSV page stages rows
+  in `localStorage` and the campaign builder creates them one at a time through
+  `POST /api/automations`. The endpoint is still reachable directly by any Pro
+  user, so it still needed the fix — but nothing in the UI exercises it, which is
+  worth knowing before anyone tries to test this through the interface.
+
+Both URL fields there accept `""` and normalise to null, so a blank CSV cell does
+not fail a 200-row import.
+
 
 **Where:** `app/api/automations/import/route.ts:15` uses `z.string()`, while
 `app/api/automations/route.ts:25` uses `z.string().url()`.
@@ -570,8 +611,8 @@ itself.
 1. ~~**S1**~~ — done 2026-08-03.
 2. ~~**C1 + C3 + S4**~~ — done 2026-08-03. Landed as three commits, not one: the
    auth helper and the alerting cron are independently revertable.
-3. **S3 + S5** — one shared URL validator across both routes. ← **next**
-4. **S2** — role check.
+3. ~~**S3 + S5**~~ — done 2026-08-03.
+4. **S2** — role check. ← **next**
 5. **P1** — decided (admin endpoint, D2 in DECISIONS.md); build the granting logic as a
    reusable function so the payment webhook can call it later.
 6. **Q1–Q6** — SEO and accessibility, independent of everything else, safe to batch.

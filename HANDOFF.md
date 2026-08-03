@@ -545,15 +545,16 @@ reaches `/uz` through the locale middleware. Key decisions:
 3. **Set `ALERT_EMAIL` on Vercel**, and add an external uptime monitor — the
    health cron is built, but on Vercel's free tier it only fires daily and it
    sends nothing without that env var. See [Health alerting](#health-alerting).
-4. **Open redirect on `replie.uz/r/*`** — `z.string().url()` allowlists no scheme
-   or host, so a paying user can point a tracked link anywhere and have it DM'd
-   from your domain. Finding 3 in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
-5. **Session revocation** — sessions are JWT-backed and cannot be revoked
+4. **Session revocation** — sessions are JWT-backed and cannot be revoked
    server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
-6. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
+5. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
    Vercel instances still reach Supabase's 15-client cap. Move to the
    transaction-mode pooler (port 6543) before real traffic.
 
+~~Open redirect on `replie.uz/r/*`~~ — fixed 2026-08-03 (S3/S5): `lib/validation/url.ts`
+allowlists http(s) at every write path, and `/r/[slug]` re-checks the stored value
+before redirecting, since rows written while the hole was open are still in the
+database.
 ~~Cron auth falls back to `NEXTAUTH_SECRET`~~ — fixed 2026-08-03 (S1/S4):
 `requireCronAuth` requires `CRON_SECRET` and fails closed on all three
 operational endpoints.
