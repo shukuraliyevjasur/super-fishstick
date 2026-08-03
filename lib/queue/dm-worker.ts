@@ -563,9 +563,20 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
     return;
   }
 
-  // Duplicate sends are enabled: every button tap re-sends the reveal
-  // instead of only firing once per person.
   const dedupeId = `reveal:${userId}`;
+
+  // Suppress Meta webhook retries: if a reveal was already sent to this user
+  // in the last 30 minutes, skip. Real re-taps after the cooldown still work.
+  const recentReveal = await prisma.dmLog.findFirst({
+    where: {
+      automationId: automation.id,
+      commentId: dedupeId,
+      status: "SENT",
+      dmSentAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
+    },
+    select: { id: true },
+  });
+  if (recentReveal && !fallback) return;
 
   if (fallback) {
     const existingReveal = await prisma.dmLog.findUnique({
