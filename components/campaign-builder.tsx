@@ -380,8 +380,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     if (triggerScope === "specific" && !postId) return setError(t.errNoPost);
     if (matchMode === "specific" && keywords.length === 0) return setError(t.errNoKeyword);
     if (!dmMessage.trim()) return setError(t.errNoDm);
-    if (openingDmEnabled && (!openingDmMessage.trim() || !openingDmButtonLabel.trim()))
-      return setError(t.errNoOpeningDm);
 
     setSaving(true);
 
@@ -396,9 +394,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       matchAnyWord: matchMode === "any",
       keywords: matchMode === "any" ? [] : keywords,
       dmMessage,
-      openingDmEnabled,
-      openingDmMessage: openingDmEnabled ? openingDmMessage : null,
-      openingDmButtonLabel: openingDmEnabled ? openingDmButtonLabel : null,
+      openingDmEnabled: false,
+      openingDmMessage: null,
+      openingDmButtonLabel: null,
       publicReplyEnabled,
       publicReplyMessages: publicReplyEnabled
         ? publicReplyMessages.map((m) => m.trim()).filter(Boolean)
@@ -407,11 +405,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       linkButtonLabel: linkButtonLabel.trim() || t.defaultLinkBtn,
       secondaryDestinationUrl: secondaryDestinationUrl.trim() || "",
       secondaryButtonLabel: secondaryButtonLabel.trim() || t.defaultLinkBtn,
-      requireFollow,
-      followPromptMessage: requireFollow ? followPromptMessage.trim() : "",
-      followPromptButtonLabel: requireFollow
-        ? followPromptButtonLabel.trim() || t.defaultFollowBtn
-        : "",
+      requireFollow: false,
+      followPromptMessage: "",
+      followPromptButtonLabel: "",
       isActive: activeValue,
     };
 
@@ -761,62 +757,23 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         </Section>
 
         <Section title={t.sectionTheyReceive}>
-          <div className="rounded-lg border border-border p-3">
+          <div className="rounded-lg border border-border p-3 opacity-60">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">{t.openingDmLabel}</span>
-              <Toggle
-                on={openingDmEnabled}
-                onToggle={() => setOpeningDmEnabled(!openingDmEnabled)}
-              />
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {t.comingSoon}
+              </span>
             </div>
-            {openingDmEnabled && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={openingDmMessage}
-                  onChange={(e) => setOpeningDmMessage(e.target.value)}
-                  placeholder={t.openingDmPlaceholder}
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <input
-                  value={openingDmButtonLabel}
-                  onChange={(e) => setOpeningDmButtonLabel(e.target.value)}
-                  placeholder={t.openingDmButtonPlaceholder}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                  maxLength={64}
-                />
-              </div>
-            )}
+            <p className="mt-1.5 text-xs text-muted">{t.requiresAppReview}</p>
           </div>
-          <div className="mt-3 rounded-lg border border-border p-3">
+          <div className="mt-3 rounded-lg border border-border p-3 opacity-60">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">{t.followGateLabel}</span>
-              <Toggle
-                on={requireFollow}
-                onToggle={() => setRequireFollow(!requireFollow)}
-              />
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {t.comingSoon}
+              </span>
             </div>
-            {requireFollow && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={followPromptMessage}
-                  onChange={(e) => setFollowPromptMessage(e.target.value)}
-                  placeholder={t.followPromptPlaceholder}
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <input
-                  value={followPromptButtonLabel}
-                  onChange={(e) => setFollowPromptButtonLabel(e.target.value)}
-                  placeholder={t.followButtonPlaceholder}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                  maxLength={20}
-                />
-                <p className="text-xs text-muted">{t.followHint}</p>
-              </div>
-            )}
+            <p className="mt-1.5 text-xs text-muted">{t.requiresAppReview}</p>
           </div>
         </Section>
 

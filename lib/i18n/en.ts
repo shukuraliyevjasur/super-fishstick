@@ -344,6 +344,8 @@ export const en: Dict = {
     errNoKeyword: "Enter at least one keyword or select 'any word' mode.",
     errNoDm: "Enter the DM message.",
     errNoOpeningDm: "Enter the opening DM message and button label.",
+    comingSoon: "Soon",
+    requiresAppReview: "Requires Meta App Review — coming soon.",
     errSaveFailed: "Failed to save campaign.",
     notFound: "Campaign not found.",
     backToCampaigns: "Back to campaigns",

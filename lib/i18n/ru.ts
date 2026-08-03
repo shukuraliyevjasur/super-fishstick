@@ -345,6 +345,8 @@ export const ru: Dict = {
     errNoKeyword: "Введите хотя бы одно ключевое слово или выберите режим «любое слово».",
     errNoDm: "Введите текст DM-сообщения.",
     errNoOpeningDm: "Введите вводное DM-сообщение и название кнопки.",
+    comingSoon: "Скоро",
+    requiresAppReview: "Требуется Meta App Review — скоро будет.",
     errSaveFailed: "Не удалось сохранить кампанию.",
     notFound: "Кампания не найдена.",
     backToCampaigns: "Назад к кампаниям",

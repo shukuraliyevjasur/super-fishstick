@@ -346,6 +346,8 @@ export const uz: Dict = {
     errNoKeyword: "Kamida bitta kalit so'z kiriting yoki 'har qanday so'z' rejimini tanlang.",
     errNoDm: "DM xabarini kiriting.",
     errNoOpeningDm: "Kirish DM uchun xabar va tugma nomini kiriting.",
+    comingSoon: "Tez kunda",
+    requiresAppReview: "Meta App Review talab etiladi — tez kunda.",
     errSaveFailed: "Kampaniyani saqlash muvaffaqiyatsiz.",
     notFound: "Kampaniya topilmadi.",
     backToCampaigns: "Kampaniyalarga qaytish",

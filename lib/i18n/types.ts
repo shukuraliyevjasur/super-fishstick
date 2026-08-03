@@ -312,6 +312,8 @@ export interface Dict {
     errNoKeyword: string
     errNoDm: string
     errNoOpeningDm: string
+    comingSoon: string
+    requiresAppReview: string
     errSaveFailed: string
     notFound: string
     backToCampaigns: string
