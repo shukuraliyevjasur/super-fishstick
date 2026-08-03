@@ -493,9 +493,15 @@ reaches `/uz` through the locale middleware. Key decisions:
    it in the Redis Cloud console if the free tier allows.
 2. **Meta App Review** — needed only to let people outside your test users
    connect their own accounts. See [META_APP_REVIEW.md](META_APP_REVIEW.md).
-3. **Session revocation** — sessions are JWT-backed and cannot be revoked
+3. **Cron auth falls back to `NEXTAUTH_SECRET`** — which now signs every session
+   JWT, so leaking it means forging any user's session. One line to delete; see
+   finding 1 in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
+4. **Open redirect on `replie.uz/r/*`** — `z.string().url()` allowlists no scheme
+   or host, so a paying user can point a tracked link anywhere and have it DM'd
+   from your domain. Finding 3 in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
+5. **Session revocation** — sessions are JWT-backed and cannot be revoked
    server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
-4. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
+6. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
    Vercel instances still reach Supabase's 15-client cap. Move to the
    transaction-mode pooler (port 6543) before real traffic.
 
