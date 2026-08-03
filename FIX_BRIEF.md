@@ -1,0 +1,527 @@
+# Fix brief — replie pre-launch review
+
+**Generated 2026-08-02.** Every finding from a four-phase review (security, live QA,
+code gaps, product gaps). Written to be executed by someone with no prior context.
+
+19 findings, 4 HIGH. Nothing here has been fixed.
+
+Source documents, if you want the reasoning behind a finding:
+[SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
+Project background: [HANDOFF.md](HANDOFF.md).
+
+---
+
+## What this project is
+
+replie is a paid SaaS for the Uzbek market. It automates Instagram comment-to-DM:
+a follower comments a keyword on a connected professional account's post, and replie
+sends them a private reply. Next.js 16 + Prisma 7 + Postgres (Supabase) + BullMQ/Redis,
+with a long-running worker on a GCP VM. Deployed and live at `replie.uz`, not yet open
+to real users.
+
+---
+
+## Read this before touching anything
+
+These will cost you hours if you find them the hard way. All are documented in
+HANDOFF.md; repeated here because they are easy to trip over.
+
+### Never run `npm install` on Windows
+
+It silently breaks CI. It floats hoisted `@emnapi/core` / `@emnapi/runtime` off
+1.10.0, which `@rolldown/binding-wasm32-wasi` pins exactly. The result installs fine
+locally and fails `npm ci` on Linux.
+
+**Before committing, always run `git diff package-lock.json`.** If you did not
+intend a dependency change, discard it with `git checkout HEAD -- package-lock.json`.
+If the lockfile genuinely must change, generate it on Linux (WSL, the GCP VM, or CI).
+
+**Several fixes below are deliberately written to add zero dependencies for this reason.**
+
+### Prisma 7 keeps the datasource URL in `prisma.config.ts`, not `schema.prisma`
+
+Adding `url = env("DATABASE_URL")` to the schema's datasource block breaks the build
+with P1012.
+
+Local commands need a dummy URL, e.g.
+`DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:generate`.
+
+Never apply a migration by hand in the Supabase SQL editor without also inserting its
+row into `_prisma_migrations` — otherwise the next deploy re-applies it, fails,
+records a *failed* migration, and blocks every later deploy with P3009.
+
+### `t()` must be imported from `lib/i18n/t.ts` in server components
+
+`components/dictionary-provider.tsx` is a `"use client"` module. Anything exported
+from it — including a pure helper — becomes a client reference, and calling it from a
+server component throws at render time. This already shipped once and 500'd
+`/[lang]/login?template=<slug>`.
+
+- Server component: `import { t } from "@/lib/i18n/t"`
+- Client component: either import works
+
+### The middleware matcher is load-bearing
+
+`proxy.ts` prefixes every unprefixed path with a locale. Anything with no page under
+`app/[lang]/` **must** stay excluded from `config.matcher` or it redirects into a 404.
+Currently excluded: `/api/*`, `/r/*`, `/reports/*`, `robots.txt`, `sitemap.xml`.
+
+`/r/*` matters most — `lib/tracking/message.ts` bakes `${APP_URL}/r/<slug>` into every
+DM already sent, so those URLs cannot change retroactively. This regressed once and
+every tracked-link click 404'd with no clicks recorded.
+`__tests__/proxy-matcher.test.ts` guards it. Do not weaken that test.
+
+### Instagram code 100 means the account is not linked to the app
+
+If any `graph.instagram.com` call returns
+`code 100 — Unsupported request - method type: get`, the request is almost certainly
+fine and the **Instagram account is not attached to the Meta app**. Add it under
+Meta dashboard → Use cases → Instagram API setup → Generate access tokens → Add account.
+
+A *fake* token returns 190 instead, so curl probes report the endpoint as healthy and
+cannot reproduce it. This cost six deploys and two wrong fixes. Do not start
+permuting URLs or HTTP methods.
+
+### Sessions are JWT, and that is forced
+
+`@auth/core`'s credentials branch always encodes a JWT cookie and never writes a
+`Session` row, ignoring the configured strategy. Under `strategy: "database"` a
+password sign-in mints a cookie the session lookup cannot resolve. So `lib/auth.ts`
+uses `strategy: "jwt"`, the session callback reads `token.sub` (not `user.id`), and
+the `Session` table is vestigial. **Do not switch the strategy back** without also
+removing the Credentials provider.
+
+---
+
+## Verification protocol
+
+Run **before** you start (to confirm a clean baseline) and **after every finding**:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:generate
+npm run typecheck
+npm run lint
+npm test
+```
+
+Expected clean baseline as of 2026-08-02: typecheck silent, lint **0 errors**
+(304 warnings are pre-existing and fine), **125 tests passing across 16 files**.
+
+Before committing:
+
+```bash
+git diff package-lock.json   # must be empty unless you intended a dependency change
+```
+
+CI runs typecheck → lint → test → build, and fails fast, so a typecheck error hides
+every lint and test result behind it.
+
+---
+
+## Findings
+
+Ordered by what would hurt most. Tier 1 blocks launch; Tier 2 should land before real
+users; Tier 3 is cleanup.
+
+---
+
+# TIER 1 — blocks launch
+
+## P1 (HIGH) — A paid plan cannot be granted through the product
+
+**Where:** `prisma/schema.prisma:79` (`plan WorkspacePlan @default(FREE)`), and the
+absence of any writer.
+
+**Problem.** No route, job, or admin screen ever writes `workspace.plan`. Verified by
+searching every write to that field across `app/`, `lib/` and `worker/`: there are
+none. Every workspace is created `FREE` and can only be upgraded by hand-editing the
+database.
+
+The gates themselves work — `canUseFeature` in `lib/billing/plan.ts` correctly blocks
+tracked links, opening DMs, and CSV import by plan. So the *enforcement* half of
+billing is built and the *granting* half does not exist. This is the one thing between
+the pricing page and charging anyone.
+
+**Consequence.** Upgrading a customer means opening Supabase and running an `UPDATE`.
+No audit trail of who upgraded whom, no downgrade on non-payment, no expiry.
+
+**This needs a product decision before code.** Ask the owner which they want:
+
+- **(a) Admin-only endpoint** — a protected route that sets `workspace.plan`, plus a
+  minimal internal screen. Fastest path to being able to charge. Manual payment stays
+  manual (Telegram → you confirm → you click).
+- **(b) Payment rails first** — integrate Payme / Click / Uzum, and let the webhook set
+  the plan. Correct end state, much larger scope. See P2.
+
+If (a): add `plan`, `planGrantedAt`, `planGrantedBy`, and `planExpiresAt` to
+`Workspace`, write an admin-gated route, and log every change to `OperationalEvent`
+so there is a trail. Do **not** reuse the existing `canManageWorkspace` check — that
+is workspace-scoped and a workspace owner must not be able to grant themselves Pro.
+
+**Verify:** a non-admin cannot call the endpoint; a plan change appears in
+`OperationalEvent`; `canUseFeature` immediately reflects the new plan.
+
+## C1 (HIGH) — Worker death is silent, and DMs stop for everyone
+
+**Where:** `app/api/health/route.ts`, `lib/ops/worker-health.ts`, `vercel.json`.
+
+**Problem.** `/api/health` already checks database, Redis, queue depth and worker
+heartbeat, and returns **503** when degraded. **Nothing calls it.** `vercel.json`
+defines only two crons (`refresh-tokens`, `attach-next-reel`). `recordWorkerAlert()`
+writes to Redis and the only consumer is `/api/admin/diagnostics`, a page a human has
+to open.
+
+**Consequence.** The worker stops (VM reboot without Docker restart, OOM, crash loop).
+Jobs pile up in Redis. Every customer's comment-to-DM silently stops. The first signal
+is a complaint, and by then it is churn.
+
+**Fix.** The plumbing exists; it needs a consumer.
+
+1. Add a Vercel cron hitting a new `/api/cron/health-check` (Vercel free tier fires
+   crons **once per day** — accept that, or use an external uptime monitor for
+   minute-level granularity; say so rather than pretending daily is enough).
+2. That route calls the same checks and, when degraded, sends an email via Resend
+   (already a dependency — `RESEND_API_KEY`, `EMAIL_FROM` are configured).
+3. Gate it on `CRON_SECRET` the same way the other crons are, but **read S1 first** —
+   do not copy the existing fallback pattern.
+
+**Verify:** stop the worker container, wait for the cron (or invoke the route with the
+bearer token), confirm an email arrives and the response is 503.
+
+## S1 (HIGH) — Cron auth falls back to the JWT signing key
+
+**Where:** `app/api/cron/refresh-tokens/route.ts:10`,
+`app/api/cron/attach-next-reel/route.ts:22`.
+
+```ts
+const cronSecret = process.env.CRON_SECRET || process.env.NEXTAUTH_SECRET;
+```
+
+**Problem.** `NEXTAUTH_SECRET` signs every session JWT. Anyone holding it can forge a
+session for any user, without a password. This fallback puts it in an
+`Authorization: Bearer` header on every cron invocation — into Vercel's cron config,
+request logs, and any proxy in between.
+
+Latent today because `CRON_SECRET` is set. It activates silently the moment that env
+var is removed, renamed, or lost in a project migration.
+
+**Fix.** Delete the fallback in both files. Require `CRON_SECRET` and let the route
+401 without it. A failing cron is an alert; a cron quietly authenticating with the
+signing key is not.
+
+Consider extracting a shared `requireCronAuth(request)` helper so the next cron route
+cannot reintroduce the pattern — C1 adds one.
+
+**Verify:** with `CRON_SECRET` unset the route returns 401 rather than accepting
+`NEXTAUTH_SECRET`.
+
+## P2 (HIGH) — No payment integration
+
+**Where:** `app/[lang]/pricing/page.tsx` — every paid CTA is
+`https://t.me/ceo_syr?text=...`.
+
+**Problem.** No payment rails. For the Uzbek market the expected options are **Payme**,
+**Click**, or **Uzum**. Manual invoicing over Telegram is a legitimate way to start,
+but it is only operable once P1 exists.
+
+**Depends on P1.** Do not start here. Sequence: P1(a) to unblock charging manually,
+then rails, then move plan-granting to the payment webhook.
+
+---
+
+# TIER 2 — before real users
+
+## S3 (MED) — Open redirect on `replie.uz/r/*`
+
+**Where:** `app/api/automations/route.ts:46` and `:103` (create and update schemas),
+`app/api/automations/import/route.ts`, consumed at `app/r/[slug]/route.ts:42`.
+
+**Problem.** `z.string().url()` has no scheme or host allowlist. Verified acceptance:
+
+```
+true   https://evil.example/phish
+true   javascript:alert(1)
+true   data:text/html,<h1>x
+true   file:///etc/passwd
+true   http://169.254.169.254/latest/meta-data/
+```
+
+`app/r/[slug]/route.ts:42` passes the stored value straight into
+`NextResponse.redirect()`.
+
+**Consequence.** An attacker signs up, pays for Standard (~47k UZS), creates a campaign
+whose `destinationUrl` is a phishing page, and gets `https://replie.uz/r/<slug>`
+pointing anywhere — DM'd to third parties from your own domain. Risk is phishing
+laundering under your brand and `replie.uz` getting flagged by Safe Browsing or Meta,
+which breaks every legitimate customer's links at once.
+
+`javascript:` is **not** the risk (browsers do not execute it from a `Location`
+header). An ordinary `https://` attacker host is.
+
+**Fix.** Add a shared URL validator that requires `http:` or `https:`, and apply it to
+`trackedDestinationUrl`, `secondaryDestinationUrl`, and `postUrl` in **both** the JSON
+route and the CSV import route. Zod supports a refinement:
+
+```ts
+const httpUrl = z.string().url().refine(
+  (v) => { try { const u = new URL(v); return u.protocol === "http:" || u.protocol === "https:"; } catch { return false; } },
+  { message: "Only http(s) links are allowed" }
+);
+```
+
+Optionally also reject `169.254.169.254` and other link-local / private hosts.
+
+**Verify:** add a test asserting `javascript:`, `data:`, and `file:` are rejected and
+`https://` is accepted. This closes S5 at the same time.
+
+## S2 (MED) — `/api/admin/diagnostics` is not admin-only
+
+**Where:** `app/api/admin/diagnostics/route.ts:10`.
+
+**Problem.** The route is named `admin` but the only check is `getCurrentWorkspaceId()`,
+which any signed-up user passes. Most queries are workspace-scoped; three are not:
+`getDMQueue().getJobCounts()`, `getWorkerHealth()` / `getWorkerAlerts(10)`, and the
+`operationalEvents` query, which explicitly includes `{ workspaceId: null }` —
+system-wide events belonging to no tenant.
+
+Webhook body previews do **not** leak: `payload` is not selected on that global query.
+Do not widen the select while fixing this.
+
+**Fix.** Either gate the whole route on an admin role, or scope the three global
+queries to the caller's workspace. If the diagnostics page needs global data for the
+operator, that is an argument for a separate admin surface (see P1, which needs one
+anyway).
+
+**Verify:** a fresh non-admin account gets 403.
+
+## C2 (MED) — No error tracking
+
+**Where:** `package.json` — the only observability dependency is `@vercel/analytics`
+(page views).
+
+**Problem.** A production exception is only visible by grepping Vercel logs. Concrete
+cost: diagnosing the Instagram linking failure on 2026-08-02 took six deploys, much of
+it reading log lines by hand and adding temporary instrumentation to capture request
+detail a tracker would have caught on the first occurrence.
+
+**Fix.** Add Sentry (or equivalent). **This adds a dependency — read the Windows
+lockfile warning above and generate the lockfile on Linux.** Wire it into the API
+routes, the worker, and the Next.js error boundaries.
+
+## C3 (MED) — Token-refresh failures are recorded but never surfaced
+
+**Where:** `app/api/cron/refresh-tokens/route.ts`.
+
+**Problem.** On failure the cron writes an `OperationalEvent` with
+`source: TOKEN_REFRESH, level: ERROR`, readable only through the diagnostics page.
+Combined with C1, nobody is notified.
+
+Not hypothetical: `refreshLongLivedToken` was calling a versioned URL Meta rejects
+(fixed 2026-08-02), so the cron was failing silently. The first visible symptom would
+have been every connected account dropping at the 60-day mark, months later, with no
+obvious cause.
+
+**Fix.** Falls out of C1 — have the health/alert path also report recent
+`TOKEN_REFRESH` errors, or email on any refresh failure.
+
+## Q1 (MED) — `<html>` has no `lang` attribute
+
+**Where:** `app/layout.tsx:22`.
+
+**Problem.** `<html className={...}>` with no `lang`. Confirmed live:
+`document.documentElement.lang` is `""`. WCAG 3.1.1 (Level A) failure on a product
+whose premise is being bilingual, plus a lost SEO signal.
+
+**Fix is not obvious.** The root layout cannot read `[lang]` params from a child
+segment. Standard pattern: have `proxy.ts` set an `x-locale` request header, then read
+it with `headers()` in the root layout and set `<html lang={locale}>`.
+
+**Verify:** `document.documentElement.lang` is `uz` on `/uz` and `ru` on `/ru`.
+
+## Q2 (MED) — No `og:image` while `twitter:card` promises one
+
+**Where:** `generateMetadata` in `app/[lang]/page.tsx` (and the other public pages).
+
+**Problem.** The page declares `twitter:card = summary_large_image` and ships no image,
+so every share on Telegram, WhatsApp, or an Instagram bio link renders as a bare text
+card. For a product whose growth motion *is* Instagram and Telegram, that is a
+conversion cost on every link anyone posts.
+
+**Fix.** Add an `openGraph.images` entry. `public/replie-icon-512.png` exists and
+works; a purpose-built 1200×630 card is better. Add it for both locales.
+
+**Verify:** `curl -s https://www.replie.uz/uz | grep og:image` returns a tag, and the
+URL it points at returns 200.
+
+## Q3 (MED) — No `canonical`, no `hreflang`
+
+**Where:** `generateMetadata` in the public pages.
+
+**Problem.** Two locales with nothing linking them, so `/uz` and `/ru` compete as
+duplicates rather than being understood as locale variants.
+
+**Fix.** Next.js supports both via the `alternates` key:
+
+```ts
+alternates: {
+  canonical: `/${lang}`,
+  languages: { uz: "/uz", ru: "/ru" },
+}
+```
+
+Note `metadataBase` in `app/layout.tsx:13` resolves relative URLs — see Q4, its host
+is currently wrong.
+
+## P3 (MED) — Russian users see Uzbek in the dashboard
+
+**Where:** `app/[lang]/(dashboard)/` — settings, logs, inbox, overview, automations,
+campaigns, diagnostics.
+
+**Problem.** These pages are hardcoded Uzbek and do not call `useDict()`, so
+`/ru/settings` renders Uzbek. Pre-existing rather than a regression (the
+pre-consolidation shims re-exported the same Uzbek implementation), but half the
+addressable market gets a half-translated product.
+
+**Fix.** Follow the existing i18n pattern: add keys to `lib/i18n/types.ts`, then values
+to **both** `lib/i18n/uz.ts` and `lib/i18n/ru.ts`, then use `dict.*` in the component.
+`app/[lang]/(dashboard)/dashboard/page.tsx` and `campaigns/page.tsx` are already
+translated — copy their approach.
+
+This is the largest mechanical task in this brief. It is safe to do incrementally, one
+page per commit.
+
+## P4 (MED) — No plan lifecycle
+
+**Problem.** Nothing expires a plan, handles a failed renewal, or downgrades a
+workspace. Once P1 exists, every upgrade is permanent.
+
+**Fix.** Depends on P1's shape. If you add `planExpiresAt`, a daily cron can downgrade
+expired workspaces — fold it into the C1 cron rather than adding a third.
+
+---
+
+# TIER 3 — cleanup
+
+## S4 (LOW) — `/api/health` auth is conditional
+
+**Where:** `app/api/health/route.ts:60`.
+
+`if (secret)` — the bearer check only applies when `CRON_SECRET` is set. If it ever
+goes missing the endpoint becomes public and returns raw DB/Redis error strings (the
+`EMAXCONNSESSION` error seen on 2026-08-02 includes pool internals).
+
+**Fix.** Require the secret unconditionally; fail closed. Same shape as S1, and the
+shared `requireCronAuth` helper covers both.
+
+## S5 (LOW) — `postUrl` unvalidated on the CSV import path
+
+**Where:** `app/api/automations/import/route.ts:15` uses `z.string()`, while
+`app/api/automations/route.ts:25` uses `z.string().url()`.
+
+Closed by the S3 fix if you apply the shared validator to both routes.
+
+## Q4 (LOW) — Sitemap host does not match the canonical host
+
+**Where:** `app/sitemap.ts`, `app/robots.ts`.
+
+`https://replie.uz/pricing` → **308** → `https://www.replie.uz/pricing` → **307** →
+`/uz/pricing`. Two redirect hops for every URL advertised to crawlers, because both
+files build from `APP_URL` (the apex) while the deployment canonicalises to `www`.
+
+**Fix.** Either set `APP_URL` to the `www` host or serve the apex directly.
+
+**Careful:** `APP_URL` also builds tracked links inside sent DMs
+(`lib/tracking/message.ts:65`). Changing it changes newly generated links. Existing
+links keep working via the 308, so this is safe, but know that you are touching two
+things at once.
+
+## Q5 (LOW) — Sitemap omits the Russian locale
+
+**Where:** `app/sitemap.ts` lists only `/` and `/pricing`.
+
+**Fix.** Emit `/uz`, `/ru`, `/uz/pricing`, `/ru/pricing`, and any other public page
+worth indexing (`privacy`, `terms`, `data-deletion`).
+
+## Q6 (LOW) — `robots.txt` `Disallow: /dashboard/` never fires
+
+**Where:** `app/robots.ts`.
+
+Real dashboard paths are `/uz/dashboard` and `/ru/dashboard`, so the rule matches
+nothing. Low impact because the dashboard requires auth, but it is not doing the job
+it appears to. `/api/` and `/r/` are correct — those are not locale-prefixed.
+
+**Fix.** Use `/*/dashboard` or list both locale paths.
+
+## C4 (LOW) — Single points of failure
+
+One `e2-micro` running the worker under `--restart always` — survives a reboot, not a
+VM failure or a Docker daemon problem. Redis is a free tier whose eviction policy can
+drop queued jobs.
+
+**Related and already tracked:** the Redis eviction policy is `volatile-lru` and should
+be `noeviction`; under memory pressure Redis Cloud can evict queued jobs and silently
+lose DMs. Change it in the Redis Cloud console. This is blocker 1 in HANDOFF.md.
+
+Not a code fix. Worth naming so it is a decision rather than an accident.
+
+---
+
+## Do NOT "fix" these
+
+Time was spent proving each of these is fine. Re-reporting them is a regression in
+itself.
+
+### Investigated and discarded
+
+- **XSS via `postUrl` in the public report page.** A user-controlled value reaches
+  `href` at `app/reports/[shareSlug]/page.tsx:300` on an unauthenticated page. Tested
+  against React 19.2.4: it rewrites `javascript:` hrefs to
+  `throw new Error('React has blocked a javascript: URL as a security precaution.')`.
+  Not exploitable. **Re-test only if React is ever downgraded.**
+- **IDOR on `/api/instagram/conversations/[id]`.** `conversationId` is taken unvalidated
+  from the URL, but the request uses the caller's own Instagram token, so Meta refuses
+  another workspace's conversation. Relies on Meta's enforcement rather than a local
+  check — defensible.
+- **Rate limiting / DoS** and **timing analysis of bearer comparisons** — out of scope
+  for this pass, not concretely exploitable.
+
+### Verified correct — leave alone
+
+- **Send deduplication** — a unique constraint on `(automationId, commentId)`, not
+  application logic. A duplicated webhook physically cannot double-send.
+- **Quota reservation** — `reserveWorkspaceDMSend` does the period reset and the
+  reservation inside one `prisma.$transaction`. Concurrent sends cannot overshoot.
+- **Rate limiting** — `reserveDMSlot` distinguishes requeue from skip and carries a
+  backoff delay rather than dropping jobs.
+- **Token encryption** — AES-256-GCM, random IV per token, auth tag verified on decrypt.
+- **Webhook signatures** — HMAC-SHA256 via `timingSafeEqual`, wrapped so the
+  length-mismatch throw cannot bypass verification. It accepts either the Facebook or
+  Instagram app secret on purpose.
+- **RLS** — enabled on all 15 tables. Prisma connects as superuser, so this is
+  defense-in-depth against a leaked anon key. Correct posture.
+- **Workspace membership** — `canManageWorkspace` on every mutation, `OWNER` protected
+  from demotion and deletion, self-deletion blocked, invitations check expiry *and*
+  that the session email matches.
+- **Report share slugs** — `randomBytes(9)`, 72 bits. Unguessable.
+- **The three `.catch(() => {})`** in `lib/polling/comment-reconciler.ts:266`,
+  `lib/queue/dm-worker.ts:288`, `app/api/webhook/route.ts:52` — each deliberate and
+  commented.
+- **`components/campaign-preview.tsx`** intentionally uses dark zinc and `rounded-2xl`
+  to mimic the Instagram UI, against the design system. Documented exception.
+- **304 lint warnings** are pre-existing. The bar is **0 errors**, not 0 warnings.
+
+---
+
+## Suggested order
+
+1. **S1** — one-line deletion, removes a session-forgery path. Do it first, it is free.
+2. **C1 + C3 + S4** — one cron, one shared auth helper, closes three findings.
+3. **S3 + S5** — one shared URL validator across both routes.
+4. **S2** — role check.
+5. **P1** — needs the product decision above before any code.
+6. **Q1–Q6** — SEO and accessibility, independent of everything else, safe to batch.
+7. **P3** — dashboard translation, incremental, one page per commit.
+8. **P2, P4** — after P1 lands.
+
+Findings are independent unless noted. The only hard dependencies are
+P2 → P1 and P4 → P1.
