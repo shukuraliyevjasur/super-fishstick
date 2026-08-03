@@ -14,6 +14,7 @@ const { mockPrisma } = vi.hoisted(() => ({
     operationalEvent: {
       create: vi.fn(),
     },
+    $queryRaw: vi.fn(),
   },
 }));
 
@@ -31,12 +32,29 @@ vi.mock("@/lib/meta/oauth", () => ({
   encryptToken: vi.fn(),
 }));
 
+vi.mock("@/lib/queue/client", () => ({
+  getDMQueue: () => ({ getJobCounts: vi.fn().mockResolvedValue({}) }),
+  getRedisConnection: () => ({ ping: vi.fn().mockResolvedValue("PONG") }),
+}));
+
+vi.mock("@/lib/ops/worker-health", () => ({
+  getWorkerHealth: vi.fn().mockResolvedValue({
+    healthy: true,
+    heartbeat: null,
+    ageMs: 0,
+  }),
+}));
+
 import { GET as refreshTokens } from "../app/api/cron/refresh-tokens/route";
 import { GET as attachNextReel } from "../app/api/cron/attach-next-reel/route";
+import { GET as health } from "../app/api/health/route";
 
 const routes = [
   { name: "refresh-tokens", handler: refreshTokens },
   { name: "attach-next-reel", handler: attachNextReel },
+  // S4: /api/health used to skip the check entirely when CRON_SECRET was unset,
+  // exposing raw database and Redis error strings. It is now unconditional.
+  { name: "health", handler: health },
 ];
 
 function requestWith(authorization?: string) {
@@ -53,6 +71,7 @@ beforeEach(() => {
   mockPrisma.workspace.updateMany.mockResolvedValue({ count: 0 });
   mockPrisma.instagramAccount.findMany.mockResolvedValue([]);
   mockPrisma.automation.findMany.mockResolvedValue([]);
+  mockPrisma.$queryRaw.mockResolvedValue([{ "?column?": 1 }]);
 });
 
 afterEach(() => {

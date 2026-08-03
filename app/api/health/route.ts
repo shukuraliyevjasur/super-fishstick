@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { getDMQueue, getRedisConnection } from "@/lib/queue/client";
 import { getWorkerHealth } from "@/lib/ops/worker-health";
+import { requireCronAuth } from "@/lib/ops/cron-auth";
 
 export const runtime = "nodejs";
 // Health must reflect live state (worker heartbeat, queue depth), never a
@@ -57,13 +58,11 @@ async function checkQueue(): Promise<HealthCheck & { counts?: unknown }> {
 }
 
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ status: "unauthorized" }, { status: 401 });
-    }
-  }
+  // Unconditional: the check used to be skipped entirely when CRON_SECRET was
+  // unset, which would have made this endpoint public and leaked raw database
+  // and Redis error strings (pool internals included) to anyone who asked.
+  const unauthorized = requireCronAuth(request);
+  if (unauthorized) return unauthorized;
 
   const [database, redis, queue, worker] = await Promise.all([
     checkDatabase(),
