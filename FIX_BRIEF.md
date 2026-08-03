@@ -145,21 +145,26 @@ the pricing page and charging anyone.
 **Consequence.** Upgrading a customer means opening Supabase and running an `UPDATE`.
 No audit trail of who upgraded whom, no downgrade on non-payment, no expiry.
 
-**This needs a product decision before code.** Ask the owner which they want:
+**DECIDED — build the admin endpoint (option a).** Recorded as D2 in
+[DECISIONS.md](DECISIONS.md). Payment is collected manually for now (customer contacts
+`t.me/ceo_syr`, owner confirms, owner grants the plan). Payment rails follow **as soon
+as practical** and then become the default path — see P2.
 
-- **(a) Admin-only endpoint** — a protected route that sets `workspace.plan`, plus a
-  minimal internal screen. Fastest path to being able to charge. Manual payment stays
-  manual (Telegram → you confirm → you click).
-- **(b) Payment rails first** — integrate Payme / Click / Uzum, and let the webhook set
-  the plan. Correct end state, much larger scope. See P2.
+Add `planGrantedAt`, `planGrantedBy` and `planExpiresAt` to `Workspace`, write an
+admin-gated route, and log every change to `OperationalEvent` so there is a trail.
 
-If (a): add `plan`, `planGrantedAt`, `planGrantedBy`, and `planExpiresAt` to
-`Workspace`, write an admin-gated route, and log every change to `OperationalEvent`
-so there is a trail. Do **not** reuse the existing `canManageWorkspace` check — that
-is workspace-scoped and a workspace owner must not be able to grant themselves Pro.
+Three constraints that matter:
 
-**Verify:** a non-admin cannot call the endpoint; a plan change appears in
-`OperationalEvent`; `canUseFeature` immediately reflects the new plan.
+- **Put the plan-granting logic in a function the route calls**, not inline in the
+  route. A payment webhook must be able to call the same function later without a
+  rewrite. This is the whole point of doing (a) first.
+- **Do not reuse `canManageWorkspace`** to gate the route — it is workspace-scoped, and
+  a workspace owner must not be able to grant themselves Pro.
+- **Design in `planExpiresAt` now** even if nothing reads it yet; P4 needs it and
+  retrofitting a billing field later is worse.
+
+**Verify:** a non-admin gets 403; a workspace owner cannot self-grant; a plan change
+appears in `OperationalEvent`; `canUseFeature` immediately reflects the new plan.
 
 ## C1 (HIGH) — Worker death is silent, and DMs stop for everyone
 
@@ -220,12 +225,17 @@ cannot reintroduce the pattern — C1 adds one.
 **Where:** `app/[lang]/pricing/page.tsx` — every paid CTA is
 `https://t.me/ceo_syr?text=...`.
 
-**Problem.** No payment rails. For the Uzbek market the expected options are **Payme**,
-**Click**, or **Uzum**. Manual invoicing over Telegram is a legitimate way to start,
-but it is only operable once P1 exists.
+**Problem.** No payment rails. For the Uzbek market the expected options are **Click**,
+Payme, or Uzum. Manual invoicing over Telegram is a legitimate way to start, but it is
+only operable once P1 exists.
 
-**Depends on P1.** Do not start here. Sequence: P1(a) to unblock charging manually,
-then rails, then move plan-granting to the payment webhook.
+**Wanted as soon as practical, and intended to become the default** once it lands —
+the manual admin path from P1 is explicitly a stopgap (D2 in
+[DECISIONS.md](DECISIONS.md)). When rails ship, the payment webhook calls the same
+plan-granting function the admin route uses; keep the admin route for support and
+refunds.
+
+**Depends on P1.** Do not start here.
 
 ---
 
@@ -518,7 +528,8 @@ itself.
 2. **C1 + C3 + S4** — one cron, one shared auth helper, closes three findings.
 3. **S3 + S5** — one shared URL validator across both routes.
 4. **S2** — role check.
-5. **P1** — needs the product decision above before any code.
+5. **P1** — decided (admin endpoint, D2 in DECISIONS.md); build the granting logic as a
+   reusable function so the payment webhook can call it later.
 6. **Q1–Q6** — SEO and accessibility, independent of everything else, safe to batch.
 7. **P3** — dashboard translation, incremental, one page per commit.
 8. **P2, P4** — after P1 lands.
