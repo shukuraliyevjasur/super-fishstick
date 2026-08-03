@@ -20,8 +20,10 @@ export async function GET() {
   });
 
   const base = `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
-  const appId = process.env.INSTAGRAM_APP_ID ?? process.env.FACEBOOK_APP_ID;
-  const appSecret = process.env.INSTAGRAM_APP_SECRET ?? process.env.FACEBOOK_APP_SECRET;
+  const appId = process.env.INSTAGRAM_APP_ID;
+  // debug_token goes to graph.facebook.com — needs the Facebook app secret,
+  // not the Instagram one (they differ when both are set).
+  const appSecret = process.env.FACEBOOK_APP_SECRET ?? process.env.INSTAGRAM_APP_SECRET;
 
   const results = await Promise.allSettled(
     accounts.map(async (account) => {
