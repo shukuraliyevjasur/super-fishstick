@@ -66,5 +66,8 @@ before merging.
 
 ## Baseline verified
 
-2026-08-02, commit `120cc89`: working tree clean, nothing unpushed, CI green,
+2026-08-02, commit `b5214a9`: working tree clean, nothing unpushed, CI green,
 typecheck silent, lint 0 errors / 304 warnings, 125 tests passing across 16 files.
+
+Commits after this one have been documentation only, so the numbers above still hold.
+If they ever stop matching, the code changed — find out why before starting work.
