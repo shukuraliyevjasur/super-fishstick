@@ -4,8 +4,9 @@ import type { Dict, Locale } from "./types"
 export type { Dict, Locale }
 export { uz } from "./uz"
 export { ru } from "./ru"
+export { en } from "./en"
 
-export const locales: Locale[] = ["uz", "ru"]
+export const locales: Locale[] = ["uz", "ru", "en"]
 export const defaultLocale: Locale = "uz"
 
 export function hasLocale(s: string): s is Locale {
@@ -15,6 +16,7 @@ export function hasLocale(s: string): s is Locale {
 const loaders: Record<Locale, () => Promise<Dict>> = {
   uz: () => import("./uz").then((m) => m.uz),
   ru: () => import("./ru").then((m) => m.ru),
+  en: () => import("./en").then((m) => m.en),
 }
 
 export async function getDictionary(locale: Locale): Promise<Dict> {

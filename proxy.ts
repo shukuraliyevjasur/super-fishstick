@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const LOCALES = ["uz", "ru"] as const;
+const LOCALES = ["uz", "ru", "en"] as const;
 const DEFAULT_LOCALE = "uz";
 
 const PROTECTED_PATHS = [
@@ -25,10 +25,9 @@ function hasSessionCookie(request: NextRequest): boolean {
 }
 
 function getLocale(request: NextRequest): string {
-  const accept = request.headers.get("accept-language") ?? "";
-  if (accept.toLowerCase().startsWith("ru")) return "ru";
-  // Russian browser: ru-RU, ru;q=0.9, etc.
-  if (/\bru\b/.test(accept.toLowerCase())) return "ru";
+  const accept = request.headers.get("accept-language") ?? "".toLowerCase();
+  if (/\bru\b/.test(accept)) return "ru";
+  if (/\ben\b/.test(accept)) return "en";
   return DEFAULT_LOCALE;
 }
 
