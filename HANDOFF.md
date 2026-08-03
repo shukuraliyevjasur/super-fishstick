@@ -107,6 +107,11 @@ the repo.
 Optional: `DATABASE_POOL_MAX` overrides the per-instance connection cap
 (default 1 — see [Database connections](#database-connections)).
 
+`ALERT_EMAIL` is where operational alerts are sent (see
+[Health alerting](#health-alerting)). **If it is unset, no alert email is ever
+sent** — the health cron still records the problem to `OperationalEvent` and
+still answers 503, but nothing reaches a human. Set it on Vercel.
+
 > `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` are the **Instagram-specific**
 > credentials from **Use cases → Instagram API setup** in the Meta dashboard, not
 > the top-level App ID and secret under App Settings → Basic. They are different
@@ -197,6 +202,45 @@ which is a single long-running process, if queue throughput needs it.
 > `max: 1` is a **per-instance** cap, not a global one. Enough concurrent Vercel
 > instances can still reach 15. The durable fix is Supabase's transaction-mode
 > pooler on port 6543, which is built for serverless.
+
+---
+
+## Health alerting
+
+`/api/cron/health-check` runs the same checks as `/api/health` (database, Redis,
+queue depth, worker heartbeat), plus recent `TOKEN_REFRESH` failures, and emails
+`ALERT_EMAIL` via Resend when anything is wrong. It answers 503 when degraded.
+
+All three operational endpoints — both crons and `/api/health` — require
+`Authorization: Bearer $CRON_SECRET` through `requireCronAuth` in
+`lib/ops/cron-auth.ts`. It fails closed: no `CRON_SECRET`, no access. Do not
+reintroduce a fallback secret or an `if (secret)` wrapper.
+
+### The daily cron is a backstop, not worker-death detection
+
+**Vercel's free tier fires crons once per day.** `vercel.json` schedules the
+health check at 07:00 UTC, after both other crons, so it catches the morning's
+token-refresh failures. But a worker that dies at 07:05 stays dead for ~24 hours
+before anyone is told — and while it is down, jobs pile up in Redis and **no DMs
+are sent for any customer**.
+
+Daily is therefore not sufficient on its own. For real coverage, point an
+external uptime monitor at the same route every few minutes:
+
+```
+URL:     https://replie.uz/api/cron/health-check
+Header:  Authorization: Bearer <CRON_SECRET>
+Alert:   on any non-200 (the route returns 503 when degraded)
+```
+
+`cron-job.org` is the usual pick on a free budget — 1-minute intervals and
+**custom request headers on the free tier**, which is the deciding feature.
+UptimeRobot's free tier does not send custom headers, so it cannot authenticate
+against this route.
+
+Do not work around a monitor's missing header support by accepting the secret as
+a URL query parameter — that puts `CRON_SECRET` into request logs and referrer
+headers.
 
 ---
 
@@ -498,9 +542,9 @@ reaches `/uz` through the locale middleware. Key decisions:
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
    [META_APP_REVIEW.md](META_APP_REVIEW.md).
-3. **Cron auth falls back to `NEXTAUTH_SECRET`** — which now signs every session
-   JWT, so leaking it means forging any user's session. One line to delete; see
-   finding 1 in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
+3. **Set `ALERT_EMAIL` on Vercel**, and add an external uptime monitor — the
+   health cron is built, but on Vercel's free tier it only fires daily and it
+   sends nothing without that env var. See [Health alerting](#health-alerting).
 4. **Open redirect on `replie.uz/r/*`** — `z.string().url()` allowlists no scheme
    or host, so a paying user can point a tracked link anywhere and have it DM'd
    from your domain. Finding 3 in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
@@ -510,6 +554,9 @@ reaches `/uz` through the locale middleware. Key decisions:
    Vercel instances still reach Supabase's 15-client cap. Move to the
    transaction-mode pooler (port 6543) before real traffic.
 
+~~Cron auth falls back to `NEXTAUTH_SECRET`~~ — fixed 2026-08-03 (S1/S4):
+`requireCronAuth` requires `CRON_SECRET` and fails closed on all three
+operational endpoints.
 ~~`EMAIL_FROM` using Resend sandbox sender~~ — fixed: `login@replie.uz` verified.
 ~~Domain not purchased~~ — fixed: `replie.uz` live.
 ~~Meta app credentials~~ — fixed 2026-08-02: app `replie` created and

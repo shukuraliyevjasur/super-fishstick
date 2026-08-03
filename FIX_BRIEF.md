@@ -3,7 +3,10 @@
 **Generated 2026-08-02.** Every finding from a four-phase review (security, live QA,
 code gaps, product gaps). Written to be executed by someone with no prior context.
 
-19 findings, 4 HIGH. Nothing here has been fixed.
+19 findings, 4 HIGH.
+
+**Status.** Fixed so far: **S1**, **S4**, **C1**, **C3** (2026-08-03). Each
+finding below carries its own status line. 15 open.
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -166,7 +169,27 @@ Three constraints that matter:
 **Verify:** a non-admin gets 403; a workspace owner cannot self-grant; a plan change
 appears in `OperationalEvent`; `canUseFeature` immediately reflects the new plan.
 
-## C1 (HIGH) — Worker death is silent, and DMs stop for everyone
+## C1 (HIGH) — Worker death is silent, and DMs stop for everyone — ✅ FIXED 2026-08-03
+
+**Fixed.** `/api/cron/health-check` runs the shared checks
+(`lib/ops/health-report.ts`, now also used by `/api/health`) and emails
+`ALERT_EMAIL` via Resend's REST API when degraded. Registered in `vercel.json` at
+07:00 UTC.
+
+**The daily limit is real and accepted, not papered over.** Vercel's free tier
+fires crons once a day, and there is no plan to upgrade. A worker dying just
+after a run stays dead ~24h. The daily cron is a backstop; an external monitor
+(cron-job.org — 1-minute intervals *and* custom headers on the free tier) is the
+actual detection path. Documented under "Health alerting" in HANDOFF.md, along
+with why UptimeRobot's free tier cannot be used here.
+
+**Still requires an operator action:** `ALERT_EMAIL` must be set on Vercel or no
+email is sent.
+
+Note the brief's claim that Resend "is already a dependency" was inaccurate — only
+`next-auth/providers/resend` is installed, not the `resend` SDK. `lib/ops/alert-email.ts`
+calls the REST API with `fetch`, so this still added zero dependencies.
+
 
 **Where:** `app/api/health/route.ts`, `lib/ops/worker-health.ts`, `vercel.json`.
 
@@ -193,7 +216,15 @@ is a complaint, and by then it is churn.
 **Verify:** stop the worker container, wait for the cron (or invoke the route with the
 bearer token), confirm an email arrives and the response is 503.
 
-## S1 (HIGH) — Cron auth falls back to the JWT signing key
+## S1 (HIGH) — Cron auth falls back to the JWT signing key — ✅ FIXED 2026-08-03
+
+**Fixed** in `cb52797` / `c346cbf`. The fallback is gone from both routes and the
+fail-closed check now lives in `requireCronAuth` (`lib/ops/cron-auth.ts`), shared
+with `/api/health` and the new health-check cron. Guarded by
+`__tests__/cron-auth.test.ts`. Note the check is `!cronSecret || header !== ...`:
+dropping only the `||` clause would leave an unset secret comparing against the
+string `Bearer undefined`.
+
 
 **Where:** `app/api/cron/refresh-tokens/route.ts:10`,
 `app/api/cron/attach-next-reel/route.ts:22`.
@@ -318,7 +349,14 @@ detail a tracker would have caught on the first occurrence.
 lockfile warning above and generate the lockfile on Linux.** Wire it into the API
 routes, the worker, and the Next.js error boundaries.
 
-## C3 (MED) — Token-refresh failures are recorded but never surfaced
+## C3 (MED) — Token-refresh failures are recorded but never surfaced — ✅ FIXED 2026-08-03
+
+**Fixed** as part of C1. `getRecentTokenRefreshErrors()` reads `TOKEN_REFRESH` /
+`ERROR` events from the last 26 hours (wider than the daily cron interval, so a
+failure is not missed between runs) and the health cron emails them **even when
+the system is otherwise healthy** — a broken refresh is not a degraded state, but
+it is silent until every connected account drops at the 60-day mark.
+
 
 **Where:** `app/api/cron/refresh-tokens/route.ts`.
 
@@ -412,7 +450,12 @@ expired workspaces — fold it into the C1 cron rather than adding a third.
 
 # TIER 3 — cleanup
 
-## S4 (LOW) — `/api/health` auth is conditional
+## S4 (LOW) — `/api/health` auth is conditional — ✅ FIXED 2026-08-03
+
+**Fixed** in `c346cbf` via the same `requireCronAuth` helper. Its 401 body changed
+from `{ status: "unauthorized" }` to `{ success: false, error: "Unauthorized" }`
+for consistency with the cron routes; the endpoint is consumed by status code.
+
 
 **Where:** `app/api/health/route.ts:60`.
 
@@ -524,9 +567,10 @@ itself.
 
 ## Suggested order
 
-1. **S1** — one-line deletion, removes a session-forgery path. Do it first, it is free.
-2. **C1 + C3 + S4** — one cron, one shared auth helper, closes three findings.
-3. **S3 + S5** — one shared URL validator across both routes.
+1. ~~**S1**~~ — done 2026-08-03.
+2. ~~**C1 + C3 + S4**~~ — done 2026-08-03. Landed as three commits, not one: the
+   auth helper and the alerting cron are independently revertable.
+3. **S3 + S5** — one shared URL validator across both routes. ← **next**
 4. **S2** — role check.
 5. **P1** — decided (admin endpoint, D2 in DECISIONS.md); build the granting logic as a
    reusable function so the payment webhook can call it later.

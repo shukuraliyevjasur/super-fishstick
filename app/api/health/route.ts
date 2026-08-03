@@ -1,61 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db/client";
-import { getDMQueue, getRedisConnection } from "@/lib/queue/client";
-import { getWorkerHealth } from "@/lib/ops/worker-health";
 import { requireCronAuth } from "@/lib/ops/cron-auth";
+import { buildHealthReport } from "@/lib/ops/health-report";
 
 export const runtime = "nodejs";
 // Health must reflect live state (worker heartbeat, queue depth), never a
 // cached response, or it reports stale worker start times.
 export const dynamic = "force-dynamic";
-
-type CheckStatus = "ok" | "error";
-
-interface HealthCheck {
-  status: CheckStatus;
-  detail?: string;
-}
-
-async function checkDatabase(): Promise<HealthCheck> {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return { status: "ok" };
-  } catch (error) {
-    return {
-      status: "error",
-      detail: error instanceof Error ? error.message : "Database check failed",
-    };
-  }
-}
-
-async function checkRedis(): Promise<HealthCheck> {
-  try {
-    const pong = await getRedisConnection().ping();
-    return { status: pong === "PONG" ? "ok" : "error", detail: pong };
-  } catch (error) {
-    return {
-      status: "error",
-      detail: error instanceof Error ? error.message : "Redis check failed",
-    };
-  }
-}
-
-async function checkQueue(): Promise<HealthCheck & { counts?: unknown }> {
-  try {
-    const counts = await getDMQueue().getJobCounts(
-      "waiting",
-      "active",
-      "delayed",
-      "failed"
-    );
-    return { status: "ok", counts };
-  } catch (error) {
-    return {
-      status: "error",
-      detail: error instanceof Error ? error.message : "Queue check failed",
-    };
-  }
-}
 
 export async function GET(request: NextRequest) {
   // Unconditional: the check used to be skipped entirely when CRON_SECRET was
@@ -64,34 +14,13 @@ export async function GET(request: NextRequest) {
   const unauthorized = requireCronAuth(request);
   if (unauthorized) return unauthorized;
 
-  const [database, redis, queue, worker] = await Promise.all([
-    checkDatabase(),
-    checkRedis(),
-    checkQueue(),
-    getWorkerHealth().catch((error) => ({
-      healthy: false,
-      heartbeat: null,
-      ageMs: null,
-      error: error instanceof Error ? error.message : "Worker check failed",
-    })),
-  ]);
-
-  const healthy =
-    database.status === "ok" &&
-    redis.status === "ok" &&
-    queue.status === "ok" &&
-    worker.healthy;
+  const report = await buildHealthReport();
 
   return NextResponse.json(
     {
-      status: healthy ? "ok" : "degraded",
-      checks: {
-        database,
-        redis,
-        queue,
-        worker,
-      },
+      status: report.healthy ? "ok" : "degraded",
+      checks: report.checks,
     },
-    { status: healthy ? 200 : 503 }
+    { status: report.healthy ? 200 : 503 }
   );
 }
