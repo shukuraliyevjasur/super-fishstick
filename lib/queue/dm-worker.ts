@@ -797,7 +797,7 @@ export function createDMWorker(): Worker<DmQueueJob> {
     "dm-processing",
     processJob,
     {
-      connection: getRedisConnection(),
+      connection: getRedisConnection({ persistent: true }),
       concurrency: 5,
       settings: {
         backoffStrategy: (attemptsMade: number) =>
