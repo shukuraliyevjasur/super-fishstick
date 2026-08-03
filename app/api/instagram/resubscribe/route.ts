@@ -7,7 +7,7 @@ import { getMetaGraphApiVersion } from "@/lib/env";
 
 export const runtime = "nodejs";
 
-// Check what fields are actually subscribed at the account level via Meta's API.
+// Check subscribed fields + token scopes for all connected accounts.
 export async function GET() {
   const workspaceId = await getCurrentWorkspaceId();
   if (!workspaceId) {
@@ -20,22 +20,41 @@ export async function GET() {
   });
 
   const base = `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
+  const appId = process.env.INSTAGRAM_APP_ID ?? process.env.FACEBOOK_APP_ID;
+  const appSecret = process.env.INSTAGRAM_APP_SECRET ?? process.env.FACEBOOK_APP_SECRET;
 
   const results = await Promise.allSettled(
     accounts.map(async (account) => {
       const token = decryptToken(account.accessToken);
-      const res = await fetch(`${base}/${account.instagramId}/subscribed_apps`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      return { username: account.username, data };
+
+      const [subsRes, debugRes] = await Promise.all([
+        fetch(`${base}/${account.instagramId}/subscribed_apps`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        appId && appSecret
+          ? fetch(
+              `https://graph.facebook.com/debug_token?input_token=${token}&access_token=${appId}|${appSecret}`
+            )
+          : null,
+      ]);
+
+      const subsData = await subsRes.json();
+      const debugData = debugRes ? await debugRes.json() : null;
+
+      return {
+        username: account.username,
+        subscribed_fields: subsData?.data?.[0]?.subscribed_fields ?? subsData,
+        token_scopes: debugData?.data?.scopes ?? debugData?.error ?? "no app credentials",
+        token_expires_at: debugData?.data?.expires_at ?? null,
+        token_is_valid: debugData?.data?.is_valid ?? null,
+      };
     })
   );
 
   return NextResponse.json({
     success: true,
     data: results.map((r) =>
-      r.status === "fulfilled" ? r.value : { username: "unknown", error: r.reason }
+      r.status === "fulfilled" ? r.value : { username: "unknown", error: String(r.reason) }
     ),
   });
 }
