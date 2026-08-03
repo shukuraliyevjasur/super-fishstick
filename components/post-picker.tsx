@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from "react";
 import { readCache, writeCache } from "@/lib/client-cache";
+import { useDict } from "@/components/dictionary-provider";
 
 interface InstagramPost {
   id: string;
@@ -41,6 +42,7 @@ export default function PostPicker({
   usedPostIds,
   onSelect,
 }: PostPickerProps) {
+  const t = useDict().campaignBuilder;
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +79,11 @@ export default function PostPicker({
           setPosts(data.data);
           writeCache(cacheKey, data.data);
         } else if (!cached.data) {
-          setError(data.error ?? "Postlarni yuklab bo'lmadi");
+          setError(data.error ?? t.postPickerErrLoad);
         }
       })
       .catch(() => {
-        if (!cancelled && !cached.data) setError("Postlarni yuklab bo'lmadi");
+        if (!cancelled && !cached.data) setError(t.postPickerErrLoad);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -106,7 +108,7 @@ export default function PostPicker({
     return (
       <div className="text-center py-8">
         <p className="text-sm text-muted">{error}</p>
-        <p className="text-xs text-muted mt-1">Avval Instagram akkauntingizni ulang</p>
+        <p className="text-xs text-muted mt-1">{t.postPickerErrConnect}</p>
       </div>
     );
   }
@@ -114,7 +116,7 @@ export default function PostPicker({
   if (posts.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-sm text-muted">Postlar topilmadi</p>
+        <p className="text-sm text-muted">{t.postPickerNoPosts}</p>
       </div>
     );
   }
@@ -131,21 +133,21 @@ export default function PostPicker({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Izoh orqali postlarni qidiring…"
+          placeholder={t.postPickerSearch}
           className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
         />
         <span className="shrink-0 text-xs text-muted">{posts.length}</span>
       </div>
       {visible.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted">
-          &ldquo;{query}&rdquo; ga mos post topilmadi
+          {t.postPickerNoResults.replace("{{query}}", query)}
         </p>
       ) : (
         <>
           {usedPostIds && Object.keys(usedPostIds).length > 0 && (
             <p className="flex items-center gap-2 px-1 text-xs text-muted">
               <span className="inline-block h-3 w-3 rounded-full border-2 border-warning" />
-              Boshqa kampaniya tomonidan ishlatilgan
+              {t.postPickerUsedBy}
             </p>
           )}
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1">
@@ -187,7 +189,7 @@ export default function PostPicker({
               />
             ) : (
               <div className="w-full h-full bg-surface flex items-center justify-center">
-                <span className="text-xs text-muted">Rasm yo&apos;q</span>
+                <span className="text-xs text-muted">{t.postPickerNoImage}</span>
               </div>
             )}
             {showVideo && (
@@ -206,12 +208,12 @@ export default function PostPicker({
             )}
             {isSelected && (
               <span className="absolute bottom-0 inset-x-0 bg-accent text-white text-xs py-1">
-                Tanlangan
+                {t.postPickerSelected}
               </span>
             )}
             {isUsed && (
               <span className="absolute bottom-0 inset-x-0 bg-warning text-background text-xs py-1 font-medium">
-                Ishlatilgan
+                {t.postPickerUsed}
               </span>
             )}
           </button>

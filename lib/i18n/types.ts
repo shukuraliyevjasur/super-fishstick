@@ -315,5 +315,18 @@ export interface Dict {
     errSaveFailed: string
     notFound: string
     backToCampaigns: string
+    // campaign-preview fallbacks (shown when fields are empty)
+    previewOpeningDmFallback: string
+    previewButtonFallback: string
+    // post-picker strings
+    postPickerSearch: string
+    postPickerNoImage: string
+    postPickerSelected: string
+    postPickerUsed: string
+    postPickerUsedBy: string
+    postPickerNoResults: string
+    postPickerNoPosts: string
+    postPickerErrLoad: string
+    postPickerErrConnect: string
   }
 }

@@ -150,6 +150,16 @@ select:focus-visible {
   animation: heroMockupIn 1000ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards;
 }
 
+/* Prevent iOS Safari from zooming on input focus. iOS only zooms when
+   font-size < 16px — our text-sm is 13px, text-base is 15px, both trigger it. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
