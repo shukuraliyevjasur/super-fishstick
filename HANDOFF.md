@@ -112,6 +112,13 @@ Optional: `DATABASE_POOL_MAX` overrides the per-instance connection cap
 sent** — the health cron still records the problem to `OperationalEvent` and
 still answers 503, but nothing reaches a human. Set it on Vercel.
 
+`ADMIN_EMAILS` is a comma-separated allowlist of platform operators — the people
+who may see cross-tenant data and (once P1 lands) grant plans. Unset means nobody,
+which fails closed. **The listed account must exist and have a verified email**,
+or the allowlist entry does nothing: an address nobody has registered is claimable
+by whoever signs up with it first, so verification is what makes the entry safe.
+See D3 in [DECISIONS.md](DECISIONS.md).
+
 > `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` are the **Instagram-specific**
 > credentials from **Use cases → Instagram API setup** in the Meta dashboard, not
 > the top-level App ID and secret under App Settings → Basic. They are different

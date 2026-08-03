@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import StatusBadge from "@/components/status-badge";
 
 interface DiagnosticsData {
-  queueCounts: Record<string, number>;
+  /** Queue depth and worker alerts are global, so they are admin-only (S2). */
+  isPlatformAdmin: boolean;
+  queueCounts: Record<string, number> | null;
   workerHealth: {
     healthy: boolean;
     ageMs: number | null;
@@ -21,7 +23,7 @@ interface DiagnosticsData {
     jobId?: string;
     commentId?: string;
     createdAt: string;
-  }>;
+  }> | null;
   webhookFailures: Array<{
     id: string;
     object: string | null;
@@ -150,26 +152,32 @@ export default function DiagnosticsPage() {
           >
             {data?.workerHealth.healthy ? "Sogʿlom" : "Eʿtibor talab qiladi"}
           </p>
-          <p className="mt-2 text-xs text-muted">
-            {workerAgeSeconds == null
-              ? "Yurak urishi topilmadi"
-              : `Soʿnggi yurak urishi ${workerAgeSeconds}s oldin`}
-          </p>
+          {/* Heartbeat age is worker infrastructure detail, so it is only sent
+              to platform admins. Customers see liveness alone. */}
+          {data?.isPlatformAdmin && (
+            <p className="mt-2 text-xs text-muted">
+              {workerAgeSeconds == null
+                ? "Yurak urishi topilmadi"
+                : `Soʿnggi yurak urishi ${workerAgeSeconds}s oldin`}
+            </p>
+          )}
         </div>
-        {["waiting", "active", "delayed", "failed"].map((key) => (
-          <div key={key} className="panel rounded-md p-5">
-            <p className="text-xs font-semibold uppercase text-muted">
-              Navbat: {key}
-            </p>
-            <p className="mt-3 text-2xl font-bold text-foreground">
-              {data?.queueCounts[key] ?? 0}
-            </p>
-          </div>
-        ))}
+        {data?.queueCounts &&
+          ["waiting", "active", "delayed", "failed"].map((key) => (
+            <div key={key} className="panel rounded-md p-5">
+              <p className="text-xs font-semibold uppercase text-muted">
+                Navbat: {key}
+              </p>
+              <p className="mt-3 text-2xl font-bold text-foreground">
+                {data.queueCounts?.[key] ?? 0}
+              </p>
+            </div>
+          ))}
       </div>
 
+      {data?.workerAlerts && (
       <Section title="Worker ogohlantirishlari">
-        {data?.workerAlerts.length ? (
+        {data.workerAlerts.length ? (
           <div className="space-y-3">
             {data.workerAlerts.map((alert) => (
               <div
@@ -195,6 +203,7 @@ export default function DiagnosticsPage() {
           <EmptyState label="Ogohlantirishlar yoʿq." />
         )}
       </Section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="DM xatoliklari">

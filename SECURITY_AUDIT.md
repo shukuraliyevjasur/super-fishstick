@@ -1,7 +1,7 @@
 # Security audit — 2026-08-02
 
 Full-scope audit of the app before opening it to real users. Nothing was fixed as
-part of the audit itself; findings 1, 3, 4 and 5 were fixed on 2026-08-03.
+part of the audit itself; **all five findings were fixed on 2026-08-03.**
 
 This is not the disclosure policy — see [SECURITY.md](SECURITY.md) for that.
 
@@ -10,7 +10,7 @@ This is not the disclosure policy — see [SECURITY.md](SECURITY.md) for that.
 | # | Sev | Status | Finding | File |
 |---|-----|--------|---------|------|
 | 1 | **HIGH** | **fixed** `cb52797` `c346cbf` | Cron auth falls back to `NEXTAUTH_SECRET`, now the JWT signing key | `app/api/cron/refresh-tokens/route.ts:10`, `app/api/cron/attach-next-reel/route.ts:22` |
-| 2 | MED | open | `/api/admin/diagnostics` has no admin check | `app/api/admin/diagnostics/route.ts:10` |
+| 2 | MED | **fixed** | `/api/admin/diagnostics` has no admin check | `app/api/admin/diagnostics/route.ts:10` |
 | 3 | MED | **fixed** | Open redirect on `replie.uz/r/*` — no scheme or host allowlist | `app/api/automations/route.ts:46`, `app/r/[slug]/route.ts:42` |
 | 4 | LOW | **fixed** `c346cbf` | `/api/health` auth is conditional; leaks DB/Redis errors when unset | `app/api/health/route.ts:60` |
 | 5 | LOW | **fixed** | CSV import accepts any string as `postUrl`; JSON route requires a URL | `app/api/automations/import/route.ts:15` |

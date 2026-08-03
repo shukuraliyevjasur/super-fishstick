@@ -5,8 +5,9 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 
 19 findings, 4 HIGH.
 
-**Status.** Fixed so far: **S1**, **S4**, **C1**, **C3**, **S3**, **S5**
-(2026-08-03). Each finding below carries its own status line. 13 open.
+**Status.** Fixed so far: **S1**, **S4**, **C1**, **C3**, **S3**, **S5**, **S2**
+(2026-08-03) — every security finding is closed. Each finding below carries its
+own status line. 12 open.
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -341,7 +342,30 @@ Optionally also reject `169.254.169.254` and other link-local / private hosts.
 **Verify:** add a test asserting `javascript:`, `data:`, and `file:` are rejected and
 `https://` is accepted. This closes S5 at the same time.
 
-## S2 (MED) — `/api/admin/diagnostics` is not admin-only
+## S2 (MED) — `/api/admin/diagnostics` is not admin-only — ✅ FIXED 2026-08-03
+
+**Fixed by scoping, not by gating the route** — the brief offered either, and
+gating turns out to be wrong here: despite the `admin` in its path, this route
+backs a page in the **ordinary customer sidebar** (`components/sidebar.tsx`).
+Gating the whole route would have deleted a customer feature.
+
+So the split is per-field. Workspace-scoped data (webhook, DM and token failures)
+stays open to the workspace. Platform-admin only: queue depth, worker alerts —
+which carry *other tenants'* job and comment ids — worker heartbeat internals
+(pid, hostname), and the system-wide `{ workspaceId: null }` events. Customers
+still see worker `healthy` true/false, which is legitimately their business.
+
+`payload` is still not selected on the system-wide query, and there is now a test
+asserting it stays that way.
+
+**This finding forced the platform-admin decision that P1 also needs.**
+`lib/auth/admin.ts` / `isCurrentUserPlatformAdmin()`, recorded as **D3** in
+[DECISIONS.md](DECISIONS.md). Read it before P1 — D2 says not to reuse
+`canManageWorkspace` but does not say what to use instead; D3 is the answer.
+
+**Requires an operator action:** set `ADMIN_EMAILS` on Vercel, and the account
+must have a **verified** email or the entry does nothing.
+
 
 **Where:** `app/api/admin/diagnostics/route.ts:10`.
 
@@ -612,9 +636,10 @@ itself.
 2. ~~**C1 + C3 + S4**~~ — done 2026-08-03. Landed as three commits, not one: the
    auth helper and the alerting cron are independently revertable.
 3. ~~**S3 + S5**~~ — done 2026-08-03.
-4. **S2** — role check. ← **next**
+4. ~~**S2**~~ — done 2026-08-03.
 5. **P1** — decided (admin endpoint, D2 in DECISIONS.md); build the granting logic as a
-   reusable function so the payment webhook can call it later.
+   reusable function so the payment webhook can call it later. ← **next**.
+   The admin gate it needs already exists: `isCurrentUserPlatformAdmin()`, D3.
 6. **Q1–Q6** — SEO and accessibility, independent of everything else, safe to batch.
 7. **P3** — dashboard translation, incremental, one page per commit.
 8. **P2, P4** — after P1 lands.

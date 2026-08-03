@@ -11,6 +11,55 @@ history stays readable.
 
 ---
 
+## D3 — Platform admin is an env allowlist, not a database column
+
+**Date:** 2026-08-03
+**Status:** active
+**Applies to:** `lib/auth/admin.ts`, `/api/admin/diagnostics`, and the plan-granting
+endpoint D2 calls for
+
+### The decision
+
+Platform administration — the operator of replie, as distinct from a workspace
+owner — is defined by the **`ADMIN_EMAILS`** env var: a comma-separated allowlist.
+`isCurrentUserPlatformAdmin()` is the single entry point. **The address must also
+be `emailVerified`.**
+
+### Why
+
+D2 already established that `canManageWorkspace` cannot gate anything
+platform-wide: every customer is OWNER of their own workspace, so that role gates
+on nothing. Something had to represent the operator. An env allowlist because:
+
+- **No migration.** Prisma migrations here carry the P3009 trap (HANDOFF.md), and
+  this needed to exist before P1 rather than as part of it.
+- **Not escalatable by a database write.** An attacker with SQL access still
+  cannot make themselves an admin. A boolean column would be one `UPDATE` away.
+- **Revoking is an env change**, not a data fix.
+
+The verification requirement is load-bearing, not belt-and-braces. Signup refuses
+an address that already exists, but an address that has *never* registered is
+claimable by anyone — so without it, listing an unregistered address in
+`ADMIN_EMAILS` would hand platform admin to whoever signs up with it first.
+
+The email is read **from the database, not the session token**, because sessions
+are JWT-backed and not revocable (D1), which makes the token the wrong source of
+truth for an authorisation decision.
+
+### How to apply
+
+- Gate anything cross-tenant on `isCurrentUserPlatformAdmin()`. Never on
+  `canManageWorkspace`.
+- **The operator must have signed up and verified their email** before
+  `ADMIN_EMAILS` does anything. An unset or empty value grants nobody — it fails
+  closed.
+- Changing admins requires an env change and redeploy. That is the accepted
+  tradeoff for a single-operator product; revisit if staff ever need granting,
+  at which point a `User.isAdmin` column plus an audit trail is the natural
+  successor.
+
+---
+
 ## D2 — Billing: admin-granted plans now, payment rails as soon as possible
 
 **Date:** 2026-08-02
