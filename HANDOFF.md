@@ -491,8 +491,13 @@ reaches `/uz` through the locale middleware. Key decisions:
    `Eviction policy is volatile-lru. It should be "noeviction"` on boot. Under
    memory pressure Redis Cloud can evict queued jobs, silently losing DMs. Change
    it in the Redis Cloud console if the free tier allows.
-2. **Meta App Review** — needed only to let people outside your test users
-   connect their own accounts. See [META_APP_REVIEW.md](META_APP_REVIEW.md).
+2. **Meta Advanced Access** — the real gate on self-serve signup. Until it is granted,
+   the app holds **Standard Access**, which means "only for a business I own or
+   manage": an Instagram account can only connect if it has been added by hand under
+   **Use cases → Instagram API setup → Generate access tokens → Add account**. The
+   OAuth flow itself is already self-serve and needs no code changes.
+   See [Meta verification status](#meta-verification-status) below and
+   [META_APP_REVIEW.md](META_APP_REVIEW.md).
 3. **Cron auth falls back to `NEXTAUTH_SECRET`** — which now signs every session
    JWT, so leaking it means forging any user's session. One line to delete; see
    finding 1 in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
@@ -513,6 +518,57 @@ on Vercel (these differ from the top-level Meta App ID — take them from
 **Use cases → Instagram API setup**, not App Settings → Basic), webhook verified
 at `https://replie.uz/api/webhook`, redirect URI
 `https://replie.uz/api/instagram/callback`.
+
+---
+
+## Meta verification status
+
+Where the App Review path stands as of 2026-08-02, so the next attempt does not start
+from zero.
+
+**Done:**
+
+- App `replie` created and **published**. Instagram-specific `INSTAGRAM_APP_ID` /
+  `INSTAGRAM_APP_SECRET` set on Vercel (these are **not** the top-level Meta App ID and
+  secret — take them from Use cases → Instagram API setup).
+- Webhook verified at `https://replie.uz/api/webhook`, redirect URI
+  `https://replie.uz/api/instagram/callback`.
+- `ceo.syr` added under **Generate access tokens** and connected end to end. That was
+  the missing step that made every Graph call fail with code 100.
+- **Tech Provider status granted.** This is what unlocks App Review — the dashboard
+  card said "Become a Tech Provider to submit to App Review and request access to user
+  data and data from other businesses." Accepting it replaced the **Testing** item in
+  the left sidebar with a **Review** section containing *Testing*, *Verification*, and
+  *App Review*.
+- At least one successful API call, which Advanced Access requires.
+
+**Next, in this order:**
+
+1. **Review → Verification.** Do this *before* writing App Review justifications —
+   submissions get blocked without it, so there is no point drafting first.
+   The business-type picker offers **Sole proprietorship**, which maps to **YaTT**
+   (Yakka tartibdagi tadbirkor) in Uzbekistan — far cheaper and faster than
+   registering an MChJ (the LLC equivalent). Meta will want a legal business name and
+   address plus a document proving the entity exists.
+
+   > **Do not submit before the registration actually exists**, and match the legal
+   > name exactly as printed on the document. Meta cross-checks it, and a rejected
+   > verification is slower and more scrutinised to re-submit than getting it right
+   > once.
+
+2. **Review → App Review.** [META_APP_REVIEW.md](META_APP_REVIEW.md) already has
+   permission justifications and a screencast script, but it is **stale in three ways**
+   and will fail review as written:
+   - It lists 3 permissions; the code requests **4**. `instagram_business_manage_insights`
+     is missing and is real — it powers the overview page, and the callback log confirms
+     Instagram grants it. Either justify it or drop the scope and the feature.
+   - The screencast script says "sign in with an email magic link". Signup is now email
+     + password; the magic link is the fallback. Reviewers follow the script literally.
+   - It says "OpenReply" throughout, not replie.
+
+**Meanwhile:** accounts can still be onboarded by hand through **Review → Testing** —
+the same flow that connected `ceo.syr`. Good enough for the first handful of customers
+while verification is pending.
 
 ---
 

@@ -14,7 +14,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
   investigated and proven **not** to be a problem, so it does not get re-reported.
 - **[HANDOFF.md](HANDOFF.md)** — how the project is deployed and the traps that cost
   real debugging time (Windows lockfile breaking CI, Prisma 7's datasource location,
-  the locale middleware matcher, Instagram code 100 meaning an unlinked account).
+  the locale middleware matcher, Instagram code 100 meaning an unlinked account). Also
+  carries the Meta verification status, so the App Review path does not restart from
+  zero.
+- **[AGENT_PROMPT.md](AGENT_PROMPT.md)** — the starting prompt for an agent picking up
+  the review findings, plus the verified baseline to check against.
 
 **Billing, in one line:** paid plans are granted by an admin endpoint for now, and move
 to a payment webhook (Click / Payme / Uzum) as soon as that integration is practical —
