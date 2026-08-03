@@ -47,19 +47,21 @@ interface WebhookEntry {
   changes?: Array<{
     field: string;
     value: {
+      // comment fields
       id?: string;
       comment_id?: string;
       text?: string;
-      from?: {
-        id?: string;
-        username?: string;
-      };
-      media?: {
-        id?: string;
-      };
+      from?: { id?: string; username?: string };
+      media?: { id?: string };
       media_id?: string;
+      // messaging fields (entry.changes format used by Instagram Graph API)
+      sender?: { id?: string };
+      recipient?: { id?: string };
+      postback?: { mid?: string; title?: string; payload?: string };
+      read?: { watermark?: number; seq?: number };
     };
   }>;
+  // Messenger-platform-style messaging array (kept for forward compatibility)
   messaging?: Array<{
     sender?: { id?: string };
     recipient?: { id?: string };
@@ -139,13 +141,32 @@ export function parsePostbackEvents(
   if (payload.object !== "instagram") return events;
 
   for (const entry of payload.entry ?? []) {
+    // Instagram Graph API delivers messaging_postbacks via entry.changes
+    for (const change of entry.changes ?? []) {
+      if (change.field !== "messaging_postbacks") continue;
+      const value = change.value;
+      const postbackPayload = value?.postback?.payload;
+      const userId = value?.sender?.id;
+      const accountId = entry.id ?? value?.recipient?.id;
+
+      if (!postbackPayload || !userId || !accountId) continue;
+      if (userId === accountId) continue;
+
+      events.push({
+        instagramAccountId: accountId,
+        userId,
+        payload: postbackPayload,
+        mid: value?.postback?.mid,
+      });
+    }
+
+    // Messenger-platform format fallback (entry.messaging)
     for (const messaging of entry.messaging ?? []) {
       const postbackPayload = messaging.postback?.payload;
       const userId = messaging.sender?.id;
       const accountId = entry.id ?? messaging.recipient?.id;
 
       if (!postbackPayload || !userId || !accountId) continue;
-      // Ignore echoes of the account's own actions.
       if (userId === accountId) continue;
 
       events.push({
@@ -171,6 +192,24 @@ export function parseReadEvents(payload: WebhookPayload): WebhookReadEvent[] {
   if (payload.object !== "instagram") return events;
 
   for (const entry of payload.entry ?? []) {
+    // Instagram Graph API delivers messaging_seen via entry.changes
+    for (const change of entry.changes ?? []) {
+      if (change.field !== "messaging_seen") continue;
+      const value = change.value;
+      const userId = value?.sender?.id;
+      const accountId = entry.id ?? value?.recipient?.id;
+
+      if (!userId || !accountId) continue;
+      if (userId === accountId) continue;
+
+      events.push({
+        instagramAccountId: accountId,
+        userId,
+        watermark: value?.read?.watermark,
+      });
+    }
+
+    // Messenger-platform format fallback (entry.messaging)
     for (const messaging of entry.messaging ?? []) {
       if (!messaging.read) continue;
 
