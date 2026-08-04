@@ -46,6 +46,14 @@ no DMs are sent.**
 
 Push to `main`. Vercel builds with `prisma generate && prisma migrate deploy && next build`.
 
+> **`prisma migrate deploy` runs on every deploy**, so pushing a commit that adds
+> a migration applies it to the live database. Check `prisma/migrations/` in what
+> you are pushing. A migration that fails leaves a *failed* row and blocks every
+> later deploy with P3009 — see [Database migrations](#database-migrations).
+>
+> Pending as of 2026-08-04: `20260804120000_add_plan_grant_fields` (three
+> nullable columns and an index on `Workspace`; metadata-only, no row rewrite).
+
 ### Worker
 
 The e2-micro is too small to build the image itself — `npm ci` took over 40
@@ -703,26 +711,27 @@ reaches `/uz` through the locale middleware. Key decisions:
 
 ## Before real users
 
-1. **Redis eviction policy** — the worker logs
-   `Eviction policy is volatile-lru. It should be "noeviction"` on boot. Under
-   memory pressure Redis Cloud can evict queued jobs, silently losing DMs. Change
-   it in the Redis Cloud console if the free tier allows.
-2. **Meta Advanced Access** — the real gate on self-serve signup. Until it is granted,
+1. **Meta Advanced Access** — the real gate on self-serve signup. Until it is granted,
    the app holds **Standard Access**, which means "only for a business I own or
    manage": an Instagram account can only connect if it has been added by hand under
    **Use cases → Instagram API setup → Generate access tokens → Add account**. The
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
    [META_APP_REVIEW.md](META_APP_REVIEW.md).
-3. **Opening DM and follow gate are disabled** — no Instagram messaging webhook has
+2. **Opening DM and follow gate are disabled** — no Instagram messaging webhook has
    ever reached the app, so a button tap delivers nothing. Both features are hidden
    behind a "Soon" badge until this is resolved. App Review is *not* the cause; see
    [Messaging webhooks have never fired](#messaging-webhooks-have-never-fired--open-investigation-2026-08-03)
    for what is ruled out and what to try next.
-4. **Set `ALERT_EMAIL` and `ADMIN_EMAILS` on Vercel**, and add an external uptime
-   monitor — the health cron is built, but on Vercel's free tier it only fires
-   daily and it sends nothing without `ALERT_EMAIL`. See
-   [Health alerting](#health-alerting).
+3. **Set the two new env vars before deploying**, or two features ship dead:
+   `ALERT_EMAIL` (no alert email is ever sent without it) and `ADMIN_EMAILS`
+   (`/api/admin/plan` and the global diagnostics panels 403 for everyone,
+   including you). `ADMIN_EMAILS` must list an account that exists and has a
+   **verified** email. See [Health alerting](#health-alerting) and D3.
+4. **Add an external uptime monitor.** Vercel's free tier fires crons once a day,
+   so the health check alone cannot detect worker death promptly.
+   [Health alerting](#health-alerting) explains why cron-job.org works for this
+   and UptimeRobot's free tier does not.
 5. **Session revocation** — sessions are JWT-backed and cannot be revoked
    server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
 6. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
@@ -732,6 +741,13 @@ reaches `/uz` through the locale middleware. Key decisions:
    every advertised URL and every tracked link in a DM pays a redirect hop.
    Recommended: make the apex primary in Vercel, which needs no code change since
    `APP_URL` is already the apex. See Q4 in [FIX_BRIEF.md](FIX_BRIEF.md).
+8. **Payment rails** — blocked on merchant credentials from Click or Payme, not on
+   code. Until then, plans are granted manually through
+   [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
+   [FIX_BRIEF.md](FIX_BRIEF.md) for what will be needed once access arrives.
+
+~~Redis eviction policy~~ — fixed 2026-08-04: now `noeviction`, so queued jobs
+can no longer be evicted under memory pressure.
 
 ~~Open redirect on `replie.uz/r/*`~~ — fixed 2026-08-03 (S3/S5): `lib/validation/url.ts`
 allowlists http(s) at every write path, and `/r/[slug]` re-checks the stored value

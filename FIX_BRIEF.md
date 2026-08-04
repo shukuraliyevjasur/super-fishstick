@@ -287,7 +287,28 @@ cannot reintroduce the pattern — C1 adds one.
 **Verify:** with `CRON_SECRET` unset the route returns 401 rather than accepting
 `NEXTAUTH_SECRET`.
 
-## P2 (HIGH) — No payment integration
+## P2 (HIGH) — No payment integration — ⛔ BLOCKED on provider access (2026-08-04)
+
+**Not startable yet, and not for code reasons.** Click / Payme require a merchant
+account and API credentials before anything can be built against them. Owner is
+pursuing that; this is a "come back in a few weeks" item, not a backlog item
+anyone can pick up today.
+
+**The code side is already prepared, so this should be small when it unblocks.**
+`grantWorkspacePlan()` in `lib/billing/grant.ts` is the single writer of
+`workspace.plan`. The payment webhook calls it with
+`source: "PAYMENT_WEBHOOK"` and a `grantedBy` like `webhook:click`, and needs no
+other change — the audit trail, expiry and plan gates all already work. See P1
+and D2.
+
+What will actually be needed when credentials arrive: a webhook route verifying
+the provider's signature, a mapping from their product/amount to a
+`WorkspacePlan`, an `expiresAt` matching the billing cycle, and idempotency on
+their transaction id so a retried callback cannot double-grant.
+
+**Meanwhile the manual path works:** the customer pays via Telegram and the owner
+grants the plan through `POST /api/admin/plan`. That was the point of D2.
+
 
 **Where:** `app/[lang]/pricing/page.tsx` — every paid CTA is
 `https://t.me/ceo_syr?text=...`.
@@ -748,9 +769,9 @@ One `e2-micro` running the worker under `--restart always` — survives a reboot
 VM failure or a Docker daemon problem. Redis is a free tier whose eviction policy can
 drop queued jobs.
 
-**Related and already tracked:** the Redis eviction policy is `volatile-lru` and should
-be `noeviction`; under memory pressure Redis Cloud can evict queued jobs and silently
-lose DMs. Change it in the Redis Cloud console. This is blocker 1 in HANDOFF.md.
+~~**Related and already tracked:** the Redis eviction policy is `volatile-lru`~~ —
+**done 2026-08-04: it is now `noeviction`**, so queued jobs can no longer be
+evicted under memory pressure. That was the actionable half of this finding.
 
 Not a code fix. Worth naming so it is a decision rather than an accident.
 
