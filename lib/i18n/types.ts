@@ -343,6 +343,41 @@ export interface Dict {
     noMatch: string
   }
 
+  campaignDetail: {
+    active: string
+    paused: string
+    triggerAnyPost: string
+    triggerNextReel: string
+    triggerSpecificPost: string
+    anyComment: string
+    noKeywords: string
+    statSent: string
+    statClicks: string
+    statCtr: string
+    statFailed: string
+    whenSomeoneComments: string
+    postBadgeAny: string
+    postBadgePost: string
+    andCommentContains: string
+    theyGetOpeningDm: string
+    openingMessageFallback: string
+    buttonFallback: string
+    mustFollowFirst: string
+    followPromptFallback: string
+    followButtonFallback: string
+    andTheyGetDm: string
+    openLinkFallback: string
+    tabInsights: string
+    tabPreview: string
+    edit: string
+    pause: string
+    resume: string
+    sampleComment: string
+    notFound: string
+    breadcrumb: string
+    publicReplyUnderPost: string
+  }
+
   importCampaigns: {
     title: string
     descIntro: string

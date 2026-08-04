@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview";
+import { useDict } from "@/components/dictionary-provider";
 
 interface Campaign {
   id: string;
@@ -49,6 +50,8 @@ interface Campaign {
 type Tab = "insights" | "preview";
 
 export default function CampaignDetailPage() {
+  const dict = useDict();
+  const d = dict.campaignDetail;
   const router = useRouter();
   const rawParams = useParams();
   const id = rawParams.id as string;
@@ -125,12 +128,12 @@ export default function CampaignDetailPage() {
   if (notFound || !campaign) {
     return (
       <div className="panel rounded-md p-8 text-center">
-        <p className="text-sm text-muted">Kampaniya topilmadi.</p>
+        <p className="text-sm text-muted">{d.notFound}</p>
         <button
           onClick={() => router.push(`/${lang}/campaigns`)}
           className="mt-4 rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
         >
-          Kampaniyalarga qaytish
+          {dict.campaignBuilder.backToCampaigns}
         </button>
       </div>
     );
@@ -146,19 +149,19 @@ export default function CampaignDetailPage() {
   const hasSecondLink = Boolean(campaign.trackedLinks?.[1]?.destinationUrl);
 
   const trigger = campaign.matchAnyPost
-    ? "Har qanday post yoki reel"
+    ? d.triggerAnyPost
     : campaign.pendingNextReel
-      ? "Keyingi reel"
-      : "Muayyan post yoki reel";
+      ? d.triggerNextReel
+      : d.triggerSpecificPost;
   const matchText = campaign.matchAnyWord
-    ? "Har qanday izoh"
-    : campaign.keywords.join(", ") || "Kalit so'z yo'q";
+    ? d.anyComment
+    : campaign.keywords.join(", ") || d.noKeywords;
 
   const metrics = [
-    { label: "Yuborildi", value: campaign.analytics.sent },
-    { label: "Kliklar", value: campaign.analytics.clicks },
-    { label: "CTR", value: `${campaign.analytics.ctr}%` },
-    { label: "Muvaffaqiyatsiz", value: campaign.analytics.failed },
+    { label: d.statSent, value: campaign.analytics.sent },
+    { label: d.statClicks, value: campaign.analytics.clicks },
+    { label: d.statCtr, value: `${campaign.analytics.ctr}%` },
+    { label: d.statFailed, value: campaign.analytics.failed },
   ];
 
   return (
@@ -170,7 +173,7 @@ export default function CampaignDetailPage() {
             href={`/${lang}/campaigns`}
             className="text-sm text-muted hover:text-foreground"
           >
-            &larr; Kampaniyalar
+            &larr; {d.breadcrumb}
           </Link>
         </div>
         <div className="flex items-center gap-2">
@@ -182,11 +185,11 @@ export default function CampaignDetailPage() {
                 : "bg-muted/15 text-muted"
             }`}
           >
-            {campaign.isActive ? "FAOL" : "TO'XTATILGAN"}
+            {campaign.isActive ? d.active : d.paused}
           </span>
         </div>
 
-        <Summary title="Kimdir izoh yozganda">
+        <Summary title={d.whenSomeoneComments}>
           <div className="flex items-center gap-3">
             {postThumb ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -197,18 +200,20 @@ export default function CampaignDetailPage() {
               />
             ) : (
               <div className="grid h-14 w-14 place-items-center rounded-md bg-surface-hover text-xs text-muted">
-                {campaign.matchAnyPost || campaign.pendingNextReel ? "Har" : "Post"}
+                {campaign.matchAnyPost || campaign.pendingNextReel
+                  ? d.postBadgeAny
+                  : d.postBadgePost}
               </div>
             )}
             <span className="text-sm text-foreground">{trigger}</span>
           </div>
         </Summary>
 
-        <Summary title="Va izohda mavjud">
+        <Summary title={d.andCommentContains}>
           <FieldBox>{matchText}</FieldBox>
           {publicReplies.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs text-muted">Post ostida ommaviy javob</p>
+              <p className="text-xs text-muted">{d.publicReplyUnderPost}</p>
               {publicReplies.map((m, i) => (
                 <FieldBox key={i}>{m}</FieldBox>
               ))}
@@ -217,32 +222,31 @@ export default function CampaignDetailPage() {
         </Summary>
 
         {campaign.openingDmEnabled && (
-          <Summary title="Ular kirish DM oladi">
-            <FieldBox>{campaign.openingDmMessage || "Kirish xabari"}</FieldBox>
-            <FieldBox>{campaign.openingDmButtonLabel || "Tugma"}</FieldBox>
+          <Summary title={d.theyGetOpeningDm}>
+            <FieldBox>{campaign.openingDmMessage || d.openingMessageFallback}</FieldBox>
+            <FieldBox>{campaign.openingDmButtonLabel || d.buttonFallback}</FieldBox>
           </Summary>
         )}
 
         {campaign.requireFollow && (
-          <Summary title="Ular avval obuna bo'lishi kerak">
+          <Summary title={d.mustFollowFirst}>
             <FieldBox>
-              {campaign.followPromptMessage ||
-                "Deyarli bo'ldi! Meni kuzating va quyidagi tugmani bosib havolani oling 💛"}
+              {campaign.followPromptMessage || d.followPromptFallback}
             </FieldBox>
             <FieldBox>
-              {campaign.followPromptButtonLabel || "Obuna bo'ldim ✅"}
+              {campaign.followPromptButtonLabel || d.followButtonFallback}
             </FieldBox>
           </Summary>
         )}
 
-        <Summary title="Va ular DM oladi">
+        <Summary title={d.andTheyGetDm}>
           <FieldBox>{campaign.dmMessage}</FieldBox>
           {hasLink && (
-            <FieldBox>{campaign.linkButtonLabel || "Havolani ochish"}</FieldBox>
+            <FieldBox>{campaign.linkButtonLabel || d.openLinkFallback}</FieldBox>
           )}
           {hasSecondLink && (
             <FieldBox>
-              {campaign.trackedLinks?.[1]?.label || "Havolani ochish"}
+              {campaign.trackedLinks?.[1]?.label || d.openLinkFallback}
             </FieldBox>
           )}
         </Summary>
@@ -253,10 +257,10 @@ export default function CampaignDetailPage() {
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3 border-b border-border pb-3">
           <div className="flex gap-4">
             <TabButton active={tab === "insights"} onClick={() => setTab("insights")}>
-              Statistika
+              {d.tabInsights}
             </TabButton>
             <TabButton active={tab === "preview"} onClick={() => setTab("preview")}>
-              Ko&apos;rinish
+              {d.tabPreview}
             </TabButton>
           </div>
           <div className="flex items-center gap-2">
@@ -264,7 +268,7 @@ export default function CampaignDetailPage() {
               href={`/${lang}/campaigns/${campaign.id}/edit`}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-muted hover:text-foreground"
             >
-              Tahrirlash
+              {d.edit}
             </Link>
             <button
               onClick={toggleActive}
@@ -275,7 +279,7 @@ export default function CampaignDetailPage() {
                   : "border-success/30 text-success hover:bg-success/10"
               }`}
             >
-              {campaign.isActive ? "To’xtatish" : "Davom ettirish"}
+              {campaign.isActive ? d.pause : d.resume}
             </button>
           </div>
         </div>
@@ -302,7 +306,11 @@ export default function CampaignDetailPage() {
             avatarUrl={avatarUrl}
             postThumb={postThumb}
             caption=""
-            sampleComment={campaign.matchAnyWord ? "nice!" : campaign.keywords[0] ?? "LINK"}
+            sampleComment={
+              campaign.matchAnyWord
+                ? d.sampleComment
+                : campaign.keywords[0] ?? "LINK"
+            }
             publicReplyEnabled={campaign.publicReplyEnabled}
             publicReplyMessage={publicReplies[0] ?? ""}
             openingDmEnabled={campaign.openingDmEnabled}
@@ -310,15 +318,15 @@ export default function CampaignDetailPage() {
             openingDmButtonLabel={campaign.openingDmButtonLabel ?? ""}
             revealMessage={campaign.dmMessage}
             hasLink={hasLink}
-            linkButtonLabel={campaign.linkButtonLabel ?? "Havolani ochish"}
+            linkButtonLabel={campaign.linkButtonLabel ?? d.openLinkFallback}
             hasSecondLink={hasSecondLink}
             secondLinkButtonLabel={
-              campaign.trackedLinks?.[1]?.label ?? "Havolani ochish"
+              campaign.trackedLinks?.[1]?.label ?? d.openLinkFallback
             }
             requireFollow={campaign.requireFollow}
             followPromptMessage={campaign.followPromptMessage ?? ""}
             followPromptButtonLabel={
-              campaign.followPromptButtonLabel ?? "Obuna bo'ldim ✅"
+              campaign.followPromptButtonLabel ?? d.followButtonFallback
             }
           />
           </div>
