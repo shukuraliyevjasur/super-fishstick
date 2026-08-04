@@ -26,6 +26,9 @@ export const uz: Dict = {
     logs: "DM Jurnali",
     settings: "Sozlamalar",
     logOut: "Chiqish",
+    planFree: "Bepul",
+    planStandard: "Standart",
+    planPro: "Pro",
     diagnostics: "Diagnostika",
   },
 
@@ -519,6 +522,10 @@ export const uz: Dict = {
     igErrInvalid: "Noto'g'ri Instagram javobi — qayta urinib ko'ring",
     igErrAlreadyConnected: "Bu Instagram akkaunt boshqa workspacega ulangan",
     igErrFailed: "Instagram ulanmadi — qayta urinib ko'ring",
+    planLabel: "Tarif",
+    upgrade: "Yaxshilash",
+    unlimited: "Cheksiz",
+    contactsLabel: "Murojaatchilar",
   },
 
   metrics: {

@@ -9,10 +9,12 @@ export default function Sidebar({
   isOpen,
   onClose,
   workspaceName,
+  plan,
 }: {
   isOpen: boolean;
   onClose: () => void;
   workspaceName: string;
+  plan: string;
 }) {
   const dict = useDict();
   const params = useParams();
@@ -128,24 +130,48 @@ export default function Sidebar({
           })}
         </nav>
 
-        <div className="px-5 py-4 border-t border-border">
-          <p className="text-xs font-medium text-foreground truncate">{workspaceName}</p>
-          <div className="flex items-center gap-3 mt-2">
-            <button
-              type="button"
-              onClick={() => void signOut({ callbackUrl: `/${lang}/login` })}
-              className="text-xs text-muted hover:text-error transition-colors"
+        <div className="px-4 py-4 border-t border-border space-y-3">
+          {/* Workspace + plan */}
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <p className="text-xs font-medium text-foreground truncate">{workspaceName}</p>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none ${
+                plan === "PRO"
+                  ? "bg-amber-100 text-amber-700 border border-amber-200"
+                  : plan === "STANDART"
+                    ? "bg-accent/10 text-accent border border-accent/20"
+                    : "bg-border text-muted border border-border-hover"
+              }`}
             >
-              {dict.sidebar.logOut}
-            </button>
-            <span className="text-xs text-border">|</span>
+              {plan === "PRO"
+                ? dict.sidebar.planPro
+                : plan === "STANDART"
+                  ? dict.sidebar.planStandard
+                  : dict.sidebar.planFree}
+            </span>
+          </div>
+
+          {/* Logout button */}
+          <button
+            type="button"
+            onClick={() => void signOut({ callbackUrl: `/${lang}/login` })}
+            className="w-full flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted hover:border-error/40 hover:bg-error/5 hover:text-error transition-colors"
+          >
+            <svg className="w-3 h-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/>
+            </svg>
+            {dict.sidebar.logOut}
+          </button>
+
+          {/* Language switcher */}
+          <div className="flex items-center gap-2.5">
             {(["uz", "ru", "en"] as const).flatMap((l, i) => [
-              ...(i > 0 ? [<span key={`sep-${l}`} className="text-xs text-border">|</span>] : []),
+              ...(i > 0 ? [<span key={`sep-${l}`} className="text-[10px] text-border">|</span>] : []),
               <Link
                 key={l}
                 href={`/${l}${switchPath}`}
                 onClick={onClose}
-                className={`text-xs font-semibold transition-colors ${lang === l ? "text-accent" : "text-muted hover:text-foreground"}`}
+                className={`text-[10px] font-semibold transition-colors ${lang === l ? "text-accent" : "text-muted hover:text-foreground"}`}
               >
                 {l.toUpperCase()}
               </Link>,

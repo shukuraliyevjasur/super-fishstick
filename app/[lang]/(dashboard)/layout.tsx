@@ -45,6 +45,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       workspaceName={workspace.name}
+      plan={workspace.plan}
       instagramUsername={accounts[0]?.username ?? null}
       instagramAccountCount={accounts.length}
     >

@@ -27,6 +27,9 @@ export const en: Dict = {
     settings: "Settings",
     diagnostics: "Diagnostics",
     logOut: "Log out",
+    planFree: "Free",
+    planStandard: "Standard",
+    planPro: "Pro",
   },
 
   topBar: {
@@ -517,6 +520,10 @@ export const en: Dict = {
     igErrInvalid: "Invalid Instagram response — please try again",
     igErrAlreadyConnected: "That Instagram account is connected to another workspace",
     igErrFailed: "Instagram connection failed — please try again",
+    planLabel: "Plan",
+    upgrade: "Upgrade",
+    unlimited: "Unlimited",
+    contactsLabel: "Contacts reached",
   },
 
   metrics: {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
+import Link from "next/link";
 import type { AccountOption } from "@/components/account-select";
 import { useDict, t } from "@/components/dictionary-provider";
 import { intlLocale } from "@/lib/i18n/format";
@@ -24,6 +25,12 @@ interface SettingsData {
       webhookSubscribed: boolean;
     }
   >;
+  plan: string;
+  dmQuota: { used: number; limit: number | null } | null;
+  activeAutomations: number;
+  totalAutomations: number;
+  clicksThisMonth: number;
+  contactsCount: number;
 }
 
 interface WorkspaceMembersData {
@@ -51,6 +58,8 @@ export default function SettingsPage() {
   const dict = useDict();
   const d = dict.settings;
   const searchParams = useSearchParams();
+  const params = useParams();
+  const lang = (params.lang as string) || "uz";
   const [data, setData] = useState<SettingsData | null>(null);
   const [membersData, setMembersData] = useState<WorkspaceMembersData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -355,15 +364,100 @@ export default function SettingsPage() {
 
       {/* Usage */}
       <section className="panel rounded-lg p-6">
-        <h2 className="text-base font-semibold text-foreground mb-6">{d.usageHeading}</h2>
-        <div className="flex items-center justify-between py-3">
-          <div>
-            <p className="text-sm font-medium text-foreground">{d.dmsThisMonth}</p>
-            <p className="text-xs text-muted mt-0.5">{d.currentPeriod}</p>
+        {/* Header: plan badge + heading + upgrade */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-semibold text-foreground">{d.usageHeading}</h2>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                data?.plan === "PRO"
+                  ? "bg-amber-100 text-amber-700 border border-amber-200"
+                  : data?.plan === "STANDART"
+                    ? "bg-accent/10 text-accent border border-accent/20"
+                    : "bg-border text-muted border border-border-hover"
+              }`}
+            >
+              {data?.plan === "PRO"
+                ? dict.sidebar.planPro
+                : data?.plan === "STANDART"
+                  ? dict.sidebar.planStandard
+                  : dict.sidebar.planFree}
+            </span>
           </div>
-          <span className="text-sm font-semibold text-foreground">
-            {data?.workspace.dmsSentThisPeriod ?? 0}
-          </span>
+          {data?.plan !== "PRO" && (
+            <Link
+              href={`/${lang}/pricing`}
+              className="text-xs font-semibold text-accent hover:text-accent-hover transition-colors"
+            >
+              {d.upgrade} →
+            </Link>
+          )}
+        </div>
+
+        <p className="text-xs text-muted mb-4">{d.currentPeriod}</p>
+
+        <div className="space-y-5">
+          {/* DMs this month — has a progress bar */}
+          {(() => {
+            const used = data?.dmQuota?.used ?? data?.workspace.dmsSentThisPeriod ?? 0;
+            const limit = data?.dmQuota?.limit ?? null;
+            const pct = limit ? Math.min(100, (used / limit) * 100) : null;
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-medium text-foreground">{d.dmsThisMonth}</span>
+                  <span className="text-xs tabular-nums text-muted">
+                    {used.toLocaleString()}
+                    {limit !== null ? ` / ${limit.toLocaleString()}` : ""}
+                  </span>
+                </div>
+                {pct !== null && (
+                  <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        pct > 90 ? "bg-error" : pct > 70 ? "bg-warning" : "bg-accent"
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Active campaigns */}
+          <div className="flex items-center justify-between py-2.5 border-t border-border">
+            <span className="text-sm text-foreground">{dict.dashboard.statActiveCampaigns}</span>
+            <span className="text-xs tabular-nums font-medium text-foreground">
+              {data?.activeAutomations ?? 0}
+              {data?.plan === "FREE" ? " / 2" : ""}
+            </span>
+          </div>
+
+          {/* Instagram accounts */}
+          <div className="flex items-center justify-between py-2.5 border-t border-border">
+            <span className="text-sm text-foreground">{d.accountsLabel}</span>
+            <span className="text-xs tabular-nums font-medium text-foreground">
+              {data?.instagramAccounts.length ?? 0}
+              {data?.plan === "FREE" || data?.plan === "STANDART" ? " / 1" : " / 5"}
+            </span>
+          </div>
+
+          {/* Link clicks this month */}
+          <div className="flex items-center justify-between py-2.5 border-t border-border">
+            <span className="text-sm text-foreground">{dict.dashboard.statClicks}</span>
+            <span className="text-xs tabular-nums font-medium text-foreground">
+              {(data?.clicksThisMonth ?? 0).toLocaleString()}
+            </span>
+          </div>
+
+          {/* Contacts reached */}
+          <div className="flex items-center justify-between py-2.5 border-t border-border">
+            <span className="text-sm text-foreground">{d.contactsLabel}</span>
+            <span className="text-xs tabular-nums font-medium text-foreground">
+              {(data?.contactsCount ?? 0).toLocaleString()}
+            </span>
+          </div>
         </div>
       </section>
     </div>

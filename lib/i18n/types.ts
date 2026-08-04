@@ -27,6 +27,9 @@ export interface Dict {
     settings: string
     diagnostics: string
     logOut: string
+    planFree: string
+    planStandard: string
+    planPro: string
   }
 
   topBar: {
@@ -481,6 +484,10 @@ export interface Dict {
     igErrInvalid: string
     igErrAlreadyConnected: string
     igErrFailed: string
+    planLabel: string
+    upgrade: string
+    unlimited: string
+    contactsLabel: string
   }
 
   /** Instagram insight metrics. Used as both stat-card and column labels. */

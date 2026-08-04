@@ -26,6 +26,9 @@ export const ru: Dict = {
     logs: "Журнал DM",
     settings: "Настройки",
     logOut: "Выйти",
+    planFree: "Бесплатный",
+    planStandard: "Стандарт",
+    planPro: "Pro",
     diagnostics: "Диагностика",
   },
 
@@ -518,6 +521,10 @@ export const ru: Dict = {
     igErrInvalid: "Некорректный ответ Instagram — попробуйте ещё раз",
     igErrAlreadyConnected: "Этот аккаунт Instagram уже подключён в другом воркспейсе",
     igErrFailed: "Не удалось подключить Instagram — попробуйте ещё раз",
+    planLabel: "Тариф",
+    upgrade: "Улучшить",
+    unlimited: "Безлимитно",
+    contactsLabel: "Контакты",
   },
 
   metrics: {
