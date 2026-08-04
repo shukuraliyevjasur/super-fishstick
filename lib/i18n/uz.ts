@@ -374,6 +374,25 @@ export const uz: Dict = {
     noMatch: "Mos kelmadi",
   },
 
+  importCampaigns: {
+    title: "Kampaniyalarni import qilish",
+    descIntro:
+      "Har bir kampaniya uchun bir qator bo'lgan CSV joylashtiring. Har bir qator builderda oldindan to'ldirilgan holda ochiladi — ko'rib chiqib, reel tanlang va saqlang.",
+    descRequired: "Majburiy ustunlar:",
+    descOptional: "Ixtiyoriy:",
+    descKeywords: "Kalit so'zlar bir katakda vergul bilan ajratiladi.",
+    descLink: "Kuzatilgan havolani qo'shish uchun {link} dan foydalaning.",
+    accountLabel: "Instagram akkaunt",
+    accountShort: "Akkaunt",
+    fillSample: "Namuna bilan to'ldirish",
+    submit: "Ko'rib chiqib import qilish",
+    cancel: "Bekor qilish",
+    errNoCsv:
+      "Sarlavha qatori va kamida bitta kampaniya bilan CSV joylashtiring.",
+    errRowMissing: "{{row}}-qatorda kalit so'z yoki xabar yo'q.",
+    errStorage: "Import bu brauzerda saqlanmadi.",
+  },
+
   diagnostics: {
     heading: "Diagnostika",
     subtitle:

@@ -343,6 +343,23 @@ export interface Dict {
     noMatch: string
   }
 
+  importCampaigns: {
+    title: string
+    descIntro: string
+    descRequired: string
+    descOptional: string
+    descKeywords: string
+    descLink: string
+    accountLabel: string
+    accountShort: string
+    fillSample: string
+    submit: string
+    cancel: string
+    errNoCsv: string
+    errRowMissing: string
+    errStorage: string
+  }
+
   diagnostics: {
     heading: string
     subtitle: string

@@ -372,6 +372,24 @@ export const en: Dict = {
     noMatch: "No match",
   },
 
+  importCampaigns: {
+    title: "Import campaigns",
+    descIntro:
+      "Paste a CSV with one row per campaign. Each row opens in the builder prefilled — review it, pick a reel, and save.",
+    descRequired: "Required columns:",
+    descOptional: "Optional:",
+    descKeywords: "Keywords in one cell are separated by commas.",
+    descLink: "Use {link} to insert the tracked link.",
+    accountLabel: "Instagram account",
+    accountShort: "Account",
+    fillSample: "Fill with sample",
+    submit: "Review and import",
+    cancel: "Cancel",
+    errNoCsv: "Paste a CSV with a header row and at least one campaign.",
+    errRowMissing: "Row {{row}} has no keywords or message.",
+    errStorage: "The import could not be saved in this browser.",
+  },
+
   diagnostics: {
     heading: "Diagnostics",
     subtitle:
