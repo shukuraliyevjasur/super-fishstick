@@ -16,7 +16,11 @@ function hasSessionCookie(request: NextRequest): boolean {
 }
 
 function getLocale(request: NextRequest): string {
-  const accept = request.headers.get("accept-language") ?? "".toLowerCase();
+  // `?? "".toLowerCase()` lowercased the empty fallback, not the header, so the
+  // matches below ran case-sensitively against the raw value. Browsers send
+  // lowercase subtags so it usually worked, but `Accept-Language: RU-RU` fell
+  // through to Uzbek.
+  const accept = (request.headers.get("accept-language") ?? "").toLowerCase();
   if (/\bru\b/.test(accept)) return "ru";
   if (/\ben\b/.test(accept)) return "en";
   return DEFAULT_LOCALE;
