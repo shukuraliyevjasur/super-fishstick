@@ -1,73 +1,111 @@
-# Starting prompt for a fixing agent
+# Starting prompt for the next agent
 
 Copy the block below into a fresh agent session pointed at this repo.
 
-Kept as a file so it survives, and so it can be edited as findings land — when a
-finding is fixed, delete it from `FIX_BRIEF.md` rather than editing this prompt.
+**The pre-launch review is finished** — 16 of 19 findings landed on 2026-08-04.
+This prompt was rewritten for what comes next; the previous version, which drove
+the review work, is in git history if you need it.
 
 ---
 
 ```
 You're picking up replie, a live Instagram comment-to-DM SaaS (Next.js 16, Prisma 7,
-Supabase Postgres, BullMQ/Redis, worker on a GCP VM). It's deployed at replie.uz but
-not yet open to real users. Your job is to work through the findings from a pre-launch
-review.
+Supabase Postgres, BullMQ/Redis, worker on a GCP VM), deployed at replie.uz and not
+yet open to real users.
+
+The pre-launch review is DONE — do not start there. 16 of 19 findings landed on
+2026-08-04; the 3 open ones are blocked on things outside the codebase and each says
+so in FIX_BRIEF.md. Re-fixing a closed finding is a regression.
 
 START HERE, in this order:
 1. AGENTS.md      - loads automatically; points at everything else
-2. DECISIONS.md   - settled calls. Do not quietly do something different. If you think
-                    one should be reversed, say so out loud.
-3. FIX_BRIEF.md   - your actual worklist. 19 findings, each with severity, file:line,
-                    the failure it causes, a concrete fix, and how to verify.
-4. HANDOFF.md     - deployment, and the traps that cost real debugging time.
+2. DECISIONS.md   - settled calls, D1-D3. Do not quietly do something different.
+                    If you think one should be reversed, say so out loud.
+3. HANDOFF.md     - deployment, the "Before real users" list, and the traps that
+                    cost real debugging time. This is your main map now.
+4. FIX_BRIEF.md   - the review worklist, now mostly closed. Read the "Do NOT fix
+                    these" section before touching anything.
 
-Before writing any code, confirm the baseline:
+Confirm the baseline before writing code:
   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:generate
   npm run typecheck && npm run lint && npm test
 
 Expected: typecheck silent, lint 0 errors (304 warnings are pre-existing and fine),
-125 tests passing across 16 files. If that doesn't match, stop and tell me before
+229 tests passing across 26 files. If that doesn't match, stop and tell me before
 changing anything.
 
+What actually needs doing, roughly in order of what blocks launch:
+
+1. META APP REVIEW. The real gate on self-serve signup. Verification first (needs
+   the YaTT registration), then App Review. META_APP_REVIEW.md is stale in three
+   specific ways listed in HANDOFF.md and will fail review as written. This is
+   mostly not a coding task.
+
+2. MESSAGING WEBHOOKS HAVE NEVER FIRED. Opening DM and follow gate are shipped
+   behind a "Soon" badge because a button tap delivers nothing. Both are features
+   the pricing page sells. HANDOFF.md records what has already been ruled out —
+   read it before forming a theory, and do not assume App Review is the cause.
+
+3. C2, error tracking (Sentry or equivalent). The only remaining finding that adds
+   a dependency. GENERATE THE LOCKFILE ON LINUX — WSL, the GCP VM, or CI. Never on
+   Windows; see the dependencies section in HANDOFF.md.
+
+4. Before real traffic: session revocation (JWT sessions can't be revoked
+   server-side, D1) and the Supabase transaction-mode pooler on 6543 (`max: 1` is
+   a per-instance cap, not a global one).
+
+5. P2, payment rails — BLOCKED on merchant credentials from Click or Payme. Do not
+   start it; the owner is pursuing access. FIX_BRIEF.md P2 lists exactly what will
+   be needed when it unblocks. It should be small: grantWorkspacePlan() already
+   exists and the webhook just calls it.
+
 How I want you to work:
-- One finding per commit. Re-run the full verification after each one.
-- Follow the suggested order at the bottom of FIX_BRIEF.md unless you have a reason
-  not to. Start with S1: it's a one-line deletion that removes a session-forgery path.
-- Read the "Do NOT fix these" section before you touch anything. Two findings were
-  investigated and disproved, and several parts are verified correct. Re-reporting
-  them or "fixing" working code is a regression.
+- One logical change per commit. Re-run the full verification after each.
 - ALWAYS run `git diff package-lock.json` before committing. If you didn't intend a
   dependency change, discard it. A lockfile regenerated on Windows installs fine
-  locally and breaks `npm ci` on Linux. Several fixes are deliberately written to add
-  zero dependencies for this reason.
-- Don't start P1 (the admin plan endpoint) without reading D2 in DECISIONS.md first.
-  The decision is made, but there's a constraint that's the whole point of it.
-- If something contradicts the brief, tell me rather than guessing. The brief was
+  locally and breaks `npm ci` on Linux.
+- Pushing to main auto-deploys AND runs `prisma migrate deploy` against the live
+  database. Know what's in prisma/migrations/ before you push.
+- If something contradicts the docs, tell me rather than guessing. The docs were
   written from verified evidence, so a contradiction means something changed.
 
-Begin by confirming the baseline and telling me which finding you're starting with
-and why.
+Begin by confirming the baseline and telling me what you're starting with and why.
 ```
 
 ---
 
+## What landed in the review pass (2026-08-04)
+
+Closed: **S1–S5** (every security finding), **C1**, **C3**, **Q1–Q3**, **Q5**,
+**Q6**, **P1**, **P3**, **P4**. Q4 is code-complete pending an operator decision.
+
+Three pieces of that work are load-bearing for anything built next:
+
+- **`grantWorkspacePlan()`** (`lib/billing/grant.ts`) is the *only* writer of
+  `workspace.plan`. The payment webhook must call it rather than updating the row.
+- **`isCurrentUserPlatformAdmin()`** (`lib/auth/admin.ts`, D3) gates anything
+  cross-tenant. Never gate platform-wide access on `canManageWorkspace` — every
+  customer is OWNER of their own workspace.
+- **`requireCronAuth()`** (`lib/ops/cron-auth.ts`) guards every operational
+  endpoint and fails closed. Do not add a fallback secret or an `if (secret)`
+  wrapper.
+
 ## Two things to watch
 
-**The brief is deliberately opinionated about what not to do.** Roughly a third of it
-is landmines and disproved findings. That is the part that saves money — without it an
-agent will re-derive the Instagram code-100 dead end (six deploys), re-report the
-React 19 href XSS, or regenerate the lockfile on Windows and break CI.
+**The docs are deliberately opinionated about what *not* to do.** Roughly a third
+of FIX_BRIEF.md is landmines and disproved findings. That is the part that saves
+money — without it an agent will re-derive the Instagram code-100 dead end (six
+deploys), re-report the React 19 `href` XSS, or regenerate the lockfile on Windows
+and break CI.
 
-**P1 is the one worth checking.** The decision is recorded, but the constraint that
-makes it non-throwaway — putting the granting logic in a reusable function so the
-payment webhook can call it later — is easy to skip if the agent optimises for "make
-the endpoint work". If it writes the logic inline in the route, have it pulled out
-before merging.
+**Two operator actions are outstanding and are not code.** An external uptime
+monitor, and picking a canonical host. Both are in "Before real users" in
+HANDOFF.md with the reasoning. Don't build around their absence — ask.
 
 ## Baseline verified
 
-2026-08-02, commit `b5214a9`: working tree clean, nothing unpushed, CI green,
-typecheck silent, lint 0 errors / 304 warnings, 125 tests passing across 16 files.
+2026-08-04: typecheck silent, lint 0 errors / 304 warnings, **229 tests passing
+across 26 files**, `package-lock.json` unchanged across the entire review pass —
+zero dependencies were added.
 
-Commits after this one have been documentation only, so the numbers above still hold.
-If they ever stop matching, the code changed — find out why before starting work.
+If those numbers stop matching, the code changed. Find out why before starting.

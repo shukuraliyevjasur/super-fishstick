@@ -723,15 +723,17 @@ reaches `/uz` through the locale middleware. Key decisions:
    behind a "Soon" badge until this is resolved. App Review is *not* the cause; see
    [Messaging webhooks have never fired](#messaging-webhooks-have-never-fired--open-investigation-2026-08-03)
    for what is ruled out and what to try next.
-3. **Set the two new env vars before deploying**, or two features ship dead:
-   `ALERT_EMAIL` (no alert email is ever sent without it) and `ADMIN_EMAILS`
-   (`/api/admin/plan` and the global diagnostics panels 403 for everyone,
-   including you). `ADMIN_EMAILS` must list an account that exists and has a
-   **verified** email. See [Health alerting](#health-alerting) and D3.
-4. **Add an external uptime monitor.** Vercel's free tier fires crons once a day,
-   so the health check alone cannot detect worker death promptly.
-   [Health alerting](#health-alerting) explains why cron-job.org works for this
-   and UptimeRobot's free tier does not.
+3. **Add an external uptime monitor** — *not done as of 2026-08-04.* Vercel's
+   free tier fires crons once a day, so the health check alone cannot detect
+   worker death promptly: the worker can be dead for ~24h before anyone is told,
+   and while it is down **no DMs are sent for any customer**.
+   [Health alerting](#health-alerting) has the exact URL and header, explains why
+   cron-job.org's free tier works and UptimeRobot's does not, and why the secret
+   must not be moved into a query parameter.
+   Also check whether Vercel Hobby caps cron jobs per project — `vercel.json` now
+   has three. If it does, drop the `health-check` entry and let the monitor do it.
+4. **Pick a canonical host** — *not done as of 2026-08-04.* See item 7 below;
+   listed twice because it is cheap and affects every link already going out.
 5. **Session revocation** — sessions are JWT-backed and cannot be revoked
    server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
 6. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
@@ -748,6 +750,8 @@ reaches `/uz` through the locale middleware. Key decisions:
 
 ~~Redis eviction policy~~ — fixed 2026-08-04: now `noeviction`, so queued jobs
 can no longer be evicted under memory pressure.
+~~`ALERT_EMAIL` and `ADMIN_EMAILS` unset~~ — set on Vercel 2026-08-04, so health
+alerting and the admin plan endpoint are both live.
 
 ~~Open redirect on `replie.uz/r/*`~~ — fixed 2026-08-03 (S3/S5): `lib/validation/url.ts`
 allowlists http(s) at every write path, and `/r/[slug]` re-checks the stored value
