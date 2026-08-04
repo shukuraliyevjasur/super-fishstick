@@ -33,7 +33,13 @@ type Props = { children: ReactNode; params: Promise<{ lang: string }> };
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  icons: { icon: "/replie-logo.svg" },
+  icons: {
+    icon: [
+      { url: "/replie-icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/replie-logo.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/replie-icon-512.png", sizes: "512x512" }],
+  },
 };
 
 export async function generateStaticParams() {
