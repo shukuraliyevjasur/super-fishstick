@@ -374,6 +374,26 @@ export const uz: Dict = {
     noMatch: "Mos kelmadi",
   },
 
+  inbox: {
+    title: "Xabarlar",
+    conversations: "Suhbatlar",
+    loading: "Yuklanmoqda…",
+    noConversations: "Hali suhbat yo'q.",
+    noMessages: "Xabarlar yo'q.",
+    selectConversation: "O'qish va javob berish uchun suhbat tanlang.",
+    back: "Orqaga",
+    backAria: "Suhbatlarga qaytish",
+    unknownUser: "noma'lum",
+    youPrefix: "Siz: ",
+    noText: "(matn yo'q)",
+    composerPlaceholder:
+      "Javob yozing… (Enter — yuborish, Shift+Enter — yangi qator)",
+    send: "Yuborish",
+    sending: "Yuborilmoqda…",
+    errLoadConversations: "Suhbatlarni yuklab bo'lmadi",
+    errSend: "Xabarni yuborib bo'lmadi",
+  },
+
   campaignDetail: {
     active: "FAOL",
     paused: "TO'XTATILGAN",

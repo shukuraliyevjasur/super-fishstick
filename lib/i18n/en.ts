@@ -372,6 +372,26 @@ export const en: Dict = {
     noMatch: "No match",
   },
 
+  inbox: {
+    title: "Inbox",
+    conversations: "Conversations",
+    loading: "Loading…",
+    noConversations: "No conversations yet.",
+    noMessages: "No messages.",
+    selectConversation: "Select a conversation to read and reply.",
+    back: "Back",
+    backAria: "Back to conversations",
+    unknownUser: "unknown",
+    youPrefix: "You: ",
+    noText: "(no text)",
+    composerPlaceholder:
+      "Write a reply… (Enter to send, Shift+Enter for a new line)",
+    send: "Send",
+    sending: "Sending…",
+    errLoadConversations: "Failed to load conversations",
+    errSend: "Failed to send message",
+  },
+
   campaignDetail: {
     active: "ACTIVE",
     paused: "PAUSED",

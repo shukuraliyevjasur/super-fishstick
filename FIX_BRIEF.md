@@ -9,9 +9,9 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 **Q1 Q2 Q3 Q5 Q6** (2026-08-03) and **P1 P4** (2026-08-04). **Q4** is
 code-complete but needs an operator action (which host is canonical).
 
-**Open: 4** — P2 (payment rails, now unblocked by P1), P3 (dashboard
-translation), C2 (error tracking, the only one needing a dependency), C4
-(infrastructure, not a code fix). Each finding below carries its own status line.
+**Open: 3** — P2 (payment rails, unblocked by P1 but needs commercial decisions),
+C2 (error tracking, the only one needing a dependency), C4 (infrastructure, not
+a code fix). Each finding below carries its own status line.
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -550,7 +550,40 @@ alternates: {
 Note `metadataBase` in `app/layout.tsx:13` resolves relative URLs — see Q4, its host
 is currently wrong.
 
-## P3 (MED) — Russian users see Uzbek in the dashboard
+## P3 (MED) — Russian users see Uzbek in the dashboard — ✅ FIXED 2026-08-04
+
+**Fixed across seven commits, one page each:** logs, overview, settings,
+diagnostics, CSV import, campaign detail, inbox. `StatusBadge` was translated
+with the logs page since it is shared by three of them. The campaign builder,
+preview and post picker were already done separately on 2026-08-03.
+
+Every dashboard page now calls `useDict()`. The four that do not are a redirect
+and thin wrappers with no user-visible strings.
+
+Four things worth knowing, none of which was a plain string swap:
+
+- **Dates and numbers ignored the locale everywhere.** Pages hardcoded `"uz-UZ"`,
+  or called `toLocaleString()` with no locale at all, so they followed the server
+  default. `lib/i18n/format.ts` maps the active locale to a BCP-47 tag. It is a
+  separate module with no `server-only` import, because `lib/i18n/index.ts`
+  cannot be imported from a client component.
+- **Wire formats had to be protected from translation.** The logs status filters,
+  the settings role `<select>`, the CSV column names and the BullMQ queue names
+  are API values, not copy. They now carry a dictionary key *alongside* the
+  untranslated value, so a later edit cannot localise the wire format and
+  silently break filtering or parsing.
+- **Placeholder fallbacks were Uzbek**, including the ones rendered inside the DM
+  preview — so a Russian user previewed a message with Uzbek button labels.
+- **The legacy `/automations` redirects dropped the locale.** They redirected to
+  an unprefixed `/campaigns`, which the middleware re-prefixes from
+  `Accept-Language` — so a user browsing in Russian with an English browser
+  landed on `/en/campaigns`. Now they carry `[lang]` through.
+
+`__tests__/i18n-parity.test.ts` guards the result: the `Dict` interface already
+makes a missing key a type error, and the test covers what types cannot see —
+empty values, and **interpolation tokens dropped in translation**, which
+otherwise render a hole and fail silently.
+
 
 **Where:** `app/[lang]/(dashboard)/` — settings, logs, inbox, overview, automations,
 campaigns, diagnostics.
@@ -778,14 +811,11 @@ itself.
 4. ~~**S2**~~ — done 2026-08-03.
 5. ~~**P1**~~ — done 2026-08-04, along with **P4**.
 6. ~~**Q1–Q6**~~ — done 2026-08-03, except Q4's operator action.
-7. **P3** — dashboard translation, incremental, one page per commit. ← **next**.
-   Re-scope first: the campaign builder, preview and picker were translated on
-   2026-08-03, and **English is now a third locale**, so each remaining page
-   needs keys in three dictionaries. Still hardcoded Uzbek: settings, inbox,
-   logs, overview, diagnostics, campaigns/[id], campaigns/import.
-8. **P2** — unblocked by P1. The webhook calls `grantWorkspacePlan()`.
-9. **C2** — the only remaining finding that adds a dependency. Generate the
-   lockfile on Linux.
+7. ~~**P3**~~ — done 2026-08-04, seven commits.
+8. **P2** — unblocked by P1; the webhook calls `grantWorkspacePlan()`. Needs a
+   provider and merchant account first, which is a commercial decision.
+9. **C2** — the only remaining finding that adds a dependency. **Generate the
+   lockfile on Linux**, not on Windows.
 
 Findings are independent unless noted. The only hard dependencies are
 P2 → P1 and P4 → P1.

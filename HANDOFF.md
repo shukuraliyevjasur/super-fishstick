@@ -834,9 +834,15 @@ while verification is pending.
 | Public header / footer | `components/public-site-header.tsx`, `components/public-site-footer.tsx` |
 | Sidebar | `components/sidebar.tsx` |
 
-**Known gap** — the dashboard pages under `app/[lang]/(dashboard)/` (settings,
-logs, inbox, overview, automations, campaigns, diagnostics) are hardcoded Uzbek
-and do not call `useDict()`, so `/ru/settings` renders Uzbek. This predates the
-route consolidation — the shims re-exported the same Uzbek implementation — but
-it is now visible in one place. Translating them is unfinished i18n work, not a
-regression.
+~~**Known gap** — the dashboard pages are hardcoded Uzbek~~ — **fixed 2026-08-04
+(P3).** Every dashboard page calls `useDict()`. Two rules keep it that way:
+
+- **Dates and numbers take the locale.** Use `intlLocale(dict.locale)` from
+  `lib/i18n/format.ts` — never a hardcoded `"uz-UZ"`, and never a bare
+  `toLocaleString()`, which follows the server default rather than the user.
+- **Never translate a wire format.** Status codes, role names, CSV column names
+  and BullMQ queue names are API values. Keep the value untranslated and put a
+  dictionary key beside it, as the logs filters and the settings role select do.
+
+`__tests__/i18n-parity.test.ts` catches empty values and interpolation tokens
+dropped in translation; the `Dict` interface already catches missing keys.

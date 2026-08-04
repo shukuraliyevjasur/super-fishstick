@@ -343,6 +343,25 @@ export interface Dict {
     noMatch: string
   }
 
+  inbox: {
+    title: string
+    conversations: string
+    loading: string
+    noConversations: string
+    noMessages: string
+    selectConversation: string
+    back: string
+    backAria: string
+    unknownUser: string
+    youPrefix: string
+    noText: string
+    composerPlaceholder: string
+    send: string
+    sending: string
+    errLoadConversations: string
+    errSend: string
+  }
+
   campaignDetail: {
     active: string
     paused: string

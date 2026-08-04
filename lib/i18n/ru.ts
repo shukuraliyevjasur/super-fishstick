@@ -373,6 +373,26 @@ export const ru: Dict = {
     noMatch: "Не совпало",
   },
 
+  inbox: {
+    title: "Сообщения",
+    conversations: "Диалоги",
+    loading: "Загрузка…",
+    noConversations: "Диалогов пока нет.",
+    noMessages: "Сообщений нет.",
+    selectConversation: "Выберите диалог, чтобы прочитать и ответить.",
+    back: "Назад",
+    backAria: "Назад к диалогам",
+    unknownUser: "неизвестно",
+    youPrefix: "Вы: ",
+    noText: "(без текста)",
+    composerPlaceholder:
+      "Напишите ответ… (Enter — отправить, Shift+Enter — новая строка)",
+    send: "Отправить",
+    sending: "Отправка…",
+    errLoadConversations: "Не удалось загрузить диалоги",
+    errSend: "Не удалось отправить сообщение",
+  },
+
   campaignDetail: {
     active: "АКТИВНА",
     paused: "ОСТАНОВЛЕНА",

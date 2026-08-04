@@ -15,6 +15,7 @@ import AccountSelect, { type AccountOption } from "@/components/account-select";
 import { readCache, writeCache } from "@/lib/client-cache";
 import type { ConversationListItem } from "@/app/api/instagram/conversations/route";
 import type { ThreadMessage } from "@/app/api/instagram/conversations/[id]/route";
+import { useDict } from "@/components/dictionary-provider";
 
 const POLL_MS = 12_000;
 // Cached list/threads are shown instantly on revisit, then revalidated in the
@@ -36,6 +37,8 @@ function formatTime(iso: string | null): string {
 }
 
 export default function InboxPage() {
+  const dict = useDict();
+  const d = dict.inbox;
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   // Seed from the last-used account so a revisit can paint the cached
   // conversation list immediately, before the account list even loads.
@@ -103,15 +106,15 @@ export default function InboxPage() {
           writeCache(convCacheKey(selectedAccountId), data.data.conversations);
           setConvError(null);
         } else if (!silent) {
-          setConvError(data.error ?? "Failed to load conversations");
+          setConvError(data.error ?? d.errLoadConversations);
         }
       } catch {
-        if (!silent) setConvError("Failed to load conversations");
+        if (!silent) setConvError(d.errLoadConversations);
       } finally {
         if (!silent) setConvLoading(false);
       }
     },
-    [selectedAccountId]
+    [selectedAccountId, d.errLoadConversations]
   );
 
   // Load + poll conversations for the selected account. A cached list is shown
@@ -238,12 +241,12 @@ export default function InboxPage() {
         // Roll the optimistic message back and restore the draft so it's not lost.
         setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
         setDraft(text);
-        setSendError(data.error ?? "Failed to send message");
+        setSendError(data.error ?? d.errSend);
       }
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setDraft(text);
-      setSendError("Failed to send message");
+      setSendError(d.errSend);
     } finally {
       setSending(false);
     }
@@ -259,7 +262,7 @@ export default function InboxPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-4">
-        <h1 className="text-lg font-semibold text-foreground">Xabarlar</h1>
+        <h1 className="text-lg font-semibold text-foreground">{d.title}</h1>
         {accounts.length > 1 && (
           <AccountSelect
             accounts={accounts}
@@ -279,15 +282,15 @@ export default function InboxPage() {
           }`}
         >
           <div className="shrink-0 border-b border-border px-4 py-3 text-sm font-semibold text-foreground">
-            Suhbatlar
+            {d.conversations}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {convLoading ? (
-              <p className="px-4 py-6 text-sm text-muted">Yuklanmoqda…</p>
+              <p className="px-4 py-6 text-sm text-muted">{d.loading}</p>
             ) : convError ? (
               <p className="px-4 py-6 text-sm text-error">{convError}</p>
             ) : conversations.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-muted">Hali suhbat yo&apos;q.</p>
+              <p className="px-4 py-6 text-sm text-muted">{d.noConversations}</p>
             ) : (
               conversations.map((c) => {
                 const isActive = c.id === activeId;
@@ -302,7 +305,7 @@ export default function InboxPage() {
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-sm font-medium text-foreground">
-                        @{c.contact.username ?? "unknown"}
+                        @{c.contact.username ?? d.unknownUser}
                       </span>
                       <span className="shrink-0 text-xs text-muted">
                         {formatTime(c.updatedTime)}
@@ -310,8 +313,8 @@ export default function InboxPage() {
                     </div>
                     {c.lastMessage && (
                       <p className="mt-0.5 truncate text-xs text-muted">
-                        {c.lastMessage.fromMe ? "Siz: " : ""}
-                        {c.lastMessage.text || "(matn yoʿq)"}
+                        {c.lastMessage.fromMe ? d.youPrefix : ""}
+                        {c.lastMessage.text || d.noText}
                       </p>
                     )}
                   </button>
@@ -328,7 +331,7 @@ export default function InboxPage() {
         >
           {!active ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted">
-              O&apos;qish va javob berish uchun suhbat tanlang.
+              {d.selectConversation}
             </div>
           ) : (
             <>
@@ -337,20 +340,20 @@ export default function InboxPage() {
                   type="button"
                   onClick={() => setActiveId(null)}
                   className="-ml-1 rounded-md px-2 py-1 text-muted hover:text-foreground sm:hidden"
-                  aria-label="Back to conversations"
+                  aria-label={d.backAria}
                 >
-                  Orqaga
+                  {d.back}
                 </button>
                 <span className="truncate">
-                  @{active.contact.username ?? "unknown"}
+                  @{active.contact.username ?? d.unknownUser}
                 </span>
               </div>
 
               <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
                 {threadLoading && messages.length === 0 ? (
-                  <p className="text-sm text-muted">Yuklanmoqda…</p>
+                  <p className="text-sm text-muted">{d.loading}</p>
                 ) : messages.length === 0 ? (
-                  <p className="text-sm text-muted">Xabarlar yo&apos;q.</p>
+                  <p className="text-sm text-muted">{d.noMessages}</p>
                 ) : (
                   messages.map((m) => (
                     <div
@@ -388,7 +391,7 @@ export default function InboxPage() {
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={handleKeyDown}
                     rows={1}
-                    placeholder="Javob yozing… (Enter — yuborish, Shift+Enter — yangi qator)"
+                    placeholder={d.composerPlaceholder}
                     className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
                   />
                   <button
@@ -397,7 +400,7 @@ export default function InboxPage() {
                     disabled={sending || !draft.trim()}
                     className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
                   >
-                    {sending ? "Yuborilmoqda…" : "Yuborish"}
+                    {sending ? d.sending : d.send}
                   </button>
                 </div>
               </div>
