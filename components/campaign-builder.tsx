@@ -756,10 +756,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           )}
         </Section>
 
-        <Section title={t.sectionTheyReceive}>
-          {/* Opening DM and Follow Gate hidden — pending Meta App Review (messaging webhooks not delivered under Standard Access) */}
-        </Section>
-
         <Section title={t.sectionAndTheyReceive}>
           <div className="rounded-lg border border-border p-3 space-y-2">
             <span className="text-sm text-foreground">{t.dmWithLinkLabel}</span>
