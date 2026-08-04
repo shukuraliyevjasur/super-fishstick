@@ -405,9 +405,14 @@ without an app role.
 - OAuth scope: `instagram_business_manage_messages` granted.
 - Token validity: same token sends DMs to strangers successfully.
 - "Allow access to messages" toggle: ON.
-- Tester role: added test account, no change.
-- Facebook Page linkage: `foundersyrio` was not linked to a Facebook Page;
-  linking it was the next hypothesis but the feature was archived before testing.
+- Tester role alone: added `shukuraliyevvs` as Instagram tester, no change.
+  `foundersyrio` (king0073112) also a tester — worked, but they had a Facebook
+  Page linked. Tester role without FB Page linkage is not sufficient.
+- **Facebook Page linkage: confirmed required (2026-08-04).** `foundersyrio`
+  linked a Facebook Page to their Instagram account and `messaging_postbacks`
+  started being delivered within minutes. `shukuraliyevvs` had no FB Page linked,
+  which is why adding them as a tester had no effect. This means the feature works
+  today for any account that has a connected FB Page, even under Standard Access.
 
 **403s on `/api/webhook`:** Harmless. These are GET requests from
 `facebookexternalua` (Meta's link-preview crawler). They lack
@@ -502,25 +507,22 @@ account-wide and affects the entire messaging family, not postbacks specifically
   Facebook app id and Graph API Explorer shows "No configurations available".
   There is no Facebook user token to inspect. Dead end, not a misconfiguration.
 
-### Next test — the Instagram account's inbox access toggle
+### Facebook Page linkage is required (confirmed 2026-08-04)
 
-Untried as of this writing, and the best remaining hypothesis. Instagram has an
-**account-level** setting controlling whether third-party apps receive messaging
-webhooks. It is independent of OAuth scope and of the webhook subscription, both
-of which are confirmed correct. Private replies to comments do not depend on it —
-which is exactly why sends work while every inbox-derived event stays silent.
+**Root cause:** Meta's Instagram Graph API messaging webhooks (`messaging_postbacks`,
+`messages`, `messaging_seen`) are only delivered when the Instagram account has a
+**linked Facebook Page**. This is separate from tester role, OAuth scope, and the
+account-level "Allow access to messages" toggle (which was already ON).
 
-On `crafts__by__h`, in the Instagram app:
+Evidence: `foundersyrio` linked a Facebook Page to their Instagram account →
+`messaging_postbacks` started arriving immediately. Multiple button taps → multiple
+DM2s delivered with ~4 minute delay (GCP worker cold-start; jobs then processed in
+batch). `shukuraliyevvs` had no FB Page → still no delivery after tester-role addition.
 
-**Settings and privacy → Messages and story replies → Connected tools → Allow access to messages**
-
-Some versions place it under **Business tools and controls → Connected tools**.
-Flip it on, then have an unrelated account comment the keyword and tap the button.
-
-If the toggle was already on, the hypothesis is dead. Go next to the webhook's
-per-field **Recent Errors / Recent Deliveries** view in the App Dashboard to see
-whether Meta is even attempting delivery for the messaging fields — that
-separates "not sent" from "sent and rejected", which nothing so far has done.
+**Practical implication for App Review:** The feature works today for any connected
+account that links a Facebook Page. Under Standard Access, that means manually
+onboarded accounts (via **Review → Testing → Add account**) who also link their FB
+Page. After Advanced Access is granted, it works for all accounts regardless.
 
 ### State the code is in
 
@@ -793,10 +795,10 @@ reaches `/uz` through the locale middleware. Key decisions:
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
    [META_APP_REVIEW.md](META_APP_REVIEW.md).
-2. **Opening DM and follow gate archived** — messaging webhooks silently
-   dropped under Standard Access. Unblocked by App Review (Advanced Access).
-   Code intact, UI hidden. See
-   [Messaging webhooks](#messaging-webhooks--archived-pending-app-review-2026-08-04).
+2. **Opening DM and follow gate hidden** — works today for accounts with a
+   linked Facebook Page (confirmed 2026-08-04 with `foundersyrio`). Hidden in
+   the UI until App Review grants Advanced Access for all users. Code intact.
+   See [Messaging webhooks](#messaging-webhooks--archived-pending-app-review-2026-08-04).
 3. **Add an external uptime monitor** — *not done as of 2026-08-04.* Vercel's
    free tier fires crons once a day, so the health check alone cannot detect
    worker death promptly: the worker can be dead for ~24h before anyone is told,
