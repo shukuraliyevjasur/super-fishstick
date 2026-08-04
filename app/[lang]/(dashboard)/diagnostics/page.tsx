@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/status-badge";
+import { useDict, t } from "@/components/dictionary-provider";
+import { intlLocale } from "@/lib/i18n/format";
 
 interface DiagnosticsData {
   /** Queue depth and worker alerts are global, so they are admin-only (S2). */
@@ -54,8 +56,8 @@ interface DiagnosticsData {
   }>;
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleString();
+function formatDate(value: string, locale: string) {
+  return new Date(value).toLocaleString(locale);
 }
 
 function EmptyState({ label }: { label: string }) {
@@ -78,6 +80,9 @@ function Section({
 }
 
 export default function DiagnosticsPage() {
+  const dict = useDict();
+  const d = dict.diagnostics;
+  const locale = intlLocale(dict.locale);
   const [data, setData] = useState<DiagnosticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [resubscribing, setResubscribing] = useState(false);
@@ -127,12 +132,8 @@ export default function DiagnosticsPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Diagnostika
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Tizim holati, navbatlar, webhook xatoliklari va worker ogohlantirishlari.
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">{d.heading}</h1>
+          <p className="mt-1 text-sm text-muted">{d.subtitle}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -145,22 +146,22 @@ export default function DiagnosticsPage() {
                 const lines = (payload.data as Array<{ username: string; success: boolean }>)
                   .map((r) => `@${r.username}: ${r.success ? "✓" : "✗"}`)
                   .join(", ");
-                setResubscribeResult(lines || "No accounts");
+                setResubscribeResult(lines || d.resubscribeNoAccounts);
               } else {
-                setResubscribeResult("Failed");
+                setResubscribeResult(d.resubscribeFailed);
               }
               setResubscribing(false);
             }}
             disabled={resubscribing}
             className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover disabled:opacity-50"
           >
-            {resubscribing ? "…" : "Re-subscribe webhooks"}
+            {resubscribing ? d.resubscribing : d.resubscribe}
           </button>
           <button
             onClick={() => void refreshDiagnostics()}
             className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover"
           >
-            Yangilash
+            {d.refresh}
           </button>
         </div>
         {resubscribeResult && (
@@ -171,22 +172,22 @@ export default function DiagnosticsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="panel rounded-md p-5">
           <p className="text-xs font-semibold uppercase text-muted">
-            Worker holati
+            {d.workerStatus}
           </p>
           <p
             className={`mt-3 text-2xl font-bold ${
               data?.workerHealth.healthy ? "text-success" : "text-warning"
             }`}
           >
-            {data?.workerHealth.healthy ? "Sogʿlom" : "Eʿtibor talab qiladi"}
+            {data?.workerHealth.healthy ? d.workerHealthy : d.workerAttention}
           </p>
           {/* Heartbeat age is worker infrastructure detail, so it is only sent
               to platform admins. Customers see liveness alone. */}
           {data?.isPlatformAdmin && (
             <p className="mt-2 text-xs text-muted">
               {workerAgeSeconds == null
-                ? "Yurak urishi topilmadi"
-                : `Soʿnggi yurak urishi ${workerAgeSeconds}s oldin`}
+                ? d.noHeartbeat
+                : t(d.heartbeatAge, { seconds: workerAgeSeconds })}
             </p>
           )}
         </div>
@@ -194,7 +195,7 @@ export default function DiagnosticsPage() {
           ["waiting", "active", "delayed", "failed"].map((key) => (
             <div key={key} className="panel rounded-md p-5">
               <p className="text-xs font-semibold uppercase text-muted">
-                Navbat: {key}
+                {t(d.queue, { name: key })}
               </p>
               <p className="mt-3 text-2xl font-bold text-foreground">
                 {data.queueCounts?.[key] ?? 0}
@@ -204,7 +205,7 @@ export default function DiagnosticsPage() {
       </div>
 
       {data?.workerAlerts && (
-      <Section title="Worker ogohlantirishlari">
+      <Section title={d.workerAlerts}>
         {data.workerAlerts.length ? (
           <div className="space-y-3">
             {data.workerAlerts.map((alert) => (
@@ -221,20 +222,20 @@ export default function DiagnosticsPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-muted">
-                  {formatDate(alert.createdAt)}
+                  {formatDate(alert.createdAt, locale)}
                   {alert.commentId ? ` · ${alert.commentId}` : ""}
                 </p>
               </div>
             ))}
           </div>
         ) : (
-          <EmptyState label="Ogohlantirishlar yoʿq." />
+          <EmptyState label={d.noWorkerAlerts} />
         )}
       </Section>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="DM xatoliklari">
+        <Section title={d.dmFailures}>
           {data?.dmFailures.length ? (
             <div className="space-y-3">
               {data.dmFailures.map((item) => (
@@ -255,11 +256,11 @@ export default function DiagnosticsPage() {
               ))}
             </div>
           ) : (
-            <EmptyState label="DM xatoliklari yoʿq." />
+            <EmptyState label={d.noDmFailures} />
           )}
         </Section>
 
-        <Section title="Webhook xatoliklari">
+        <Section title={d.webhookFailures}>
           {data?.webhookFailures.length ? (
             <div className="space-y-3">
               {data.webhookFailures.map((event) => (
@@ -268,22 +269,22 @@ export default function DiagnosticsPage() {
                     {event.object ?? "Instagram webhook"}
                   </p>
                   <p className="mt-1 text-xs text-error">
-                    {event.errorMessage ?? "Unknown error"}
+                    {event.errorMessage ?? d.unknownError}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    {formatDate(event.createdAt)}
+                    {formatDate(event.createdAt, locale)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <EmptyState label="Webhook xatoligi yoʿq." />
+            <EmptyState label={d.noWebhookFailures} />
           )}
         </Section>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Token yangilash xatoliklari">
+        <Section title={d.tokenFailures}>
           {data?.tokenRefreshFailures.length ? (
             <div className="space-y-3">
               {data.tokenRefreshFailures.map((event) => (
@@ -292,31 +293,31 @@ export default function DiagnosticsPage() {
                     {event.message}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    {formatDate(event.createdAt)}
+                    {formatDate(event.createdAt, locale)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <EmptyState label="Token xatoliklari yoʿq." />
+            <EmptyState label={d.noTokenFailures} />
           )}
         </Section>
 
       </div>
 
-      <Section title="Operatsion voqealar">
+      <Section title={d.events}>
         {data?.operationalEvents.length ? (
           <div className="space-y-3">
             {data.operationalEvents.map((event) => (
               <div key={event.id} className="grid gap-2 border-b border-border pb-3 last:border-0 sm:grid-cols-[140px_1fr_auto]">
                 <p className="text-xs font-semibold text-muted">{event.source}</p>
                 <p className="text-sm text-foreground">{event.message}</p>
-                <p className="text-xs text-muted">{formatDate(event.createdAt)}</p>
+                <p className="text-xs text-muted">{formatDate(event.createdAt, locale)}</p>
               </div>
             ))}
           </div>
         ) : (
-          <EmptyState label="Voqealar yoʿq." />
+          <EmptyState label={d.noEvents} />
         )}
       </Section>
     </div>

@@ -343,6 +343,33 @@ export interface Dict {
     noMatch: string
   }
 
+  diagnostics: {
+    heading: string
+    subtitle: string
+    refresh: string
+    resubscribe: string
+    resubscribing: string
+    resubscribeNoAccounts: string
+    resubscribeFailed: string
+    workerStatus: string
+    workerHealthy: string
+    workerAttention: string
+    noHeartbeat: string
+    heartbeatAge: string
+    queue: string
+    workerAlerts: string
+    noWorkerAlerts: string
+    dmFailures: string
+    noDmFailures: string
+    webhookFailures: string
+    noWebhookFailures: string
+    unknownError: string
+    tokenFailures: string
+    noTokenFailures: string
+    events: string
+    noEvents: string
+  }
+
   settings: {
     igHeading: string
     statusLabel: string
