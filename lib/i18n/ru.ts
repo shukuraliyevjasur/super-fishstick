@@ -362,4 +362,27 @@ export const ru: Dict = {
     postPickerErrLoad: "Не удалось загрузить посты",
     postPickerErrConnect: "Сначала подключите аккаунт Instagram",
   },
+
+  dmStatus: {
+    sent: "Отправлено",
+    failed: "Ошибка",
+    pending: "В очереди",
+    dedup: "Повтор",
+    rateLimit: "Ограничение",
+    planLimit: "Пропущено",
+    noMatch: "Не совпало",
+  },
+
+  logs: {
+    filterAll: "Все",
+    colCommenter: "Автор комментария",
+    colComment: "Комментарий",
+    colCampaign: "Кампания",
+    colAccount: "Аккаунт",
+    colStatus: "Статус",
+    colTime: "Время",
+    empty: "Записи журнала не найдены",
+    prev: "Назад",
+    next: "Вперёд",
+  },
 }

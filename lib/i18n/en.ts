@@ -361,4 +361,27 @@ export const en: Dict = {
     postPickerErrLoad: "Could not load posts",
     postPickerErrConnect: "Connect your Instagram account first",
   },
+
+  dmStatus: {
+    sent: "Sent",
+    failed: "Failed",
+    pending: "Queued",
+    dedup: "Duplicate",
+    rateLimit: "Rate limited",
+    planLimit: "Skipped",
+    noMatch: "No match",
+  },
+
+  logs: {
+    filterAll: "All",
+    colCommenter: "Commenter",
+    colComment: "Comment",
+    colCampaign: "Campaign",
+    colAccount: "Account",
+    colStatus: "Status",
+    colTime: "Time",
+    empty: "No log entries found",
+    prev: "Previous",
+    next: "Next",
+  },
 }

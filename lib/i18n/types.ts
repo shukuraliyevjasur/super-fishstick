@@ -331,4 +331,28 @@ export interface Dict {
     postPickerErrLoad: string
     postPickerErrConnect: string
   }
+
+  /** DM delivery statuses. Shared — StatusBadge, the logs filters, diagnostics. */
+  dmStatus: {
+    sent: string
+    failed: string
+    pending: string
+    dedup: string
+    rateLimit: string
+    planLimit: string
+    noMatch: string
+  }
+
+  logs: {
+    filterAll: string
+    colCommenter: string
+    colComment: string
+    colCampaign: string
+    colAccount: string
+    colStatus: string
+    colTime: string
+    empty: string
+    prev: string
+    next: string
+  }
 }

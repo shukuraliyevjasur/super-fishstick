@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import StatusBadge from "@/components/status-badge";
+import { useDict } from "@/components/dictionary-provider";
+import { intlLocale } from "@/lib/i18n/format";
+import type { Dict } from "@/lib/i18n/types";
 
 interface DmLog {
   id: string;
@@ -23,17 +26,27 @@ interface Pagination {
   totalPages: number;
 }
 
-const STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: "ALL", label: "Barchasi" },
-  { value: "SENT", label: "Yuborildi" },
-  { value: "FAILED", label: "Muvaffaqiyatsiz" },
-  { value: "PENDING", label: "Navbatda" },
-  { value: "SKIPPED_RATE_LIMIT", label: "Cheklov" },
-  { value: "SKIPPED_PLAN_LIMIT", label: "O'tkazib yuborildi" },
-  { value: "SKIPPED_DEDUP", label: "Takror" },
+/**
+ * Filter values are API status codes and must not be translated; only the
+ * labels are. `ALL` is the one that is not a DmStatus, so it reads from
+ * `logs.filterAll` rather than `dmStatus`.
+ */
+const STATUS_FILTERS: {
+  value: string;
+  key: keyof Dict["dmStatus"] | null;
+}[] = [
+  { value: "ALL", key: null },
+  { value: "SENT", key: "sent" },
+  { value: "FAILED", key: "failed" },
+  { value: "PENDING", key: "pending" },
+  { value: "SKIPPED_RATE_LIMIT", key: "rateLimit" },
+  { value: "SKIPPED_PLAN_LIMIT", key: "planLimit" },
+  { value: "SKIPPED_DEDUP", key: "dedup" },
 ];
 
 export default function LogsPage() {
+  const dict = useDict();
+  const d = dict.logs;
   const [logs, setLogs] = useState<DmLog[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +106,7 @@ export default function LogsPage() {
       {/* Filters */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map(({ value, label }) => (
+          {STATUS_FILTERS.map(({ value, key }) => (
             <button
               key={value}
               onClick={() => handleFilterChange(value)}
@@ -106,7 +119,7 @@ export default function LogsPage() {
                 }
               `}
             >
-              {label}
+              {key ? dict.dmStatus[key] : d.filterAll}
             </button>
           ))}
         </div>
@@ -125,12 +138,12 @@ export default function LogsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left bg-background">
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Izoh yozuvchi</th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Izoh</th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Kampaniya</th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Akkaunt</th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Holat</th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Vaqt</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{d.colCommenter}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{d.colComment}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{d.colCampaign}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{d.colAccount}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{d.colStatus}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{d.colTime}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -148,7 +161,7 @@ export default function LogsPage() {
               {!loading && logs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted">
-                    Jurnal yozuvlari topilmadi
+                    {d.empty}
                   </td>
                 </tr>
               )}
@@ -176,7 +189,7 @@ export default function LogsPage() {
                       <StatusBadge status={log.status} />
                     </td>
                     <td className="px-6 py-3.5 text-muted whitespace-nowrap text-xs">
-                      {new Date(log.createdAt).toLocaleString("uz-UZ", {
+                      {new Date(log.createdAt).toLocaleString(intlLocale(dict.locale), {
                         month: "short",
                         day: "numeric",
                         hour: "2-digit",
@@ -202,7 +215,7 @@ export default function LogsPage() {
                 onClick={() => { setLoading(true); setPage(page - 1); }}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted border border-border hover:text-foreground hover:border-border-hover transition-all disabled:opacity-30 disabled:pointer-events-none"
               >
-                Oldingi
+                {d.prev}
               </button>
               <span className="text-xs text-muted px-2">
                 {page} / {pagination.totalPages}
@@ -212,7 +225,7 @@ export default function LogsPage() {
                 onClick={() => { setLoading(true); setPage(page + 1); }}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted border border-border hover:text-foreground hover:border-border-hover transition-all disabled:opacity-30 disabled:pointer-events-none"
               >
-                Keyingi
+                {d.next}
               </button>
             </div>
           </div>

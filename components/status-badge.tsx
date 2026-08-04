@@ -1,11 +1,23 @@
-const statusConfig: Record<string, { text: string; label: string }> = {
-  SENT: { text: "text-success", label: "Yuborildi" },
-  FAILED: { text: "text-error", label: "Muvaffaqiyatsiz" },
-  PENDING: { text: "text-warning", label: "Navbatda" },
-  SKIPPED_DEDUP: { text: "text-muted", label: "Takror" },
-  SKIPPED_RATE_LIMIT: { text: "text-warning", label: "Cheklov" },
-  SKIPPED_PLAN_LIMIT: { text: "text-muted", label: "O'tkazib yuborildi" },
-  SKIPPED_NO_MATCH: { text: "text-muted", label: "Mos kelmadi" },
+"use client";
+
+import { useDict } from "@/components/dictionary-provider";
+import type { Dict } from "@/lib/i18n/types";
+
+/**
+ * Shared by the logs table, campaign detail and diagnostics, so translating it
+ * once covers all three. Colour stays here; the label comes from the dictionary.
+ */
+const statusConfig: Record<
+  string,
+  { text: string; key: keyof Dict["dmStatus"] }
+> = {
+  SENT: { text: "text-success", key: "sent" },
+  FAILED: { text: "text-error", key: "failed" },
+  PENDING: { text: "text-warning", key: "pending" },
+  SKIPPED_DEDUP: { text: "text-muted", key: "dedup" },
+  SKIPPED_RATE_LIMIT: { text: "text-warning", key: "rateLimit" },
+  SKIPPED_PLAN_LIMIT: { text: "text-muted", key: "planLimit" },
+  SKIPPED_NO_MATCH: { text: "text-muted", key: "noMatch" },
 };
 
 interface StatusBadgeProps {
@@ -13,6 +25,9 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
+  const dict = useDict();
   const config = statusConfig[status] ?? statusConfig.PENDING;
-  return <span className={`text-sm ${config.text}`}>{config.label}</span>;
+  return (
+    <span className={`text-sm ${config.text}`}>{dict.dmStatus[config.key]}</span>
+  );
 }

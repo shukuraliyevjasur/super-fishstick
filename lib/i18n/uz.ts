@@ -363,4 +363,27 @@ export const uz: Dict = {
     postPickerErrLoad: "Postlarni yuklab bo'lmadi",
     postPickerErrConnect: "Avval Instagram akkauntingizni ulang",
   },
+
+  dmStatus: {
+    sent: "Yuborildi",
+    failed: "Muvaffaqiyatsiz",
+    pending: "Navbatda",
+    dedup: "Takror",
+    rateLimit: "Cheklov",
+    planLimit: "O'tkazib yuborildi",
+    noMatch: "Mos kelmadi",
+  },
+
+  logs: {
+    filterAll: "Barchasi",
+    colCommenter: "Izoh yozuvchi",
+    colComment: "Izoh",
+    colCampaign: "Kampaniya",
+    colAccount: "Akkaunt",
+    colStatus: "Holat",
+    colTime: "Vaqt",
+    empty: "Jurnal yozuvlari topilmadi",
+    prev: "Oldingi",
+    next: "Keyingi",
+  },
 }
