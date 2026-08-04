@@ -374,6 +374,36 @@ export const uz: Dict = {
     noMatch: "Mos kelmadi",
   },
 
+  metrics: {
+    views: "Ko'rishlar",
+    reach: "Qamrov",
+    likes: "Yoqtirish",
+    comments: "Izohlar",
+    saved: "Saqlangan",
+    shares: "Ulashish",
+  },
+
+  overview: {
+    show: "Ko'rsatish",
+    lastN: "Oxirgi {{n}}",
+    countAll: "Barchasi",
+    rangeAll: "Barcha vaqt",
+    rangeRecent: "So'nggi",
+    postsSummary: "{{count}} ta post, @{{username}}",
+    truncatedSuffix: " ({{count}} ta bilan cheklangan)",
+    insightsTitle:
+      "Ko'rishlar, qamrov, saqlangan va ulashishlar uchun insights ruxsati kerak.",
+    insightsBody:
+      "Ruxsat berish uchun akkauntni qayta ulang — yoqtirishlar va izohlar ko'rinib turibdi.",
+    reconnect: "Instagram qayta ulash",
+    connect: "Instagram ulash",
+    errLoad: "Statistikani yuklab bo'lmadi",
+    postsHeading: "Postlar",
+    noPosts: "Postlar topilmadi",
+    colPost: "Post",
+    colDate: "Sana",
+  },
+
   logs: {
     filterAll: "Barchasi",
     colCommenter: "Izoh yozuvchi",

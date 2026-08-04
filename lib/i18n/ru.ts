@@ -373,6 +373,36 @@ export const ru: Dict = {
     noMatch: "Не совпало",
   },
 
+  metrics: {
+    views: "Просмотры",
+    reach: "Охват",
+    likes: "Лайки",
+    comments: "Комментарии",
+    saved: "Сохранения",
+    shares: "Репосты",
+  },
+
+  overview: {
+    show: "Показать",
+    lastN: "Последние {{n}}",
+    countAll: "Все",
+    rangeAll: "За всё время",
+    rangeRecent: "Последние",
+    postsSummary: "постов: {{count}}, @{{username}}",
+    truncatedSuffix: " (ограничено {{count}})",
+    insightsTitle:
+      "Для просмотров, охвата, сохранений и репостов нужно разрешение insights.",
+    insightsBody:
+      "Переподключите аккаунт, чтобы выдать разрешение — лайки и комментарии уже видны.",
+    reconnect: "Переподключить Instagram",
+    connect: "Подключить Instagram",
+    errLoad: "Не удалось загрузить статистику",
+    postsHeading: "Посты",
+    noPosts: "Посты не найдены",
+    colPost: "Пост",
+    colDate: "Дата",
+  },
+
   logs: {
     filterAll: "Все",
     colCommenter: "Автор комментария",

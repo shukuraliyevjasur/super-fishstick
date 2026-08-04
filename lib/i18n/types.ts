@@ -343,6 +343,35 @@ export interface Dict {
     noMatch: string
   }
 
+  /** Instagram insight metrics. Used as both stat-card and column labels. */
+  metrics: {
+    views: string
+    reach: string
+    likes: string
+    comments: string
+    saved: string
+    shares: string
+  }
+
+  overview: {
+    show: string
+    lastN: string
+    countAll: string
+    rangeAll: string
+    rangeRecent: string
+    postsSummary: string
+    truncatedSuffix: string
+    insightsTitle: string
+    insightsBody: string
+    reconnect: string
+    connect: string
+    errLoad: string
+    postsHeading: string
+    noPosts: string
+    colPost: string
+    colDate: string
+  }
+
   logs: {
     filterAll: string
     colCommenter: string

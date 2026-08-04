@@ -372,6 +372,36 @@ export const en: Dict = {
     noMatch: "No match",
   },
 
+  metrics: {
+    views: "Views",
+    reach: "Reach",
+    likes: "Likes",
+    comments: "Comments",
+    saved: "Saved",
+    shares: "Shares",
+  },
+
+  overview: {
+    show: "Show",
+    lastN: "Last {{n}}",
+    countAll: "All",
+    rangeAll: "All time",
+    rangeRecent: "Recent",
+    postsSummary: "{{count}} posts, @{{username}}",
+    truncatedSuffix: " (limited to {{count}})",
+    insightsTitle:
+      "Views, reach, saves and shares need the insights permission.",
+    insightsBody:
+      "Reconnect the account to grant it — likes and comments are already visible.",
+    reconnect: "Reconnect Instagram",
+    connect: "Connect Instagram",
+    errLoad: "Could not load statistics",
+    postsHeading: "Posts",
+    noPosts: "No posts found",
+    colPost: "Post",
+    colDate: "Date",
+  },
+
   logs: {
     filterAll: "All",
     colCommenter: "Commenter",
