@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PROTECTED_PATHS,
   PUBLIC_LOCALES,
+  getOgLocale,
   getSiteUrl,
   localeAlternates,
 } from "../lib/site";
@@ -26,15 +27,39 @@ describe("getSiteUrl", () => {
 });
 
 describe("localeAlternates (Q3)", () => {
-  it("gives each locale its own canonical and both hreflangs", () => {
+  it("gives each locale its own canonical and every hreflang", () => {
     expect(localeAlternates("/pricing", "ru")).toEqual({
       canonical: "/ru/pricing",
-      languages: { uz: "/uz/pricing", ru: "/ru/pricing" },
+      languages: {
+        uz: "/uz/pricing",
+        ru: "/ru/pricing",
+        en: "/en/pricing",
+      },
     });
+  });
+
+  it("covers every supported locale, so a new one cannot be half-added", () => {
+    // English was added on 2026-08-03 and had to be threaded through the
+    // sitemap, hreflang, og:locale and prerendering in one go.
+    const { languages } = localeAlternates("", "uz");
+    expect(Object.keys(languages)).toEqual([...PUBLIC_LOCALES]);
   });
 
   it("handles the landing page, whose path is empty", () => {
     expect(localeAlternates("", "uz").canonical).toBe("/uz");
+  });
+});
+
+describe("getOgLocale", () => {
+  it("maps every supported locale to a territory code", () => {
+    // og:locale wants a territory, not a bare language tag.
+    for (const locale of PUBLIC_LOCALES) {
+      expect(getOgLocale(locale)).toMatch(/^[a-z]{2}_[A-Z]{2}$/);
+    }
+  });
+
+  it("falls back rather than emitting undefined for an unknown value", () => {
+    expect(getOgLocale("xx")).toBe("uz_UZ");
   });
 });
 

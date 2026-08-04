@@ -1,6 +1,6 @@
 # replie — Agent Handoff
 
-**Last updated:** 2026-08-02
+**Last updated:** 2026-08-03
 
 ## What this is
 
@@ -333,6 +333,120 @@ than a bare code-100 that could have come from any of three calls.
 
 ---
 
+## Messaging webhooks have never fired — open investigation (2026-08-03)
+
+**Symptom:** the opening DM sends and its button renders, but tapping it delivers
+nothing. The reveal never arrives.
+
+**The core fact, and the one to start from:** *no Instagram messaging webhook of
+any kind has ever reached us.* Not `messaging_postbacks`, not `messaging_seen`,
+not `messages`. `comments` events flow fine through the same endpoint, the same
+signature check, the same subscription. Verify before doing anything else:
+
+```sql
+SELECT "createdAt", entry_change.value ->> 'field' AS field, entry.value ->> 'id' AS entry_id
+FROM "WebhookEvent",
+     LATERAL jsonb_array_elements(payload -> 'entry') AS entry(value),
+     LATERAL jsonb_array_elements(entry.value -> 'changes') AS entry_change(value)
+ORDER BY "createdAt" DESC LIMIT 50;
+```
+
+Every `messaging_postbacks` row in the table as of 2026-08-03 has
+**`entry_id = "0"`**. That is Meta's synthetic fixture from the dashboard's *Send
+to server* button (sender `2494432963985342`, payload `"Payload"`, title
+`"Talk to human"`, `is_self: true`). Those prove the endpoint parses and stores
+correctly. They prove nothing about live delivery. Do not mistake them for real
+traffic — that mistake was made twice on 2026-08-03.
+
+A real tap leaves a visible message bubble in the thread, which should itself
+fire a `messages` event. None has ever arrived either. Whatever is wrong is
+account-wide and affects the entire messaging family, not postbacks specifically.
+
+### Ruled out, with evidence — do not re-investigate
+
+| Hypothesis | How it was killed |
+|---|---|
+| Parser read the wrong payload shape | Fixed and verified. Instagram Graph API delivers messaging via `entry.changes[].field`, **not** `entry.messaging[]` (that is the old Messenger Platform shape). `lib/meta/webhook.ts` handles `entry.changes` first with `entry.messaging` as fallback; the synthetic events parse and enqueue correctly. |
+| Account-level subscription missing `messaging_postbacks` | Was genuinely missing from `subscribed_fields` in `subscribeInstagramAccountToWebhooks`; added, and every account re-subscribed via `POST /api/instagram/resubscribe`. `GET` on the same route now reports `["comments", "messages", "messaging_postbacks"]`. Did not change the symptom. |
+| App-level webhook fields not subscribed | Dashboard shows `messages`, `messaging_postbacks`, `messaging_seen` all Subscribed on v26.0. |
+| Token missing the OAuth scope | `getAuthorizationUrl` requests `instagram_business_basic`, `instagram_business_manage_messages`, `instagram_business_manage_comments`, `instagram_business_manage_insights`. All four granted. |
+| Expired or invalid token | Comments and sends both work on the same token. |
+| **App Review / Advanced Access is the gate** | **Refuted.** Sending a private reply requires `instagram_business_manage_messages` — the exact permission suspected — and `vitreen.uz`, an account with no relationship to the app or the Meta account, received one at 22:14 and 22:19 UTC. The permission works for strangers today. The app is **Published**, not in dev mode. |
+
+### Wrong turns that cost the 2026-08-03 session
+
+- **Reading "Ready for testing" as a blocker.** Every permission on the list
+  carries that label, including `instagram_business_basic`, which strangers
+  demonstrably reach. The label does not mean what it looks like it means.
+- **Treating the phone's message thread as evidence of what the system sent.**
+  Two DMs seen in the Instagram UI were reported as postback reveals. There are
+  **zero** `DmLog` rows with `commentId LIKE 'reveal:%'` — the system never sent
+  a reveal to anyone. Always confirm against `DmLog` / `WebhookEvent` before
+  concluding a path works.
+- **`debug_token` against `graph.facebook.com`.** Returns code 190 for this app
+  and always will: it uses **Instagram Login**, so `INSTAGRAM_APP_ID` is not a
+  Facebook app id and Graph API Explorer shows "No configurations available".
+  There is no Facebook user token to inspect. Dead end, not a misconfiguration.
+
+### Next test — the Instagram account's inbox access toggle
+
+Untried as of this writing, and the best remaining hypothesis. Instagram has an
+**account-level** setting controlling whether third-party apps receive messaging
+webhooks. It is independent of OAuth scope and of the webhook subscription, both
+of which are confirmed correct. Private replies to comments do not depend on it —
+which is exactly why sends work while every inbox-derived event stays silent.
+
+On `crafts__by__h`, in the Instagram app:
+
+**Settings and privacy → Messages and story replies → Connected tools → Allow access to messages**
+
+Some versions place it under **Business tools and controls → Connected tools**.
+Flip it on, then have an unrelated account comment the keyword and tap the button.
+
+If the toggle was already on, the hypothesis is dead. Go next to the webhook's
+per-field **Recent Errors / Recent Deliveries** view in the App Dashboard to see
+whether Meta is even attempting delivery for the messaging fields — that
+separates "not sent" from "sent and rejected", which nothing so far has done.
+
+### State the code is in
+
+Opening DM and follow gate are **disabled in the UI** — greyed cards with a
+"Soon" badge in `components/campaign-builder.tsx`, and the save payload hardcodes
+`openingDmEnabled: false` / `requireFollow: false`. Existing rows were cleared in
+the database. Basic automation (comment → DM with tracked link) is unaffected and
+works for strangers end to end, in 4–7 seconds.
+
+To re-test the postback path, flip `openingDmEnabled` on one automation directly
+in SQL. **Do not open that campaign in the builder while testing** — saving wipes
+the flag.
+
+The follow gate was never tested independently. It is gated by inference: it
+sends the same postback button (`followcheck:<id>`) through the same dead path.
+It also has a second, unverified dependency — `getUserFollowStatus` reads
+`is_user_follow_business`, and [`lib/queue/dm-worker.ts`](lib/queue/dm-worker.ts)
+treats a `null` return as fail-open and delivers the link anyway. If that field
+is restricted the gate will not error, it will silently pass everyone.
+
+### If the webhook path cannot be made to work
+
+Swap the postback button for a `web_url` button, which never touches the
+messaging webhook family:
+
+1. Opening DM goes out as a button template with `type: "web_url"` pointing at
+   `https://replie.uz/api/reveal/<token>`, where the token is an HMAC-signed blob
+   carrying `automationId` + the user's IGSID + an expiry. The IGSID is known at
+   send time — it is `commenterId` from the comment webhook.
+2. The tap opens Instagram's in-app browser on that endpoint, which verifies the
+   signature, enqueues the same `process-postback` job, and returns a short
+   "check your DMs" page.
+3. `processPostback` is unchanged.
+
+The send leg is already proven for outside users: `vitreen.uz`'s 22:14 DM went
+out through `sendPrivateReplyWithLinkButton`, which emits `web_url` buttons. Cost
+is a browser flash instead of the reveal landing instantly.
+
+---
+
 ## Database migrations
 
 Prisma 7 reads the datasource URL from `prisma.config.ts`, **not** `schema.prisma`.
@@ -569,15 +683,21 @@ reaches `/uz` through the locale middleware. Key decisions:
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
    [META_APP_REVIEW.md](META_APP_REVIEW.md).
-3. **Set `ALERT_EMAIL` on Vercel**, and add an external uptime monitor — the
-   health cron is built, but on Vercel's free tier it only fires daily and it
-   sends nothing without that env var. See [Health alerting](#health-alerting).
-4. **Session revocation** — sessions are JWT-backed and cannot be revoked
+3. **Opening DM and follow gate are disabled** — no Instagram messaging webhook has
+   ever reached the app, so a button tap delivers nothing. Both features are hidden
+   behind a "Soon" badge until this is resolved. App Review is *not* the cause; see
+   [Messaging webhooks have never fired](#messaging-webhooks-have-never-fired--open-investigation-2026-08-03)
+   for what is ruled out and what to try next.
+4. **Set `ALERT_EMAIL` and `ADMIN_EMAILS` on Vercel**, and add an external uptime
+   monitor — the health cron is built, but on Vercel's free tier it only fires
+   daily and it sends nothing without `ALERT_EMAIL`. See
+   [Health alerting](#health-alerting).
+5. **Session revocation** — sessions are JWT-backed and cannot be revoked
    server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
-5. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
+6. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
    Vercel instances still reach Supabase's 15-client cap. Move to the
    transaction-mode pooler (port 6543) before real traffic.
-6. **Pick a canonical host.** `replie.uz` currently 308s to `www.replie.uz`, so
+7. **Pick a canonical host.** `replie.uz` currently 308s to `www.replie.uz`, so
    every advertised URL and every tracked link in a DM pays a redirect hop.
    Recommended: make the apex primary in Vercel, which needs no code change since
    `APP_URL` is already the apex. See Q4 in [FIX_BRIEF.md](FIX_BRIEF.md).

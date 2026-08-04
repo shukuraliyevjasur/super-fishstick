@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDictionary, hasLocale } from "@/lib/i18n";
-import { localeAlternates } from "@/lib/site";
+import { getOgLocale, localeAlternates } from "@/lib/site";
 import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props) {
       description: d.pricing.metaDesc,
       url: `/${lang}/pricing`,
       siteName: "replie",
-      locale: lang === "ru" ? "ru_RU" : "uz_UZ",
+      locale: getOgLocale(lang),
       type: "website",
     },
     twitter: {

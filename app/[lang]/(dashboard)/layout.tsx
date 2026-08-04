@@ -48,7 +48,7 @@ export default async function DashboardLayout({
       instagramUsername={accounts[0]?.username ?? null}
       instagramAccountCount={accounts.length}
     >
-      {!credentials.emailVerified && <VerifyEmailBanner />}
+      {!credentials.emailVerified && <VerifyEmailBanner lang={locale} />}
       {children}
     </DashboardShell>
   );

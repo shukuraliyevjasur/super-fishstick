@@ -9,10 +9,20 @@ import Redis from "ioredis";
 
 let connection: Redis | null = null;
 
-export function getRedisConnection(): Redis {
+export function getRedisConnection(opts: { persistent?: boolean } = {}): Redis {
+  if (connection?.status === "end" || connection?.status === "close") {
+    connection = null;
+  }
   if (!connection) {
+    const persistent = opts.persistent ?? false;
     connection = new Redis(process.env.REDIS_URL!, {
-      maxRetriesPerRequest: null, // Required by BullMQ
+      // BullMQ workers need null (retry forever); web handlers need fail-fast.
+      maxRetriesPerRequest: persistent ? null : 3,
+      enableOfflineQueue: persistent,
+      connectTimeout: 5000,
+      retryStrategy: persistent
+        ? undefined
+        : (times) => (times > 2 ? null : Math.min(times * 500, 1500)),
     });
   }
   return connection;

@@ -130,21 +130,17 @@ export default function Sidebar({
         <div className="px-5 py-4 border-t border-border">
           <p className="text-xs font-medium text-foreground truncate">{workspaceName}</p>
           <div className="flex items-center gap-3 mt-2">
-            <Link
-              href={`/uz${switchPath}`}
-              onClick={onClose}
-              className={`text-xs font-semibold transition-colors ${lang === "uz" ? "text-accent" : "text-muted hover:text-foreground"}`}
-            >
-              UZ
-            </Link>
-            <span className="text-xs text-border">|</span>
-            <Link
-              href={`/ru${switchPath}`}
-              onClick={onClose}
-              className={`text-xs font-semibold transition-colors ${lang === "ru" ? "text-accent" : "text-muted hover:text-foreground"}`}
-            >
-              RU
-            </Link>
+            {(["uz", "ru", "en"] as const).flatMap((l, i) => [
+              ...(i > 0 ? [<span key={`sep-${l}`} className="text-xs text-border">|</span>] : []),
+              <Link
+                key={l}
+                href={`/${l}${switchPath}`}
+                onClick={onClose}
+                className={`text-xs font-semibold transition-colors ${lang === l ? "text-accent" : "text-muted hover:text-foreground"}`}
+              >
+                {l.toUpperCase()}
+              </Link>,
+            ])}
           </div>
         </div>
       </aside>

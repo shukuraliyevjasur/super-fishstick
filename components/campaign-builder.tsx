@@ -12,6 +12,7 @@ import { useRouter, useParams } from "next/navigation";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import PostPicker from "@/components/post-picker";
 import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview";
+import { useDict } from "@/components/dictionary-provider";
 import { readCache, writeCache } from "@/lib/client-cache";
 import {
   IMPORT_QUEUE_KEY,
@@ -124,6 +125,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const router = useRouter();
   const params = useParams();
   const lang = (params.lang as string) || "uz";
+  const dict = useDict();
+  const t = dict.campaignBuilder;
 
   const [loading, setLoading] = useState(mode === "edit");
   const [notFound, setNotFound] = useState(false);
@@ -161,14 +164,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [dmMessage, setDmMessage] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
   const [trackedDestinationUrl, setTrackedDestinationUrl] = useState("");
-  const [linkButtonLabel, setLinkButtonLabel] = useState("Havolani ochish");
+  const [linkButtonLabel, setLinkButtonLabel] = useState(t.defaultLinkBtn);
   const [secondLinkOpen, setSecondLinkOpen] = useState(false);
   const [secondaryDestinationUrl, setSecondaryDestinationUrl] = useState("");
-  const [secondaryButtonLabel, setSecondaryButtonLabel] = useState("Havolani ochish");
+  const [secondaryButtonLabel, setSecondaryButtonLabel] = useState(t.defaultLinkBtn);
   const [requireFollow, setRequireFollow] = useState(false);
   const [followPromptMessage, setFollowPromptMessage] = useState("");
   const [followPromptButtonLabel, setFollowPromptButtonLabel] =
-    useState("Obuna bo'ldim ✅");
+    useState(t.defaultFollowBtn);
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("dm");
 
@@ -259,23 +262,24 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         setOpeningDmMessage(c.openingDmMessage ?? "");
         setOpeningDmButtonLabel(c.openingDmButtonLabel ?? "");
         setDmMessage(c.dmMessage);
-        setLinkButtonLabel(c.linkButtonLabel ?? "Havolani ochish");
+        setLinkButtonLabel(c.linkButtonLabel ?? t.defaultLinkBtn);
         setIsActive(c.isActive);
         const link = c.trackedLinks?.[0]?.destinationUrl ?? "";
         setTrackedDestinationUrl(link);
         setLinkOpen(Boolean(link));
         const secondLink = c.trackedLinks?.[1];
         setSecondaryDestinationUrl(secondLink?.destinationUrl ?? "");
-        setSecondaryButtonLabel(secondLink?.label ?? "Havolani ochish");
+        setSecondaryButtonLabel(secondLink?.label ?? t.defaultLinkBtn);
         setSecondLinkOpen(Boolean(secondLink?.destinationUrl));
         setRequireFollow(c.requireFollow ?? false);
         setFollowPromptMessage(c.followPromptMessage ?? "");
         setFollowPromptButtonLabel(
-          c.followPromptButtonLabel ?? "Obuna bo'ldim ✅"
+          c.followPromptButtonLabel ?? t.defaultFollowBtn
         );
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, campaignId]);
 
   // Track which posts on the selected account are already assigned to an
@@ -321,7 +325,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     setOpeningDmEnabled(hasOpening);
     setOpeningDmMessage(row.openingDmMessage ?? "");
     setOpeningDmButtonLabel(
-      row.openingDmButtonLabel || (hasOpening ? "Havolani yuborish" : "")
+      row.openingDmButtonLabel || (hasOpening ? t.defaultOpeningBtn : "")
     );
     const link = row.trackedUrl ?? "";
     setTrackedDestinationUrl(link);
@@ -346,6 +350,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     } catch {
       // ignore a malformed queue
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -371,19 +376,16 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   async function handleSubmit(activeValue: boolean) {
     setError(null);
 
-    if (!selectedAccountId) return setError("Avval Instagram akkauntingizni ulang.");
-    if (triggerScope === "specific" && !postId)
-      return setError("Kampaniya uchun post yoki reel tanlang.");
-    if (matchMode === "specific" && keywords.length === 0)
-      return setError("Kamida bitta kalit so'z kiriting yoki 'har qanday so'z' rejimini tanlang.");
-    if (!dmMessage.trim()) return setError("DM xabarini kiriting.");
-    if (openingDmEnabled && (!openingDmMessage.trim() || !openingDmButtonLabel.trim()))
-      return setError("Kirish DM uchun xabar va tugma nomini kiriting.");
+    if (!selectedAccountId) return setError(t.errNoAccount);
+    if (triggerScope === "specific" && !postId) return setError(t.errNoPost);
+    if (matchMode === "specific" && keywords.length === 0) return setError(t.errNoKeyword);
+    if (!dmMessage.trim()) return setError(t.errNoDm);
 
     setSaving(true);
 
+    const defaultName = t.defaultCampaignName.replace("{{username}}", username);
     const payload = {
-      name: name.trim() || `@${username} kampaniyasi`,
+      name: name.trim() || defaultName,
       instagramAccountId: selectedAccountId,
       postId: triggerScope === "specific" ? postId : null,
       postUrl: triggerScope === "specific" ? postUrl : null,
@@ -392,22 +394,20 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       matchAnyWord: matchMode === "any",
       keywords: matchMode === "any" ? [] : keywords,
       dmMessage,
-      openingDmEnabled,
-      openingDmMessage: openingDmEnabled ? openingDmMessage : null,
-      openingDmButtonLabel: openingDmEnabled ? openingDmButtonLabel : null,
+      openingDmEnabled: false,
+      openingDmMessage: null,
+      openingDmButtonLabel: null,
       publicReplyEnabled,
       publicReplyMessages: publicReplyEnabled
         ? publicReplyMessages.map((m) => m.trim()).filter(Boolean)
         : [],
       trackedDestinationUrl: trackedDestinationUrl.trim() || "",
-      linkButtonLabel: linkButtonLabel.trim() || "Havolani ochish",
+      linkButtonLabel: linkButtonLabel.trim() || t.defaultLinkBtn,
       secondaryDestinationUrl: secondaryDestinationUrl.trim() || "",
-      secondaryButtonLabel: secondaryButtonLabel.trim() || "Havolani ochish",
-      requireFollow,
-      followPromptMessage: requireFollow ? followPromptMessage.trim() : "",
-      followPromptButtonLabel: requireFollow
-        ? followPromptButtonLabel.trim() || "Obuna bo'ldim ✅"
-        : "",
+      secondaryButtonLabel: secondaryButtonLabel.trim() || t.defaultLinkBtn,
+      requireFollow: false,
+      followPromptMessage: "",
+      followPromptButtonLabel: "",
       isActive: activeValue,
     };
 
@@ -473,13 +473,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         setError(
           firstField
             ? `${firstField}: ${fieldErrors[firstField][0]}`
-            : data.error ?? "Kampaniyani saqlash muvaffaqiyatsiz"
+            : data.error ?? t.errSaveFailed
         );
         if (typeof window !== "undefined")
           window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
-      setError("Kampaniyani saqlash muvaffaqiyatsiz");
+      setError(t.errSaveFailed);
     } finally {
       setSaving(false);
     }
@@ -520,12 +520,12 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   if (notFound) {
     return (
       <div className="panel rounded-md p-8 text-center">
-        <p className="text-sm text-muted">Kampaniya topilmadi.</p>
+        <p className="text-sm text-muted">{t.notFound}</p>
         <button
-          onClick={() => router.push("/campaigns")}
+          onClick={() => router.push(`/${lang}/campaigns`)}
           className="mt-4 rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
         >
-          Kampaniyalarga qaytish
+          {t.backToCampaigns}
         </button>
       </div>
     );
@@ -536,11 +536,11 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       {importQueue && (
         <div className="rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
           <span className="font-medium text-foreground">
-            {importTotal - importQueue.length + 1} / {importTotal} import qilinmoqda.
+            {t.importProgress
+              .replace("{{done}}", String(importTotal - importQueue.length + 1))
+              .replace("{{total}}", String(importTotal))}
           </span>{" "}
-          <span className="text-muted">
-            Maydonlar CSV faylingizdan to&apos;ldirildi. Reel tanlang, kerakli joylarni tahrirlang va keyingisini yuklash uchun saqlang — bu qatorni o&apos;tkazib yubormoqchi bo&apos;lsangiz O&apos;tkazib yuborish tugmasini bosing.
-          </span>
+          <span className="text-muted">{t.importHint}</span>
         </div>
       )}
 
@@ -550,18 +550,18 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           {mode === "edit" ? (
             <>
               <span className="truncate text-sm font-semibold text-foreground">
-                {name || "Nomsiz kampaniya"}
+                {name || t.untitled}
               </span>
               <span
                 className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
                   isActive ? "bg-success/15 text-success" : "bg-muted/15 text-muted"
                 }`}
               >
-                {isActive ? "FAOL" : "TO'XTATILGAN"}
+                {isActive ? t.statusActive : t.statusPaused}
               </span>
             </>
           ) : (
-            <span className="text-sm text-muted">Yangi kampaniya</span>
+            <span className="text-sm text-muted">{t.newLabel}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -572,7 +572,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               disabled={saving}
               className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
             >
-              {importQueue.length > 1 ? "O'tkazib yuborish" : "O'tkazib va tugatish"}
+              {importQueue.length > 1 ? t.skip : t.skipAndFinish}
             </button>
           )}
           {mode === "edit" &&
@@ -583,7 +583,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 disabled={saving}
                 className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
               >
-                To&apos;xtatish
+                {t.pause}
               </button>
             ) : (
               <button
@@ -592,7 +592,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 disabled={saving}
                 className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
               >
-                Ishga tushirish
+                {t.launch}
               </button>
             ))}
           <button
@@ -601,7 +601,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             disabled={saving}
             className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
           >
-            {saving ? "Saqlanmoqda…" : mode === "new" ? "Ishga tushirish" : "O'zgarishlarni saqlash"}
+            {saving ? t.saving : mode === "new" ? t.launch : t.saveChanges}
           </button>
         </div>
       </div>
@@ -617,13 +617,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-foreground">
-            Kampaniya nomi{" "}
-            <span className="font-normal text-muted">(ixtiyoriy)</span>
+            {t.nameLabel}{" "}
+            <span className="font-normal text-muted">{t.nameLabelOptional}</span>
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Masalan: Yangi mahsulot aksiyasi"
+            placeholder={t.namePlaceholder}
             className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
             maxLength={100}
           />
@@ -639,18 +639,18 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   setPostThumb(null);
                 }}
                 includeAll={false}
-                label="Instagram akkaunt"
+                label={t.accountLabel}
               />
             </div>
           )}
         </div>
 
-        <Section title="Kimdir izoh yozganda">
+        <Section title={t.sectionWhen}>
           <Radio
             checked={triggerScope === "specific"}
             onSelect={() => setTriggerScope("specific")}
           >
-            muayyan post yoki reel
+            {t.triggerSpecific}
           </Radio>
           {triggerScope === "specific" && (
             <div className="rounded-lg border border-border p-2">
@@ -666,43 +666,43 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             checked={triggerScope === "any"}
             onSelect={() => setTriggerScope("any")}
           >
-            har qanday post yoki reel
+            {t.triggerAny}
           </Radio>
           <Radio
             checked={triggerScope === "next"}
             onSelect={() => setTriggerScope("next")}
           >
-            keyingi post yoki reel
+            {t.triggerNext}
           </Radio>
         </Section>
 
-        <Section title="Va izohda mavjud">
+        <Section title={t.sectionAnd}>
           <Radio
             checked={matchMode === "specific"}
             onSelect={() => setMatchMode("specific")}
           >
-            muayyan so&apos;z yoki so&apos;zlar
+            {t.matchSpecific}
           </Radio>
           {matchMode === "specific" && (
             <div className="space-y-1">
               <input
                 value={keywordText}
                 onChange={(e) => setKeywordText(e.target.value)}
-                placeholder="Kalit so'z kiriting"
+                placeholder={t.keywordPlaceholder}
                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
               />
-              <p className="text-xs text-muted">So&apos;zlarni vergul bilan ajrating</p>
+              <p className="text-xs text-muted">{t.keywordHint}</p>
             </div>
           )}
           <Radio
             checked={matchMode === "any"}
             onSelect={() => setMatchMode("any")}
           >
-            har qanday so&apos;z
+            {t.matchAny}
           </Radio>
           <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
             <span className="text-sm text-foreground">
-              post ostidagi izohlariga javob berish
+              {t.publicReplyLabel}
             </span>
             <Toggle
               on={publicReplyEnabled}
@@ -720,7 +720,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                         prev.map((m, idx) => (idx === i ? e.target.value : m))
                       )
                     }
-                    placeholder="Sizga DM yubordim! 📩"
+                    placeholder={t.publicReplyPlaceholder}
                     maxLength={1000}
                     className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
                   />
@@ -748,87 +748,42 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   }
                   className="text-xs font-medium text-accent hover:underline"
                 >
-                  + Yana bir javob qo&apos;shish
+                  {t.addReply}
                 </button>
               )}
-              <p className="text-xs text-muted">
-                Har safar bittasi tasodifiy tanlanadi, shunda javoblar bir xil ko&apos;rinmaydi.
-              </p>
+              <p className="text-xs text-muted">{t.replyRotateHint}</p>
             </div>
           )}
         </Section>
 
-        <Section title="Ular oladi">
-          <div className="rounded-lg border border-border p-3">
+        <Section title={t.sectionTheyReceive}>
+          <div className="rounded-lg border border-border p-3 opacity-60">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">kirish DM</span>
-              <Toggle
-                on={openingDmEnabled}
-                onToggle={() => setOpeningDmEnabled(!openingDmEnabled)}
-              />
-            </div>
-            {openingDmEnabled && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={openingDmMessage}
-                  onChange={(e) => setOpeningDmMessage(e.target.value)}
-                  placeholder="Salom! Izohingiz uchun rahmat 😊"
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <input
-                  value={openingDmButtonLabel}
-                  onChange={(e) => setOpeningDmButtonLabel(e.target.value)}
-                  placeholder="Havolani yuboring"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                  maxLength={64}
-                />
-              </div>
-            )}
-          </div>
-          <div className="mt-3 rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">
-                avval obuna bo&apos;lish talabi
+              <span className="text-sm text-foreground">{t.openingDmLabel}</span>
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {t.comingSoon}
               </span>
-              <Toggle
-                on={requireFollow}
-                onToggle={() => setRequireFollow(!requireFollow)}
-              />
             </div>
-            {requireFollow && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={followPromptMessage}
-                  onChange={(e) => setFollowPromptMessage(e.target.value)}
-                  placeholder="Deyarli bo'ldi! Meni kuzating va quyidagi tugmani bosib havolani oling 💛"
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <input
-                  value={followPromptButtonLabel}
-                  onChange={(e) => setFollowPromptButtonLabel(e.target.value)}
-                  placeholder="Obuna bo'ldim ✅"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                  maxLength={20}
-                />
-                <p className="text-xs text-muted">
-                  Havola faqat obunani tasdiqlangandan so&apos;ng yuboriladi. Tekshirib bo&apos;lmasa ham yuborilaveradi.
-                </p>
-              </div>
-            )}
+            <p className="mt-1.5 text-xs text-muted">{t.requiresAppReview}</p>
+          </div>
+          <div className="mt-3 rounded-lg border border-border p-3 opacity-60">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground">{t.followGateLabel}</span>
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                {t.comingSoon}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs text-muted">{t.requiresAppReview}</p>
           </div>
         </Section>
 
-        <Section title="Va ular oladi">
+        <Section title={t.sectionAndTheyReceive}>
           <div className="rounded-lg border border-border p-3 space-y-2">
-            <span className="text-sm text-foreground">havolali DM</span>
+            <span className="text-sm text-foreground">{t.dmWithLinkLabel}</span>
             <textarea
               value={dmMessage}
               onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="Xabar yozing"
+              placeholder={t.dmPlaceholder}
               rows={3}
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-none"
               maxLength={1000}
@@ -845,7 +800,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 <input
                   value={linkButtonLabel}
                   onChange={(e) => setLinkButtonLabel(e.target.value)}
-                  placeholder="Tugma nomi (masalan: Havolani ochish)"
+                  placeholder={t.linkButtonPlaceholder}
                   maxLength={20}
                   className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
                 />
@@ -860,7 +815,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                     <input
                       value={secondaryButtonLabel}
                       onChange={(e) => setSecondaryButtonLabel(e.target.value)}
-                      placeholder="Ikkinchi tugma nomi"
+                      placeholder={t.secondButtonPlaceholder}
                       maxLength={20}
                       className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
                     />
@@ -871,7 +826,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                     onClick={() => setSecondLinkOpen(true)}
                     className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
                   >
-                    + Ikkinchi havola qo&apos;shish
+                    {t.addSecondLink}
                   </button>
                 )}
               </div>
@@ -881,19 +836,17 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 onClick={() => setLinkOpen(true)}
                 className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
               >
-                + Havola qo&apos;shish
+                {t.addLink}
               </button>
             )}
-            <p className="text-xs text-muted">
-              {"{link}"} — kuzatilgan havola; {"{username}"} — foydalanuvchi nomi.
-            </p>
+            <p className="text-xs text-muted">{t.tokenHint}</p>
           </div>
         </Section>
       </div>
 
       {/* Right: preview */}
       <div>
-        <p className="mb-4 text-sm text-muted">Ko&apos;rinish</p>
+        <p className="mb-4 text-sm text-muted">{t.previewLabel}</p>
         <div className="flex justify-center lg:sticky lg:top-6 lg:block">
           <CampaignPreview
             tab={previewTab}
@@ -910,14 +863,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             openingDmButtonLabel={openingDmButtonLabel}
             revealMessage={dmMessage}
             hasLink={Boolean(trackedDestinationUrl.trim())}
-            linkButtonLabel={linkButtonLabel || "Havolani ochish"}
+            linkButtonLabel={linkButtonLabel || t.defaultLinkBtn}
             hasSecondLink={
               secondLinkOpen && Boolean(secondaryDestinationUrl.trim())
             }
-            secondLinkButtonLabel={secondaryButtonLabel || "Havolani ochish"}
+            secondLinkButtonLabel={secondaryButtonLabel || t.defaultLinkBtn}
             requireFollow={requireFollow}
             followPromptMessage={followPromptMessage}
-            followPromptButtonLabel={followPromptButtonLabel || "Obuna bo'ldim ✅"}
+            followPromptButtonLabel={followPromptButtonLabel || t.defaultFollowBtn}
           />
         </div>
       </div>

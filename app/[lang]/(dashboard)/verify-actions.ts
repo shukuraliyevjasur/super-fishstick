@@ -10,7 +10,7 @@ import { prisma } from "@/lib/db/client";
  * (the adapter stamps `emailVerified`) as well as signing them in, so no second
  * token type is needed.
  */
-export async function resendVerification(): Promise<{ ok: boolean }> {
+export async function resendVerification(lang = "uz"): Promise<{ ok: boolean }> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false };
 
@@ -21,7 +21,11 @@ export async function resendVerification(): Promise<{ ok: boolean }> {
   if (!user?.email || user.emailVerified) return { ok: false };
 
   try {
-    await signIn("resend", { email: user.email, redirect: false });
+    await signIn("resend", {
+      email: user.email,
+      redirect: false,
+      callbackUrl: `/${lang}/dashboard`,
+    });
     return { ok: true };
   } catch {
     return { ok: false };

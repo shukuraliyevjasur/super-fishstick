@@ -42,7 +42,13 @@ export async function GET() {
     tokenRefreshFailures,
     operationalEvents,
   ] = await Promise.all([
-    getWorkerHealth(),
+    // Also a Redis read, and it sits in the same Promise.all as the Prisma
+    // queries — an unhandled rejection here 500s the entire page.
+    getWorkerHealth().catch(() => ({
+      healthy: false,
+      heartbeat: null,
+      ageMs: null,
+    })),
     prisma.webhookEvent.findMany({
       where: { workspaceId, status: "FAILED" },
       orderBy: { createdAt: "desc" },
@@ -109,10 +115,16 @@ export async function GET() {
     }),
   ]);
 
+  // Redis being down must not take the whole diagnostics page with it — that is
+  // precisely when an operator is looking at it. `-1` reads as "unknown" rather
+  // than a real depth of 0. `getWorkerAlerts` also goes to Redis, so it gets the
+  // same treatment.
   const [queueCounts, workerAlerts] = isPlatformAdmin
     ? await Promise.all([
-        getDMQueue().getJobCounts("waiting", "active", "delayed", "failed"),
-        getWorkerAlerts(10),
+        getDMQueue()
+          .getJobCounts("waiting", "active", "delayed", "failed")
+          .catch(() => ({ waiting: -1, active: -1, delayed: -1, failed: -1 })),
+        getWorkerAlerts(10).catch(() => []),
       ])
     : [null, null];
 

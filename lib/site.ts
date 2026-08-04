@@ -31,7 +31,7 @@ export function getSiteUrl(): string {
  * or page metadata. `lib/i18n` re-exports this as `locales`, so the two cannot
  * drift.
  */
-export const PUBLIC_LOCALES = ["uz", "ru"] as const;
+export const PUBLIC_LOCALES = ["uz", "ru", "en"] as const;
 
 /**
  * Paths that require a session, relative to the locale prefix.
@@ -53,6 +53,22 @@ export const PROTECTED_PATHS = [
   "/diagnostics",
   "/set-password",
 ] as const;
+
+/**
+ * OpenGraph `locale` codes. `og:locale` wants a territory, not a bare language.
+ *
+ * Kept beside PUBLIC_LOCALES and typed against it, so adding a locale without a
+ * code here is a type error rather than a silently wrong tag.
+ */
+const OG_LOCALES: Record<(typeof PUBLIC_LOCALES)[number], string> = {
+  uz: "uz_UZ",
+  ru: "ru_RU",
+  en: "en_US",
+};
+
+export function getOgLocale(lang: string): string {
+  return OG_LOCALES[lang as (typeof PUBLIC_LOCALES)[number]] ?? "uz_UZ";
+}
 
 /**
  * `canonical` + `hreflang` for a locale-prefixed public page (Q3).

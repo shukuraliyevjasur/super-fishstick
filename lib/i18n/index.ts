@@ -5,6 +5,7 @@ import { PUBLIC_LOCALES } from "@/lib/site"
 export type { Dict, Locale }
 export { uz } from "./uz"
 export { ru } from "./ru"
+export { en } from "./en"
 
 // Defined in lib/site.ts because metadata and robots/sitemap need the same
 // list and cannot import this module — it is server-only.
@@ -18,6 +19,7 @@ export function hasLocale(s: string): s is Locale {
 const loaders: Record<Locale, () => Promise<Dict>> = {
   uz: () => import("./uz").then((m) => m.uz),
   ru: () => import("./ru").then((m) => m.ru),
+  en: () => import("./en").then((m) => m.en),
 }
 
 export async function getDictionary(locale: Locale): Promise<Dict> {

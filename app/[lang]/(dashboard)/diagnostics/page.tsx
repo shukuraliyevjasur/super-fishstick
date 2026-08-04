@@ -80,6 +80,8 @@ function Section({
 export default function DiagnosticsPage() {
   const [data, setData] = useState<DiagnosticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resubscribing, setResubscribing] = useState(false);
+  const [resubscribeResult, setResubscribeResult] = useState<string | null>(null);
 
   async function refreshDiagnostics() {
     setLoading(true);
@@ -132,12 +134,38 @@ export default function DiagnosticsPage() {
             Tizim holati, navbatlar, webhook xatoliklari va worker ogohlantirishlari.
           </p>
         </div>
-        <button
-          onClick={() => void refreshDiagnostics()}
-          className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover"
-        >
-          Yangilash
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              setResubscribing(true);
+              setResubscribeResult(null);
+              const res = await fetch("/api/instagram/resubscribe", { method: "POST" });
+              const payload = await res.json();
+              if (payload.success) {
+                const lines = (payload.data as Array<{ username: string; success: boolean }>)
+                  .map((r) => `@${r.username}: ${r.success ? "✓" : "✗"}`)
+                  .join(", ");
+                setResubscribeResult(lines || "No accounts");
+              } else {
+                setResubscribeResult("Failed");
+              }
+              setResubscribing(false);
+            }}
+            disabled={resubscribing}
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover disabled:opacity-50"
+          >
+            {resubscribing ? "…" : "Re-subscribe webhooks"}
+          </button>
+          <button
+            onClick={() => void refreshDiagnostics()}
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-border-hover"
+          >
+            Yangilash
+          </button>
+        </div>
+        {resubscribeResult && (
+          <p className="text-xs text-muted sm:text-right">{resubscribeResult}</p>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

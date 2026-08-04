@@ -1,4 +1,4 @@
-export type Locale = "uz" | "ru"
+export type Locale = "uz" | "ru" | "en"
 
 export interface Dict {
   locale: Locale
@@ -254,5 +254,81 @@ export interface Dict {
 
   common: {
     help: string
+  }
+
+  campaignBuilder: {
+    nameLabel: string
+    nameLabelOptional: string
+    namePlaceholder: string
+    accountLabel: string
+    sectionWhen: string
+    triggerSpecific: string
+    triggerAny: string
+    triggerNext: string
+    sectionAnd: string
+    matchSpecific: string
+    keywordPlaceholder: string
+    keywordHint: string
+    matchAny: string
+    publicReplyLabel: string
+    publicReplyPlaceholder: string
+    addReply: string
+    replyRotateHint: string
+    sectionTheyReceive: string
+    openingDmLabel: string
+    openingDmPlaceholder: string
+    openingDmButtonPlaceholder: string
+    followGateLabel: string
+    followPromptPlaceholder: string
+    followButtonPlaceholder: string
+    followHint: string
+    sectionAndTheyReceive: string
+    dmWithLinkLabel: string
+    dmPlaceholder: string
+    addLink: string
+    addSecondLink: string
+    linkButtonPlaceholder: string
+    secondButtonPlaceholder: string
+    tokenHint: string
+    previewLabel: string
+    untitled: string
+    statusActive: string
+    statusPaused: string
+    newLabel: string
+    skip: string
+    skipAndFinish: string
+    pause: string
+    launch: string
+    saving: string
+    saveChanges: string
+    importProgress: string
+    importHint: string
+    defaultLinkBtn: string
+    defaultFollowBtn: string
+    defaultOpeningBtn: string
+    defaultCampaignName: string
+    errNoAccount: string
+    errNoPost: string
+    errNoKeyword: string
+    errNoDm: string
+    errNoOpeningDm: string
+    comingSoon: string
+    requiresAppReview: string
+    errSaveFailed: string
+    notFound: string
+    backToCampaigns: string
+    // campaign-preview fallbacks (shown when fields are empty)
+    previewOpeningDmFallback: string
+    previewButtonFallback: string
+    // post-picker strings
+    postPickerSearch: string
+    postPickerNoImage: string
+    postPickerSelected: string
+    postPickerUsed: string
+    postPickerUsedBy: string
+    postPickerNoResults: string
+    postPickerNoPosts: string
+    postPickerErrLoad: string
+    postPickerErrConnect: string
   }
 }

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // crawlers. lib/site.ts is pure — no server-only import — so it is safe here.
 import { PROTECTED_PATHS } from "@/lib/site";
 
-const LOCALES = ["uz", "ru"] as const;
+const LOCALES = ["uz", "ru", "en"] as const;
 const DEFAULT_LOCALE = "uz";
 
 function hasSessionCookie(request: NextRequest): boolean {
@@ -16,10 +16,9 @@ function hasSessionCookie(request: NextRequest): boolean {
 }
 
 function getLocale(request: NextRequest): string {
-  const accept = request.headers.get("accept-language") ?? "";
-  if (accept.toLowerCase().startsWith("ru")) return "ru";
-  // Russian browser: ru-RU, ru;q=0.9, etc.
-  if (/\bru\b/.test(accept.toLowerCase())) return "ru";
+  const accept = request.headers.get("accept-language") ?? "".toLowerCase();
+  if (/\bru\b/.test(accept)) return "ru";
+  if (/\ben\b/.test(accept)) return "en";
   return DEFAULT_LOCALE;
 }
 

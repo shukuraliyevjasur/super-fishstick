@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDictionary, hasLocale } from "@/lib/i18n";
-import { localeAlternates } from "@/lib/site";
+import { getOgLocale, localeAlternates } from "@/lib/site";
 import PublicSiteHeader from "@/components/public-site-header";
 import PublicSiteFooter from "@/components/public-site-footer";
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props) {
       description: d.home.metaDesc,
       url: `/${lang}`,
       siteName: "replie",
-      locale: lang === "ru" ? "ru_RU" : "uz_UZ",
+      locale: getOgLocale(lang),
       type: "website",
     },
     // The image comes from app/[lang]/opengraph-image.tsx (Q2). Before it

@@ -8,7 +8,7 @@ import { resendVerification } from "@/app/[lang]/(dashboard)/verify-actions";
  * Shown until the signed-in user confirms their address. Nothing is blocked
  * while it is up — signup deliberately does not gate access on verification.
  */
-export default function VerifyEmailBanner() {
+export default function VerifyEmailBanner({ lang = "uz" }: { lang?: string }) {
   const dict = useDict();
   const v = dict.verifyEmail;
   const [sent, setSent] = useState(false);
@@ -25,7 +25,7 @@ export default function VerifyEmailBanner() {
           disabled={pending}
           onClick={() =>
             startTransition(async () => {
-              const result = await resendVerification();
+              const result = await resendVerification(lang);
               if (result.ok) setSent(true);
             })
           }

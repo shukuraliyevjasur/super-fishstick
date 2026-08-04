@@ -19,7 +19,6 @@ export default function PublicSiteHeader() {
   const params = useParams();
   const lang = (params.lang as string) || "uz";
   const pathname = usePathname();
-  const otherLang = lang === "uz" ? "ru" : "uz";
   const switchPath = pathname.slice(1 + lang.length);
 
   return (
@@ -40,15 +39,12 @@ export default function PublicSiteHeader() {
 
         <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", background: "#F1F5F9", borderRadius: 6, padding: 3, gap: 2, marginRight: 4 }}>
-            {lang === "uz" ? (
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#0145F2", background: "#fff", borderRadius: 4, padding: "3px 8px", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>UZ</span>
-            ) : (
-              <Link href={`/uz${switchPath}`} style={{ fontSize: 12, fontWeight: 500, color: "#8A94A0", padding: "3px 8px", textDecoration: "none" }}>UZ</Link>
-            )}
-            {lang === "ru" ? (
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#0145F2", background: "#fff", borderRadius: 4, padding: "3px 8px", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>RU</span>
-            ) : (
-              <Link href={`/ru${switchPath}`} style={{ fontSize: 12, fontWeight: 500, color: "#8A94A0", padding: "3px 8px", textDecoration: "none" }}>RU</Link>
+            {(["uz", "ru", "en"] as const).map((l) =>
+              lang === l ? (
+                <span key={l} style={{ fontSize: 12, fontWeight: 700, color: "#0145F2", background: "#fff", borderRadius: 4, padding: "3px 8px", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>{l.toUpperCase()}</span>
+              ) : (
+                <Link key={l} href={`/${l}${switchPath}`} style={{ fontSize: 12, fontWeight: 500, color: "#8A94A0", padding: "3px 8px", textDecoration: "none" }}>{l.toUpperCase()}</Link>
+              )
             )}
           </div>
           <Link href={`/${lang}/login`} style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none", padding: "10px 18px" }}>
@@ -90,9 +86,10 @@ export default function PublicSiteHeader() {
             {dict.nav.start}
           </Link>
           <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: "12px 0" }}>
-            <Link href={`/uz${switchPath}`} onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: lang === "uz" ? 700 : 500, color: lang === "uz" ? "#0145F2" : "#8A94A0", textDecoration: "none" }}>UZ</Link>
-            <span style={{ color: "#CBD5E1" }}>|</span>
-            <Link href={`/ru${switchPath}`} onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: lang === "ru" ? 700 : 500, color: lang === "ru" ? "#0145F2" : "#8A94A0", textDecoration: "none" }}>RU</Link>
+            {(["uz", "ru", "en"] as const).flatMap((l, i) => [
+              ...(i > 0 ? [<span key={`sep-${l}`} style={{ color: "#CBD5E1" }}>|</span>] : []),
+              <Link key={l} href={`/${l}${switchPath}`} onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: lang === l ? 700 : 500, color: lang === l ? "#0145F2" : "#8A94A0", textDecoration: "none" }}>{l.toUpperCase()}</Link>,
+            ])}
           </div>
         </div>
       )}

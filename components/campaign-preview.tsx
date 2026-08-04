@@ -10,6 +10,8 @@
  * the identical frame so switching tabs never resizes the phone.
  */
 
+import { useDict } from "@/components/dictionary-provider";
+
 export type PreviewTab = "post" | "comments" | "dm";
 
 interface CampaignPreviewProps {
@@ -226,12 +228,14 @@ function CommentsScreen({
   sampleComment,
   publicReplyEnabled,
   publicReplyMessage,
+  publicReplyFallback,
 }: {
   username: string;
   avatarUrl: string | null;
   sampleComment: string;
   publicReplyEnabled: boolean;
   publicReplyMessage: string;
+  publicReplyFallback: string;
 }) {
   const reactions = ["❤️", "🙌", "🔥", "👏", "😢", "😍", "😮", "😂"];
   return (
@@ -263,7 +267,7 @@ function CommentsScreen({
                 <span className="font-semibold">{username}</span>{" "}
                 <span className="text-zinc-500">Now</span>
               </p>
-              <p className="text-sm">{publicReplyMessage || "Sizga DM yubordim! 📩"}</p>
+              <p className="text-sm">{publicReplyMessage || publicReplyFallback}</p>
               <p className="mt-0.5 text-xs text-zinc-500">Reply</p>
             </div>
             <span className="mt-1">{Ico.heart("h-3.5 w-3.5 text-zinc-500")}</span>
@@ -302,6 +306,12 @@ function DmScreen({
   requireFollow,
   followPromptMessage,
   followPromptButtonLabel,
+  openingDmFallback,
+  buttonFallback,
+  followPromptFallback,
+  followBtnFallback,
+  dmFallback,
+  linkBtnFallback,
 }: {
   username: string;
   avatarUrl: string | null;
@@ -316,6 +326,12 @@ function DmScreen({
   requireFollow: boolean;
   followPromptMessage: string;
   followPromptButtonLabel: string;
+  openingDmFallback: string;
+  buttonFallback: string;
+  followPromptFallback: string;
+  followBtnFallback: string;
+  dmFallback: string;
+  linkBtnFallback: string;
 }) {
   return (
     <div className="flex h-full flex-col text-white">
@@ -336,15 +352,15 @@ function DmScreen({
             <div className="flex items-end gap-2">
               <Avatar url={avatarUrl} size={24} />
               <div className="max-w-[80%] overflow-hidden rounded-2xl rounded-bl-md bg-zinc-800">
-                <p className="whitespace-pre-wrap px-3 py-2 text-sm">{openingDmMessage || "Kirish xabaringiz…"}</p>
+                <p className="whitespace-pre-wrap px-3 py-2 text-sm">{openingDmMessage || openingDmFallback}</p>
                 <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                  {openingDmButtonLabel || "Tugma nomi"}
+                  {openingDmButtonLabel || buttonFallback}
                 </div>
               </div>
             </div>
             <div className="flex justify-end">
               <div className="rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
-                {openingDmButtonLabel || "Tugma nomi"}
+                {openingDmButtonLabel || buttonFallback}
               </div>
             </div>
           </>
@@ -355,17 +371,16 @@ function DmScreen({
               <Avatar url={avatarUrl} size={24} />
               <div className="max-w-[80%] overflow-hidden rounded-2xl rounded-bl-md bg-zinc-800">
                 <p className="whitespace-pre-wrap px-3 py-2 text-sm">
-                  {followPromptMessage ||
-                    "Deyarli bo'ldi! Meni kuzating va quyidagi tugmani bosib havolani oling 💛"}
+                  {followPromptMessage || followPromptFallback}
                 </p>
                 <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                  {followPromptButtonLabel || "Obuna bo'ldim ✅"}
+                  {followPromptButtonLabel || followBtnFallback}
                 </div>
               </div>
             </div>
             <div className="flex justify-end">
               <div className="rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
-                {followPromptButtonLabel || "Obuna bo'ldim ✅"}
+                {followPromptButtonLabel || followBtnFallback}
               </div>
             </div>
           </>
@@ -384,7 +399,7 @@ function DmScreen({
                 {(!showCard || bodyText) && (
                   <p className="whitespace-pre-wrap px-3 py-2 text-sm">
                     {!revealMessage
-                      ? "Xabar yozing"
+                      ? dmFallback
                       : showCard
                         ? bodyText
                         : renderMessage(revealMessage, hasLink)}
@@ -393,11 +408,11 @@ function DmScreen({
                 {showCard && (
                   <>
                     <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                      {linkButtonLabel || "Havolani ochish"}
+                      {linkButtonLabel || linkBtnFallback}
                     </div>
                     {hasSecondLink && (
                       <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                        {secondLinkButtonLabel || "Havolani ochish"}
+                        {secondLinkButtonLabel || linkBtnFallback}
                       </div>
                     )}
                   </>
@@ -422,6 +437,7 @@ function DmScreen({
 
 export default function CampaignPreview(props: CampaignPreviewProps) {
   const { tab, onTabChange } = props;
+  const t = useDict().campaignBuilder;
   const tabs: { key: PreviewTab; label: string }[] = [
     { key: "post", label: "Post" },
     { key: "comments", label: "Comments" },
@@ -446,6 +462,7 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
             sampleComment={props.sampleComment}
             publicReplyEnabled={props.publicReplyEnabled}
             publicReplyMessage={props.publicReplyMessage}
+            publicReplyFallback={t.publicReplyPlaceholder}
           />
         )}
         {tab === "dm" && (
@@ -463,6 +480,12 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
             requireFollow={props.requireFollow}
             followPromptMessage={props.followPromptMessage}
             followPromptButtonLabel={props.followPromptButtonLabel}
+            openingDmFallback={t.previewOpeningDmFallback}
+            buttonFallback={t.previewButtonFallback}
+            followPromptFallback={t.followPromptPlaceholder}
+            followBtnFallback={t.defaultFollowBtn}
+            dmFallback={t.dmPlaceholder}
+            linkBtnFallback={t.defaultLinkBtn}
           />
         )}
       </Phone>

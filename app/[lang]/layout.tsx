@@ -5,7 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { getDictionary, hasLocale } from "@/lib/i18n";
 import { DictionaryProvider } from "@/components/dictionary-provider";
 import { plusJakartaSans } from "@/app/fonts";
-import { getSiteUrl } from "@/lib/site";
+import { PUBLIC_LOCALES, getSiteUrl } from "@/lib/site";
 import "@/app/globals.css";
 
 /**
@@ -36,7 +36,9 @@ export const metadata: Metadata = {
 };
 
 export async function generateStaticParams() {
-  return [{ lang: "uz" }, { lang: "ru" }];
+  // Derived, not hand-listed: a locale added to PUBLIC_LOCALES must not silently
+  // lose prerendering. English was added on 2026-08-03 and this is why.
+  return PUBLIC_LOCALES.map((lang) => ({ lang }));
 }
 
 export default async function LangLayout({ children, params }: Props) {
