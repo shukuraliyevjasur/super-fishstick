@@ -565,18 +565,20 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
 
   const dedupeId = `reveal:${userId}`;
 
-  // Suppress Meta webhook retries: if a reveal was already sent to this user
-  // in the last 30 minutes, skip. Real re-taps after the cooldown still work.
-  const recentReveal = await prisma.dmLog.findFirst({
-    where: {
-      automationId: automation.id,
-      commentId: dedupeId,
-      status: "SENT",
-      dmSentAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
-    },
-    select: { id: true },
-  });
-  if (recentReveal && !fallback) return;
+  if (!fallback) {
+    // Atomic lock: only one of the N concurrent jobs (one per button tap, each
+    // with a unique mid) proceeds. NX means "set only if absent"; EX 1800 gives
+    // a 30-minute dedup window that also suppresses Meta webhook retries.
+    const redis = getRedisConnection();
+    const acquired = await redis.set(
+      `postback_sent:${automationId}:${userId}`,
+      "1",
+      "EX",
+      1800,
+      "NX"
+    );
+    if (!acquired) return;
+  }
 
   if (fallback) {
     const existingReveal = await prisma.dmLog.findUnique({
