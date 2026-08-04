@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/client";
-import { getPlanLimits } from "@/lib/billing/plan";
+import { getEffectivePlan, getPlanLimits } from "@/lib/billing/plan";
 
 export async function canConnectInstagramAccount({
   workspaceId,
@@ -29,6 +29,7 @@ export async function canConnectInstagramAccount({
     where: { id: workspaceId },
     select: {
       plan: true,
+      planExpiresAt: true,
       _count: { select: { instagramAccounts: true } },
     },
   });
@@ -37,7 +38,7 @@ export async function canConnectInstagramAccount({
     return { allowed: false, reason: "workspace_not_found" as const };
   }
 
-  const { maxInstagramAccounts } = getPlanLimits(workspace.plan);
+  const { maxInstagramAccounts } = getPlanLimits(getEffectivePlan(workspace));
   if (workspace._count.instagramAccounts >= maxInstagramAccounts) {
     return { allowed: false, reason: "plan_limit" as const };
   }

@@ -212,6 +212,37 @@ which is a single long-running process, if queue throughput needs it.
 
 ---
 
+## Granting a paid plan
+
+Payment is collected manually for now — the customer messages `t.me/ceo_syr`, you
+confirm payment, you grant the plan. Payment rails (Click / Payme / Uzum) replace
+this trigger later; the granting logic itself does not change (D2).
+
+**Requires `ADMIN_EMAILS` to include your address, on an account with a verified
+email.** Without that the endpoint 403s — see D3 in [DECISIONS.md](DECISIONS.md).
+
+```bash
+curl -X POST https://replie.uz/api/admin/plan \
+  -H 'content-type: application/json' \
+  -b 'authjs.session-token=<your session cookie>' \
+  -d '{"workspaceId":"<id>","plan":"PRO","reason":"paid via Telegram, ref 4471"}'
+```
+
+- `plan` is `FREE`, `STANDART` or `PRO`. Granting `FREE` is how you downgrade.
+- `expiresAt` is optional ISO 8601. **Omitted means the plan never expires**,
+  which is the right default while billing is manual — nothing will silently cut
+  a paying customer off. Pass it once payments are on a renewal cycle.
+- Every change writes an `OperationalEvent` with the previous plan, the new plan,
+  who did it and why. The `Workspace` columns hold only the *latest* grant; that
+  event log is the history, and it is the only billing audit trail there is.
+
+An expired plan stops working **immediately**, not when the daily cron notices —
+`getEffectivePlan()` is applied at every gate (DM quota, campaign count, Instagram
+account limit, follow gate, opening DM, tracked links, CSV import). The sweep in
+the health-check cron only reconciles the stored row.
+
+---
+
 ## Health alerting
 
 `/api/cron/health-check` runs the same checks as `/api/health` (database, Redis,

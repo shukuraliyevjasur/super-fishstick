@@ -56,6 +56,35 @@ type BooleanFeatureKeys = {
 
 export type PlanFeature = BooleanFeatureKeys;
 
+/** The plan fields any gate needs. Matches a Prisma `select` on Workspace. */
+export interface PlanBearing {
+  plan: WorkspacePlan;
+  planExpiresAt?: Date | null;
+}
+
+/**
+ * The plan a workspace actually has right now (P4).
+ *
+ * An expired plan is FREE. Enforcing expiry here rather than relying on the
+ * downgrade sweep matters: Vercel's free tier runs crons **once a day**, so a
+ * workspace whose plan lapsed just after a run would otherwise keep every paid
+ * feature for another 24 hours. The sweep in `downgradeExpiredWorkspaces()`
+ * only reconciles the stored row.
+ *
+ * `planExpiresAt: null` means the plan does not expire, which is how every
+ * manually granted plan starts.
+ */
+export function getEffectivePlan(
+  workspace: PlanBearing,
+  now: Date = new Date()
+): WorkspacePlan {
+  if (workspace.plan === "FREE") return "FREE";
+  if (!workspace.planExpiresAt) return workspace.plan;
+  return workspace.planExpiresAt.getTime() <= now.getTime()
+    ? "FREE"
+    : workspace.plan;
+}
+
 export function getPlanLimits(plan: WorkspacePlan) {
   return PLAN_LIMITS[plan];
 }

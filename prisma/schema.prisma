@@ -80,6 +80,19 @@ model Workspace {
   usagePeriodStart  DateTime      @default(now())
   dmsSentThisPeriod Int           @default(0)
 
+  // Billing audit trail. Written only by grantWorkspacePlan() in
+  // lib/billing/grant.ts — the admin route and, later, the payment webhook both
+  // go through that one function. See D2 in DECISIONS.md.
+  //
+  // planGrantedBy is an actor string, not a foreign key: it holds a user id for
+  // a manual grant and something like "webhook:click" for an automated one, and
+  // an audit row must survive the actor's account being deleted.
+  planGrantedAt     DateTime?
+  planGrantedBy     String?
+  // Null means "does not expire". Enforced by getEffectivePlan(), so a lapsed
+  // plan stops working the moment it expires rather than when a cron notices.
+  planExpiresAt     DateTime?
+
   members           WorkspaceMember[]
   invitations       WorkspaceInvitation[]
   instagramAccounts InstagramAccount[]
@@ -91,6 +104,7 @@ model Workspace {
   operationalEvents OperationalEvent[]
 
   @@index([ownerId])
+  @@index([planExpiresAt])
 }
 
 model WorkspaceMember {

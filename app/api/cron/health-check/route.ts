@@ -6,6 +6,7 @@ import {
   getRecentTokenRefreshErrors,
 } from "@/lib/ops/health-report";
 import { sendOperationalAlert, type AlertResult } from "@/lib/ops/alert-email";
+import { downgradeExpiredWorkspaces } from "@/lib/billing/grant";
 
 export const runtime = "nodejs";
 // Must reflect live state (worker heartbeat, queue depth), never a cached response.
@@ -31,6 +32,15 @@ export async function GET(request: NextRequest) {
 
   const report = await buildHealthReport();
   const refreshErrors = await getRecentTokenRefreshErrors().catch(() => []);
+
+  // P4: reconcile expired plans. Enforcement does not depend on this — every
+  // gate goes through getEffectivePlan(), which already treats an expired plan
+  // as FREE — so a slow sweep costs nothing but a stale row. Folded in here
+  // rather than added as a third cron, since the free tier is daily anyway.
+  const expiry = await downgradeExpiredWorkspaces().catch((error) => {
+    console.error("[health-check] plan expiry sweep failed", error);
+    return { downgraded: 0 };
+  });
 
   const degraded = !report.healthy;
   const shouldAlert = degraded || refreshErrors.length > 0;
@@ -106,6 +116,7 @@ export async function GET(request: NextRequest) {
       status: report.healthy ? "ok" : "degraded",
       checks: report.checks,
       tokenRefreshFailures: refreshErrors.length,
+      plansDowngraded: expiry.downgraded,
       alert,
     },
     { status: report.healthy ? 200 : 503 }

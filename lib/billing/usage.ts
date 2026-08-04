@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db/client";
 import type { Prisma } from "@/app/generated/prisma/client";
-import { getPlanLimits } from "@/lib/billing/plan";
+import {
+  getEffectivePlan,
+  getPlanLimits,
+  type PlanBearing,
+} from "@/lib/billing/plan";
 
 function getMonthStart(date = new Date()): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -39,8 +43,12 @@ export interface WorkspaceDMReservation {
   periodStart: Date | null;
 }
 
-function getWorkspaceDmLimit(plan: string): number {
-  const limits = getPlanLimits(plan as Parameters<typeof getPlanLimits>[0]);
+/**
+ * Takes the workspace rather than a bare plan so expiry is applied here too — a
+ * lapsed Pro workspace falls back to the FREE monthly cap immediately (P4).
+ */
+function getWorkspaceDmLimit(workspace: PlanBearing): number {
+  const limits = getPlanLimits(getEffectivePlan(workspace));
   const cap = limits.maxDmsPerMonth;
   // Infinity can't be stored in or compared against a Postgres int4 column.
   return cap === Infinity ? 2_000_000_000 : cap;
@@ -57,6 +65,7 @@ export async function reserveWorkspaceDMSend(
       where: { id: workspaceId },
       select: {
         plan: true,
+        planExpiresAt: true,
         usagePeriodStart: true,
         dmsSentThisPeriod: true,
       },
@@ -72,7 +81,7 @@ export async function reserveWorkspaceDMSend(
       };
     }
 
-    const limit = getWorkspaceDmLimit(workspace.plan);
+    const limit = getWorkspaceDmLimit(workspace);
 
     if (workspace.dmsSentThisPeriod >= limit) {
       return {
@@ -131,6 +140,7 @@ export async function canSendDMForWorkspace(workspaceId: string): Promise<{
     where: { id: workspaceId },
     select: {
       plan: true,
+      planExpiresAt: true,
       dmsSentThisPeriod: true,
     },
   });
@@ -139,7 +149,7 @@ export async function canSendDMForWorkspace(workspaceId: string): Promise<{
     return { allowed: false, remaining: 0, limit: 0 };
   }
 
-  const limit = getWorkspaceDmLimit(workspace.plan);
+  const limit = getWorkspaceDmLimit(workspace);
   const remaining = Math.max(0, limit - workspace.dmsSentThisPeriod);
 
   return {

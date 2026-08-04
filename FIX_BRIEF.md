@@ -5,12 +5,13 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 
 19 findings, 4 HIGH.
 
-**Status.** Fixed so far (all 2026-08-03): **S1 S2 S3 S4 S5** — every security
-finding is closed — plus **C1 C3** and **Q1 Q2 Q3 Q5 Q6**. **Q4** is code-complete
-but needs an operator action (which host is canonical).
+**Status.** Fixed: **S1 S2 S3 S4 S5** — every security finding — plus **C1 C3**,
+**Q1 Q2 Q3 Q5 Q6** (2026-08-03) and **P1 P4** (2026-08-04). **Q4** is
+code-complete but needs an operator action (which host is canonical).
 
-**Open: 6** — P1, P2, P3, P4, C2, C4. Each finding below carries its own status
-line.
+**Open: 4** — P2 (payment rails, now unblocked by P1), P3 (dashboard
+translation), C2 (error tracking, the only one needing a dependency), C4
+(infrastructure, not a code fix). Each finding below carries its own status line.
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -134,7 +135,38 @@ users; Tier 3 is cleanup.
 
 # TIER 1 — blocks launch
 
-## P1 (HIGH) — A paid plan cannot be granted through the product
+## P1 (HIGH) — A paid plan cannot be granted through the product — ✅ FIXED 2026-08-04
+
+**Fixed.** `POST /api/admin/plan`, gated on `isCurrentUserPlatformAdmin()` (D3) —
+**not** `canManageWorkspace`, per D2, since every customer is OWNER of their own
+workspace and that check would let anyone grant themselves Pro.
+
+All three constraints from the brief are met:
+
+- **The logic is in a function, not the route.** `grantWorkspacePlan()` in
+  `lib/billing/grant.ts` is the only place `workspace.plan` is ever written. The
+  payment webhook calls it with `source: "PAYMENT_WEBHOOK"` and needs no other
+  change — that is the whole reason for doing the admin route first.
+- **Every change is audited.** An `OperationalEvent` carrying previous plan, new
+  plan, actor, timestamp, expiry and reason is written **inside the same
+  transaction** as the update, so a plan change cannot leave no trail.
+- **`planExpiresAt` is designed in and actually enforced**, not just stored — see
+  P4.
+
+Migration `20260804120000_add_plan_grant_fields` adds three nullable columns and
+an index. Nullable with no default means it is metadata-only: no row rewrite, no
+backfill, safe on a live table.
+
+`planGrantedBy` is a free-form actor string rather than a foreign key — it holds
+a user id for a manual grant and `webhook:click` for an automated one, and an
+audit row has to survive the actor's account being deleted.
+
+**Operator runbook is in HANDOFF.md** under "Granting a paid plan", including the
+fact that omitting `expiresAt` means the plan never expires — the right default
+while billing is manual, since nothing will silently cut a paying customer off.
+
+**Requires `ADMIN_EMAILS` on Vercel** or the endpoint 403s for everyone.
+
 
 **Where:** `prisma/schema.prisma:79` (`plan WorkspacePlan @default(FREE)`), and the
 absence of any writer.
@@ -536,7 +568,28 @@ translated — copy their approach.
 This is the largest mechanical task in this brief. It is safe to do incrementally, one
 page per commit.
 
-## P4 (MED) — No plan lifecycle
+## P4 (MED) — No plan lifecycle — ✅ FIXED 2026-08-04
+
+**Fixed in two halves, and the enforcement half is the one that matters.**
+
+`getEffectivePlan(workspace)` returns FREE for an expired plan and is applied at
+**every** gate: DM quota (`lib/billing/usage.ts`), campaign count, follow gate,
+opening DM, tracked links, CSV import, Instagram account limit, and the dashboard
+stats route so the UI shows the quota actually in force.
+
+Enforcing at the gate rather than relying on the sweep is deliberate: Vercel's
+free tier runs crons **once a day**, so a plan lapsing just after a run would
+otherwise keep every paid feature for another 24 hours.
+
+`downgradeExpiredWorkspaces()` then reconciles the stored row, folded into the
+existing health-check cron rather than added as a third cron, as the brief asked.
+It downgrades through `grantWorkspacePlan()` rather than a raw update, so an
+automatic expiry lands in the same audit trail as a manual change, attributed to
+`system:expiry`.
+
+A failure in the sweep is caught and logged rather than failing the cron — the
+health check's own alerting is more important than the reconciliation.
+
 
 **Problem.** Nothing expires a plan, handles a failed renewal, or downgrades a
 workspace. Once P1 exists, every upgrade is permanent.
@@ -723,12 +776,16 @@ itself.
    auth helper and the alerting cron are independently revertable.
 3. ~~**S3 + S5**~~ — done 2026-08-03.
 4. ~~**S2**~~ — done 2026-08-03.
-5. **P1** — decided (admin endpoint, D2 in DECISIONS.md); build the granting logic as a
-   reusable function so the payment webhook can call it later. ← **next**.
-   The admin gate it needs already exists: `isCurrentUserPlatformAdmin()`, D3.
+5. ~~**P1**~~ — done 2026-08-04, along with **P4**.
 6. ~~**Q1–Q6**~~ — done 2026-08-03, except Q4's operator action.
-7. **P3** — dashboard translation, incremental, one page per commit.
-8. **P2, P4** — after P1 lands.
+7. **P3** — dashboard translation, incremental, one page per commit. ← **next**.
+   Re-scope first: the campaign builder, preview and picker were translated on
+   2026-08-03, and **English is now a third locale**, so each remaining page
+   needs keys in three dictionaries. Still hardcoded Uzbek: settings, inbox,
+   logs, overview, diagnostics, campaigns/[id], campaigns/import.
+8. **P2** — unblocked by P1. The webhook calls `grantWorkspacePlan()`.
+9. **C2** — the only remaining finding that adds a dependency. Generate the
+   lockfile on Linux.
 
 Findings are independent unless noted. The only hard dependencies are
 P2 → P1 and P4 → P1.

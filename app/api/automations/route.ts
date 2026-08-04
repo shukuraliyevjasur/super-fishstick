@@ -10,7 +10,7 @@ import {
   canManageWorkspace,
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
-import { canUseFeature, getPlanLimits } from "@/lib/billing/plan";
+import { canUseFeature, getEffectivePlan, getPlanLimits } from "@/lib/billing/plan";
 import { httpUrlOrEmptySchema, httpUrlSchema } from "@/lib/validation/url";
 
 // This list is read-your-writes (created/imported campaigns must show up
@@ -298,6 +298,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         plan: true,
+        planExpiresAt: true,
         _count: { select: { automations: true } },
       },
     }),
@@ -325,8 +326,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Plan enforcement: campaign count
-  const limits = getPlanLimits(workspace.plan);
+  // Plan enforcement. `getEffectivePlan` treats an expired plan as FREE, so a
+  // lapsed workspace loses paid features immediately rather than waiting for
+  // the daily downgrade sweep (P4).
+  const plan = getEffectivePlan(workspace);
+  const limits = getPlanLimits(plan);
   if (
     limits.maxActiveAutomations !== Infinity &&
     workspace._count.automations >= limits.maxActiveAutomations
@@ -334,26 +338,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: `${{ FREE: "Bepul", STANDART: "Standart", PRO: "Pro" }[workspace.plan]} rejim ${limits.maxActiveAutomations} ta kampaniya bilan cheklangan`,
+        error: `${{ FREE: "Bepul", STANDART: "Standart", PRO: "Pro" }[plan]} rejim ${limits.maxActiveAutomations} ta kampaniya bilan cheklangan`,
       },
       { status: 403 }
     );
   }
 
   // Plan enforcement: Pro-only features
-  if (parsed.data.requireFollow && !canUseFeature(workspace.plan, "followGate")) {
+  if (parsed.data.requireFollow && !canUseFeature(plan, "followGate")) {
     return NextResponse.json(
       { success: false, error: "Follow gate faqat Pro rejimda mavjud" },
       { status: 403 }
     );
   }
-  if (parsed.data.openingDmEnabled && !canUseFeature(workspace.plan, "openingDm")) {
+  if (parsed.data.openingDmEnabled && !canUseFeature(plan, "openingDm")) {
     return NextResponse.json(
       { success: false, error: "Kirish DM faqat Pro rejimda mavjud" },
       { status: 403 }
     );
   }
-  if (parsed.data.trackedDestinationUrl && !canUseFeature(workspace.plan, "trackedLinks")) {
+  if (parsed.data.trackedDestinationUrl && !canUseFeature(plan, "trackedLinks")) {
     return NextResponse.json(
       { success: false, error: "Kuzatilgan havolalar faqat Pro rejimda mavjud" },
       { status: 403 }

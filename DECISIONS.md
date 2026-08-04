@@ -63,8 +63,15 @@ truth for an authorisation decision.
 ## D2 — Billing: admin-granted plans now, payment rails as soon as possible
 
 **Date:** 2026-08-02
-**Status:** active
-**Applies to:** `workspace.plan`, `lib/billing/plan.ts`, the pricing page CTAs
+**Status:** active — the "now" half shipped 2026-08-04 (P1/P4); payment rails still pending
+**Applies to:** `workspace.plan`, `lib/billing/grant.ts`, `lib/billing/plan.ts`,
+the pricing page CTAs
+
+> **Implemented.** `grantWorkspacePlan()` in `lib/billing/grant.ts` is the single
+> writer of `workspace.plan`; `POST /api/admin/plan` is a thin caller gated on
+> `isCurrentUserPlatformAdmin()` (D3). **A payment webhook calls the same
+> function with `source: "PAYMENT_WEBHOOK"` and needs no other change** — that
+> was the point of building the admin path first. Runbook in HANDOFF.md.
 
 ### The decision
 

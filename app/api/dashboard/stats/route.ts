@@ -6,7 +6,7 @@ import {
   normalizeTopKeywords,
   summarizeDmStatuses,
 } from "@/lib/tracking/analytics";
-import { getPlanLimits } from "@/lib/billing/plan";
+import { getEffectivePlan, getPlanLimits } from "@/lib/billing/plan";
 
 export async function GET(request: NextRequest) {
   const workspaceId = await getCurrentWorkspaceId();
@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
       select: {
         name: true,
         plan: true,
+        planExpiresAt: true,
         dmsSentThisPeriod: true,
       },
     }),
@@ -191,7 +192,10 @@ export async function GET(request: NextRequest) {
     user?.email?.split("@")[0] ||
     null;
 
-  const planLimits = workspace ? getPlanLimits(workspace.plan) : null;
+  // The effective plan, so the dashboard shows the quota actually in force
+  // rather than the one a lapsed subscription used to buy.
+  const effectivePlan = workspace ? getEffectivePlan(workspace) : null;
+  const planLimits = effectivePlan ? getPlanLimits(effectivePlan) : null;
 
   return NextResponse.json({
     success: true,
@@ -199,7 +203,7 @@ export async function GET(request: NextRequest) {
       userName: firstName,
       contactsCount: contactRows.length,
       workspace,
-      plan: workspace?.plan ?? "FREE",
+      plan: effectivePlan ?? "FREE",
       dmQuota: planLimits ? {
         used: workspace!.dmsSentThisPeriod,
         limit: planLimits.maxDmsPerMonth === Infinity ? null : planLimits.maxDmsPerMonth,
