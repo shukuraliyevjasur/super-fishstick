@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { AccountOption } from "@/components/account-select";
+import { useDict, t } from "@/components/dictionary-provider";
+import { intlLocale } from "@/lib/i18n/format";
 
 interface SettingsData {
   workspace: {
@@ -45,6 +47,8 @@ interface WorkspaceMembersData {
 }
 
 export default function SettingsPage() {
+  const dict = useDict();
+  const d = dict.settings;
   const [data, setData] = useState<SettingsData | null>(null);
   const [membersData, setMembersData] = useState<WorkspaceMembersData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +76,7 @@ export default function SettingsPage() {
   }
 
   async function disconnectInstagram(instagramAccountId: string) {
-    if (!confirm("Instagram uzilasinmi? Bu akkaunt uchun campaignlar DM yuborishni to'xtatadi.")) {
+    if (!confirm(d.disconnectConfirm)) {
       return;
     }
     setBusy(`disconnect:${instagramAccountId}`);
@@ -98,7 +102,7 @@ export default function SettingsPage() {
       setMembersData(payload.data);
       setInviteEmail("");
     } else {
-      setMemberError(payload.error ?? "A'zoni taklif qilib bo'lmadi");
+      setMemberError(payload.error ?? d.inviteFailed);
     }
     setBusy(null);
   }
@@ -127,15 +131,13 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Instagram Connection */}
       <section className="panel rounded-lg p-6">
-        <h2 className="text-base font-semibold text-foreground mb-6">Instagram Ulash</h2>
+        <h2 className="text-base font-semibold text-foreground mb-6">{d.igHeading}</h2>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div>
-              <p className="text-sm font-medium text-foreground">Holat</p>
-              <p className="text-xs text-muted mt-0.5">
-                Izoh webhook va xususiy javoblar ushbu ulanishga bog&apos;liq.
-              </p>
+              <p className="text-sm font-medium text-foreground">{d.statusLabel}</p>
+              <p className="text-xs text-muted mt-0.5">{d.statusHelp}</p>
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -144,27 +146,27 @@ export default function SettingsPage() {
                   : "bg-warning/10 text-warning"
               }`}
             >
-              {accounts.length > 0 ? "Ulangan" : "Ulanmagan"}
+              {accounts.length > 0 ? d.connected : d.notConnected}
             </span>
           </div>
 
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div>
-              <p className="text-sm font-medium text-foreground">Akkauntlar</p>
+              <p className="text-sm font-medium text-foreground">{d.accountsLabel}</p>
               <p className="text-xs text-muted mt-0.5">
-                {accounts.length} ta ulangan Instagram profil
+                {t(d.accountsHelp, { count: accounts.length })}
               </p>
             </div>
             <span className="text-sm text-muted">
-              {accounts.length > 0 ? `${accounts.length} ta ulangan` : "Yo'q"}
+              {accounts.length > 0
+                ? t(d.accountsCount, { count: accounts.length })
+                : d.none}
             </span>
           </div>
 
           <div className="space-y-3 py-3">
             {accounts.length === 0 && (
-              <p className="text-sm text-muted">
-                Kampaniya ishga tushirish uchun Instagram professional akkauntingizni ulang.
-              </p>
+              <p className="text-sm text-muted">{d.connectPrompt}</p>
             )}
             {accounts.map((account) => (
               <div
@@ -176,11 +178,13 @@ export default function SettingsPage() {
                     @{account.username}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    Token muddati:{" "}
+                    {d.tokenExpires}{" "}
                     {account.tokenExpiresAt
-                      ? new Date(account.tokenExpiresAt).toLocaleDateString("uz-UZ")
-                      : "ma'lum emas"}{" "}
-                    · {account.webhookSubscribed ? "Webhook tayyor" : "Webhook kutilmoqda"}
+                      ? new Date(account.tokenExpiresAt).toLocaleDateString(
+                          intlLocale(dict.locale)
+                        )
+                      : d.tokenUnknown}{" "}
+                    · {account.webhookSubscribed ? d.webhookReady : d.webhookPending}
                   </p>
                 </div>
                 <button
@@ -188,7 +192,7 @@ export default function SettingsPage() {
                   disabled={busy === `disconnect:${account.id}`}
                   className="inline-flex items-center justify-center rounded-lg border border-error/20 px-4 py-2 text-sm font-medium text-error hover:border-error/40 hover:bg-error/5 disabled:opacity-50 transition-colors"
                 >
-                  {busy === `disconnect:${account.id}` ? "Uzilyapti..." : "Uzish"}
+                  {busy === `disconnect:${account.id}` ? d.disconnecting : d.disconnect}
                 </button>
               </div>
             ))}
@@ -201,14 +205,14 @@ export default function SettingsPage() {
             href="/api/instagram/connect"
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-colors"
           >
-            {accounts.length > 0 ? "Boshqa akkaunt ulash" : "Instagram ulash"}
+            {accounts.length > 0 ? d.connectAnother : d.connect}
           </a>
         </div>
       </section>
 
       {/* Team */}
       <section className="panel rounded-lg p-6">
-        <h2 className="text-base font-semibold text-foreground mb-6">Jamoa</h2>
+        <h2 className="text-base font-semibold text-foreground mb-6">{d.teamHeading}</h2>
         <div className="space-y-3">
           {membersData?.members.map((member) => (
             <div
@@ -217,7 +221,7 @@ export default function SettingsPage() {
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {member.user.name ?? member.user.email ?? "Noma'lum a'zo"}
+                  {member.user.name ?? member.user.email ?? d.unknownMember}
                 </p>
                 <p className="text-xs text-muted">{member.user.email}</p>
               </div>
@@ -231,7 +235,7 @@ export default function SettingsPage() {
         {membersData?.invitations.length ? (
           <div className="mt-6 border-t border-border pt-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-              Kutilayotgan takliflar
+              {d.pendingInvites}
             </p>
             <div className="space-y-3">
               {membersData.invitations.map((invitation) => (
@@ -253,7 +257,7 @@ export default function SettingsPage() {
                       onClick={() => void navigator.clipboard?.writeText(invitation.inviteUrl)}
                       className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:border-border-hover hover:text-foreground transition-colors"
                     >
-                      Nusxa
+                      {d.copy}
                     </button>
                     <button
                       type="button"
@@ -261,7 +265,7 @@ export default function SettingsPage() {
                       disabled={busy === `invite:${invitation.id}`}
                       className="rounded-lg border border-error/20 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/5 disabled:opacity-50 transition-colors"
                     >
-                      Bekor qilish
+                      {d.cancel}
                     </button>
                   </div>
                 </div>
@@ -279,7 +283,7 @@ export default function SettingsPage() {
               type="email"
               value={inviteEmail}
               onChange={(event) => setInviteEmail(event.target.value)}
-              placeholder="hamkasb@kompaniya.com"
+              placeholder={d.invitePlaceholder}
               className="rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors"
               required
             />
@@ -288,15 +292,16 @@ export default function SettingsPage() {
               onChange={(event) => setInviteRole(event.target.value as "ADMIN" | "MEMBER")}
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors"
             >
-              <option value="MEMBER">Member</option>
-              <option value="ADMIN">Admin</option>
+              {/* Values are API role codes and must stay untranslated. */}
+              <option value="MEMBER">{d.roleMember}</option>
+              <option value="ADMIN">{d.roleAdmin}</option>
             </select>
             <button
               type="submit"
               disabled={busy === "invite"}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
-              {busy === "invite" ? "Yuborilmoqda..." : "Taklif yuborish"}
+              {busy === "invite" ? d.sending : d.sendInvite}
             </button>
             {memberError && (
               <p className="sm:col-span-3 text-sm text-error">{memberError}</p>
@@ -307,11 +312,11 @@ export default function SettingsPage() {
 
       {/* Usage */}
       <section className="panel rounded-lg p-6">
-        <h2 className="text-base font-semibold text-foreground mb-6">Foydalanish</h2>
+        <h2 className="text-base font-semibold text-foreground mb-6">{d.usageHeading}</h2>
         <div className="flex items-center justify-between py-3">
           <div>
-            <p className="text-sm font-medium text-foreground">Bu oy yuborilgan DM lar</p>
-            <p className="text-xs text-muted mt-0.5">Joriy hisob-kitob davri</p>
+            <p className="text-sm font-medium text-foreground">{d.dmsThisMonth}</p>
+            <p className="text-xs text-muted mt-0.5">{d.currentPeriod}</p>
           </div>
           <span className="text-sm font-semibold text-foreground">
             {data?.workspace.dmsSentThisPeriod ?? 0}

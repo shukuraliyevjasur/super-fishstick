@@ -343,6 +343,42 @@ export interface Dict {
     noMatch: string
   }
 
+  settings: {
+    igHeading: string
+    statusLabel: string
+    statusHelp: string
+    connected: string
+    notConnected: string
+    accountsLabel: string
+    accountsHelp: string
+    accountsCount: string
+    none: string
+    connectPrompt: string
+    tokenExpires: string
+    tokenUnknown: string
+    webhookReady: string
+    webhookPending: string
+    disconnect: string
+    disconnecting: string
+    disconnectConfirm: string
+    connect: string
+    connectAnother: string
+    teamHeading: string
+    unknownMember: string
+    pendingInvites: string
+    copy: string
+    cancel: string
+    invitePlaceholder: string
+    roleMember: string
+    roleAdmin: string
+    sendInvite: string
+    sending: string
+    inviteFailed: string
+    usageHeading: string
+    dmsThisMonth: string
+    currentPeriod: string
+  }
+
   /** Instagram insight metrics. Used as both stat-card and column labels. */
   metrics: {
     views: string
