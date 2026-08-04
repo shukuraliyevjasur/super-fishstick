@@ -382,20 +382,57 @@ than a bare code-100 that could have come from any of three calls.
 
 ---
 
-## Messaging webhooks — root cause found and fixed (2026-08-04)
+## Messaging webhooks — archived pending App Review (2026-08-04)
 
-**Root cause (found 2026-08-04):** Instagram delivers button taps via the
-`messages` webhook field (carrying `message.quick_reply.payload`), **not** via
-`messaging_postbacks`. The webhook route handled `comments`, `messaging_postbacks`,
-and `messaging_seen` — but had no handler for `messages`. Button taps arrived,
-were stored in `WebhookEvent`, and were silently dropped.
+**Conclusion (2026-08-04):** Instagram Graph API messaging webhooks (`messages`,
+`messaging_postbacks`, `messaging_seen`) are silently dropped by Meta under
+Standard Access when the interacting user has no role on the app. `comments`
+webhooks are unaffected and work correctly. Every other hypothesis was ruled out:
+account-level toggle confirmed ON, webhook fields subscribed at both app and
+per-account level, OAuth scopes granted, token valid, app Published. Adding the
+test account as a Meta tester had no effect. Meta support confirmed Advanced
+Access (App Review) is required to receive messaging webhook events from users
+without an app role.
 
-**Fix:** `parseMessageEvents` added to `lib/meta/webhook.ts`. It reads
-`entry.changes[].field === "messages"`, skips `is_echo` events (the bot's own
-outbound messages echoed back), extracts `message.quick_reply.payload`, and
-accepts only `reveal:` / `followcheck:` patterns. The webhook route enqueues
-a `POSTBACK_JOB_NAME` job with a `message_*` prefix job ID. `processPostback`
-is unchanged — the same deliver path, same 30-minute DB dedup.
+**What was tried (do not re-investigate):**
+- Parser shape: handled — `parseMessageEvents` in `lib/meta/webhook.ts` reads
+  `entry.changes[].field === "messages"` (Graph API format), with
+  `entry.messaging[]` as fallback (Messenger Platform format).
+- Subscription fields: `["comments", "messages", "messaging_postbacks"]`
+  confirmed at per-account level via `GET /{ig-id}/subscribed_apps`.
+- App Dashboard: `messages`, `messaging_postbacks`, `messaging_seen` all
+  Subscribed on v26.0.
+- OAuth scope: `instagram_business_manage_messages` granted.
+- Token validity: same token sends DMs to strangers successfully.
+- "Allow access to messages" toggle: ON.
+- Tester role: added test account, no change.
+- Facebook Page linkage: `foundersyrio` was not linked to a Facebook Page;
+  linking it was the next hypothesis but the feature was archived before testing.
+
+**403s on `/api/webhook`:** Harmless. These are GET requests from
+`facebookexternalua` (Meta's link-preview crawler). They lack
+`hub.mode=subscribe` params so the route correctly returns 403. Not errors.
+
+**Current state:** Opening DM and Follow Gate are hidden in the campaign
+builder. Save payload hardcodes `openingDmEnabled: false` / `requireFollow:
+false`. `processPostback` and `parseMessageEvents` code is intact — the
+webhook path works; the issue is Meta not delivering the events.
+
+**To re-enable after App Review:**
+1. Remove the hidden-section comment in `components/campaign-builder.tsx`
+   (lines ~759-761) — restore the Opening DM and Follow Gate JSX blocks.
+2. Restore `openingDmEnabled` and `requireFollow` in the save payload
+   (currently hardcoded `false`).
+3. Test with a non-role user: comment keyword → tap button → check `DmLog`
+   for a `reveal:` row.
+4. Update item 2 in "Before real users" below.
+
+**Alternative (no webhook dependency):** `lib/meta/reveal-token.ts` and
+`app/api/reveal/[token]/route.ts` are implemented but not wired. To use:
+replace the postback button in `processComment` with a `web_url` button
+pointing at `${APP_URL}/api/reveal/<signRevealToken(...)>`. The endpoint
+verifies the HMAC token and enqueues the same `process-postback` job.
+`processPostback` is unchanged. Works under Standard Access today.
 
 **After confirming the fix works in production** (comment the keyword on a post,
 tap the button, check `DmLog` for a `reveal:` row):
@@ -756,10 +793,10 @@ reaches `/uz` through the locale middleware. Key decisions:
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
    [META_APP_REVIEW.md](META_APP_REVIEW.md).
-2. **Opening DM and follow gate are disabled** — root cause found and fixed
-   2026-08-04 (`parseMessageEvents` in `lib/meta/webhook.ts`). Confirm the fix
-   works in production, then re-enable both cards in `campaign-builder.tsx`. See
-   [Messaging webhooks](#messaging-webhooks--root-cause-found-and-fixed-2026-08-04).
+2. **Opening DM and follow gate archived** — messaging webhooks silently
+   dropped under Standard Access. Unblocked by App Review (Advanced Access).
+   Code intact, UI hidden. See
+   [Messaging webhooks](#messaging-webhooks--archived-pending-app-review-2026-08-04).
 3. **Add an external uptime monitor** — *not done as of 2026-08-04.* Vercel's
    free tier fires crons once a day, so the health check alone cannot detect
    worker death promptly: the worker can be dead for ~24h before anyone is told,
