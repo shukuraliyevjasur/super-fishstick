@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { AccountOption } from "@/components/account-select";
 import { useDict, t } from "@/components/dictionary-provider";
 import { intlLocale } from "@/lib/i18n/format";
@@ -49,6 +50,7 @@ interface WorkspaceMembersData {
 export default function SettingsPage() {
   const dict = useDict();
   const d = dict.settings;
+  const searchParams = useSearchParams();
   const [data, setData] = useState<SettingsData | null>(null);
   const [membersData, setMembersData] = useState<WorkspaceMembersData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,27 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
   const [memberError, setMemberError] = useState<string | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  const igParam = searchParams.get("instagram");
+  const connectedParam = searchParams.get("connected");
+
+  let bannerMessage: string | null = null;
+  let bannerKind: "success" | "error" = "error";
+  if (!bannerDismissed) {
+    if (connectedParam === "true") {
+      bannerMessage = d.igConnected;
+      bannerKind = "success";
+    } else if (igParam === "denied") {
+      bannerMessage = d.igErrDenied;
+    } else if (igParam === "invalid") {
+      bannerMessage = d.igErrInvalid;
+    } else if (igParam === "already_connected") {
+      bannerMessage = d.igErrAlreadyConnected;
+    } else if (igParam === "failed") {
+      bannerMessage = d.igErrFailed;
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -129,6 +152,26 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {bannerMessage && (
+        <div
+          className={`flex items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium ${
+            bannerKind === "success"
+              ? "bg-success/10 text-success border border-success/20"
+              : "bg-error/10 text-error border border-error/20"
+          }`}
+        >
+          <span>{bannerMessage}</span>
+          <button
+            type="button"
+            onClick={() => setBannerDismissed(true)}
+            className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Instagram Connection */}
       <section className="panel rounded-lg p-6">
         <h2 className="text-base font-semibold text-foreground mb-6">{d.igHeading}</h2>

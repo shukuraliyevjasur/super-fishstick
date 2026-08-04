@@ -25,6 +25,7 @@ export const ru: Dict = {
     campaigns: "Кампании",
     logs: "Журнал DM",
     settings: "Настройки",
+    logOut: "Выйти",
     diagnostics: "Диагностика",
   },
 
@@ -512,6 +513,11 @@ export const ru: Dict = {
     usageHeading: "Использование",
     dmsThisMonth: "Отправлено DM в этом месяце",
     currentPeriod: "Текущий расчётный период",
+    igConnected: "Instagram успешно подключён",
+    igErrDenied: "Подключение Instagram отклонено",
+    igErrInvalid: "Некорректный ответ Instagram — попробуйте ещё раз",
+    igErrAlreadyConnected: "Этот аккаунт Instagram уже подключён в другом воркспейсе",
+    igErrFailed: "Не удалось подключить Instagram — попробуйте ещё раз",
   },
 
   metrics: {

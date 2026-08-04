@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useDict } from "@/components/dictionary-provider";
 
 export default function Sidebar({
@@ -130,6 +131,14 @@ export default function Sidebar({
         <div className="px-5 py-4 border-t border-border">
           <p className="text-xs font-medium text-foreground truncate">{workspaceName}</p>
           <div className="flex items-center gap-3 mt-2">
+            <button
+              type="button"
+              onClick={() => void signOut({ callbackUrl: `/${lang}/login` })}
+              className="text-xs text-muted hover:text-error transition-colors"
+            >
+              {dict.sidebar.logOut}
+            </button>
+            <span className="text-xs text-border">|</span>
             {(["uz", "ru", "en"] as const).flatMap((l, i) => [
               ...(i > 0 ? [<span key={`sep-${l}`} className="text-xs text-border">|</span>] : []),
               <Link

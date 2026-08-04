@@ -26,6 +26,7 @@ export const en: Dict = {
     logs: "DM Log",
     settings: "Settings",
     diagnostics: "Diagnostics",
+    logOut: "Log out",
   },
 
   topBar: {
@@ -511,6 +512,11 @@ export const en: Dict = {
     usageHeading: "Usage",
     dmsThisMonth: "DMs sent this month",
     currentPeriod: "Current billing period",
+    igConnected: "Instagram connected successfully",
+    igErrDenied: "Instagram connection denied",
+    igErrInvalid: "Invalid Instagram response — please try again",
+    igErrAlreadyConnected: "That Instagram account is connected to another workspace",
+    igErrFailed: "Instagram connection failed — please try again",
   },
 
   metrics: {

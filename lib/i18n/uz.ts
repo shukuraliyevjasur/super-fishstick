@@ -25,6 +25,7 @@ export const uz: Dict = {
     campaigns: "Kampaniyalar",
     logs: "DM Jurnali",
     settings: "Sozlamalar",
+    logOut: "Chiqish",
     diagnostics: "Diagnostika",
   },
 
@@ -513,6 +514,11 @@ export const uz: Dict = {
     usageHeading: "Foydalanish",
     dmsThisMonth: "Bu oy yuborilgan DM lar",
     currentPeriod: "Joriy hisob-kitob davri",
+    igConnected: "Instagram muvaffaqiyatli ulandi",
+    igErrDenied: "Instagram ulanishi rad etildi",
+    igErrInvalid: "Noto'g'ri Instagram javobi — qayta urinib ko'ring",
+    igErrAlreadyConnected: "Bu Instagram akkaunt boshqa workspacega ulangan",
+    igErrFailed: "Instagram ulanmadi — qayta urinib ko'ring",
   },
 
   metrics: {

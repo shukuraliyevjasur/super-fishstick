@@ -26,6 +26,7 @@ export interface Dict {
     logs: string
     settings: string
     diagnostics: string
+    logOut: string
   }
 
   topBar: {
@@ -475,6 +476,11 @@ export interface Dict {
     usageHeading: string
     dmsThisMonth: string
     currentPeriod: string
+    igConnected: string
+    igErrDenied: string
+    igErrInvalid: string
+    igErrAlreadyConnected: string
+    igErrFailed: string
   }
 
   /** Instagram insight metrics. Used as both stat-card and column labels. */
