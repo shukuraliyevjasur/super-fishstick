@@ -59,6 +59,13 @@ interface WebhookEntry {
       recipient?: { id?: string };
       postback?: { mid?: string; title?: string; payload?: string };
       read?: { watermark?: number; seq?: number };
+      // messages field — carries quick reply taps and echo events
+      message?: {
+        mid?: string;
+        text?: string;
+        is_echo?: boolean;
+        quick_reply?: { payload?: string };
+      };
     };
   }>;
   // Messenger-platform-style messaging array (kept for forward compatibility)
@@ -67,6 +74,12 @@ interface WebhookEntry {
     recipient?: { id?: string };
     postback?: { mid?: string; title?: string; payload?: string };
     read?: { watermark?: number; seq?: number };
+    message?: {
+      mid?: string;
+      text?: string;
+      is_echo?: boolean;
+      quick_reply?: { payload?: string };
+    };
   }>;
 }
 
@@ -174,6 +187,80 @@ export function parsePostbackEvents(
         userId,
         payload: postbackPayload,
         mid: messaging.postback?.mid,
+      });
+    }
+  }
+
+  return events;
+}
+
+/**
+ * Parse quick-reply button taps out of `messages` webhook events.
+ *
+ * Instagram delivers postback button taps (and quick replies) on the `messages`
+ * field — not `messaging_postbacks` — with the automation payload in
+ * `message.quick_reply.payload`. Only payloads matching our patterns
+ * (`reveal:`, `followcheck:`) are returned; everything else, including
+ * `is_echo` events for the bot's own outbound messages, is silently dropped.
+ */
+export function parseMessageEvents(payload: WebhookPayload): WebhookPostbackEvent[] {
+  const events: WebhookPostbackEvent[] = [];
+
+  if (payload.object !== "instagram") return events;
+
+  for (const entry of payload.entry ?? []) {
+    // Instagram Graph API format: entry.changes[].field === "messages"
+    for (const change of entry.changes ?? []) {
+      if (change.field !== "messages") continue;
+      const value = change.value;
+
+      // Skip echo events — messages the bot itself sent, echoed back.
+      if (value?.message?.is_echo) continue;
+
+      const userId = value?.sender?.id;
+      const accountId = entry.id ?? value?.recipient?.id;
+      const quickReplyPayload = value?.message?.quick_reply?.payload;
+
+      if (!userId || !accountId || !quickReplyPayload) continue;
+      if (userId === accountId) continue;
+      if (
+        !quickReplyPayload.startsWith("reveal:") &&
+        !quickReplyPayload.startsWith("followcheck:")
+      )
+        continue;
+
+      events.push({
+        instagramAccountId: accountId,
+        userId,
+        payload: quickReplyPayload,
+        mid: value?.message?.mid,
+      });
+    }
+
+    // Messenger-platform format fallback: entry.messaging[].message.quick_reply
+    for (const messaging of entry.messaging ?? []) {
+      if (messaging.postback) continue; // handled by parsePostbackEvents
+      if (messaging.message?.is_echo) continue;
+
+      const quickReplyPayload = messaging.message?.quick_reply?.payload;
+      if (!quickReplyPayload) continue;
+      if (
+        !quickReplyPayload.startsWith("reveal:") &&
+        !quickReplyPayload.startsWith("followcheck:")
+      )
+        continue;
+
+      const userId = messaging.sender?.id;
+      const accountId = entry.id ?? messaging.recipient?.id;
+
+      if (!userId || !accountId) continue;
+      if (userId === accountId) continue;
+
+      events.push({
+        instagramAccountId: accountId,
+        userId,
+        payload: quickReplyPayload,
+        mid: messaging.message?.mid,
       });
     }
   }

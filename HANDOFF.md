@@ -382,10 +382,38 @@ than a bare code-100 that could have come from any of three calls.
 
 ---
 
-## Messaging webhooks have never fired — open investigation (2026-08-03)
+## Messaging webhooks — root cause found and fixed (2026-08-04)
 
-**Symptom:** the opening DM sends and its button renders, but tapping it delivers
-nothing. The reveal never arrives.
+**Root cause (found 2026-08-04):** Instagram delivers button taps via the
+`messages` webhook field (carrying `message.quick_reply.payload`), **not** via
+`messaging_postbacks`. The webhook route handled `comments`, `messaging_postbacks`,
+and `messaging_seen` — but had no handler for `messages`. Button taps arrived,
+were stored in `WebhookEvent`, and were silently dropped.
+
+**Fix:** `parseMessageEvents` added to `lib/meta/webhook.ts`. It reads
+`entry.changes[].field === "messages"`, skips `is_echo` events (the bot's own
+outbound messages echoed back), extracts `message.quick_reply.payload`, and
+accepts only `reveal:` / `followcheck:` patterns. The webhook route enqueues
+a `POSTBACK_JOB_NAME` job with a `message_*` prefix job ID. `processPostback`
+is unchanged — the same deliver path, same 30-minute DB dedup.
+
+**After confirming the fix works in production** (comment the keyword on a post,
+tap the button, check `DmLog` for a `reveal:` row):
+1. Re-enable the Opening DM card in `components/campaign-builder.tsx` — remove
+   the "Soon" badge (lines ~764, ~773) and allow `openingDmEnabled` to be saved
+   (line ~397 hardcodes `false`).
+2. Re-enable Follow Gate the same way (line ~408).
+3. Update `Before real users` item 3 in this file.
+
+**Verify after fix:**
+
+```sql
+SELECT "createdAt", entry_change.value ->> 'field' AS field, entry.value ->> 'id' AS entry_id
+FROM "WebhookEvent",
+     LATERAL jsonb_array_elements(payload -> 'entry') AS entry(value),
+     LATERAL jsonb_array_elements(entry.value -> 'changes') AS entry_change(value)
+ORDER BY "createdAt" DESC LIMIT 50;
+```
 
 **The core fact, and the one to start from:** *no Instagram messaging webhook of
 any kind has ever reached us.* Not `messaging_postbacks`, not `messaging_seen`,
@@ -728,11 +756,10 @@ reaches `/uz` through the locale middleware. Key decisions:
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
    [META_APP_REVIEW.md](META_APP_REVIEW.md).
-2. **Opening DM and follow gate are disabled** — no Instagram messaging webhook has
-   ever reached the app, so a button tap delivers nothing. Both features are hidden
-   behind a "Soon" badge until this is resolved. App Review is *not* the cause; see
-   [Messaging webhooks have never fired](#messaging-webhooks-have-never-fired--open-investigation-2026-08-03)
-   for what is ruled out and what to try next.
+2. **Opening DM and follow gate are disabled** — root cause found and fixed
+   2026-08-04 (`parseMessageEvents` in `lib/meta/webhook.ts`). Confirm the fix
+   works in production, then re-enable both cards in `campaign-builder.tsx`. See
+   [Messaging webhooks](#messaging-webhooks--root-cause-found-and-fixed-2026-08-04).
 3. **Add an external uptime monitor** — *not done as of 2026-08-04.* Vercel's
    free tier fires crons once a day, so the health check alone cannot detect
    worker death promptly: the worker can be dead for ~24h before anyone is told,

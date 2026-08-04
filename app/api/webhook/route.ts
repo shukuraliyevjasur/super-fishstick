@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/client";
 import { getDMQueue } from "@/lib/queue/client";
 import {
   parseCommentEvents,
+  parseMessageEvents,
   parsePostbackEvents,
   parseReadEvents,
   verifyWebhookSignature,
@@ -114,6 +115,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Button taps from opening DMs → deliver the reveal message.
+    // Instagram may deliver these on `messaging_postbacks` (postback buttons)
+    // or on `messages` (quick replies / some button variants) — handle both.
     const postbackEvents = parsePostbackEvents(
       payload as Parameters<typeof parsePostbackEvents>[0]
     );
@@ -131,6 +134,30 @@ export async function POST(request: NextRequest) {
           // BullMQ forbids ":" in custom job ids, and the payload is
           // "reveal:<id>", so build with underscores and strip any colons.
           jobId: `postback_${event.instagramAccountId}_${event.userId}_${(
+            event.mid ?? event.payload
+          ).replace(/:/g, "_")}`,
+        }
+      );
+    }
+
+    // Quick-reply taps arrive on `messages`, not `messaging_postbacks`.
+    // processPostback handles both paths identically; the 30-minute DB
+    // dedup check prevents double delivery if both event types fire.
+    const messageEvents = parseMessageEvents(
+      payload as Parameters<typeof parseMessageEvents>[0]
+    );
+
+    for (const event of messageEvents) {
+      await queue.add(
+        POSTBACK_JOB_NAME,
+        {
+          instagramAccountId: event.instagramAccountId,
+          userId: event.userId,
+          payload: event.payload,
+          mid: event.mid,
+        },
+        {
+          jobId: `message_${event.instagramAccountId}_${event.userId}_${(
             event.mid ?? event.payload
           ).replace(/:/g, "_")}`,
         }

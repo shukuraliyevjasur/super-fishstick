@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   verifyWebhookSignature,
   parseCommentEvents,
+  parseMessageEvents,
   parseReadEvents,
 } from "../lib/meta/webhook";
 import { createHmac } from "crypto";
@@ -287,6 +288,273 @@ describe("parseCommentEvents", () => {
 
     const events = parseCommentEvents(payload);
     expect(events).toHaveLength(0);
+  });
+});
+
+describe("parseMessageEvents", () => {
+  it("parses a quick-reply tap from entry.changes messages field", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "user_999" },
+                recipient: { id: "acct_123" },
+                message: {
+                  mid: "mid_abc",
+                  text: "Reveal",
+                  quick_reply: { payload: "reveal:automation_456" },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const events = parseMessageEvents(payload);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({
+      instagramAccountId: "acct_123",
+      userId: "user_999",
+      payload: "reveal:automation_456",
+      mid: "mid_abc",
+    });
+  });
+
+  it("parses a followcheck quick-reply tap", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "user_999" },
+                recipient: { id: "acct_123" },
+                message: {
+                  mid: "mid_def",
+                  quick_reply: { payload: "followcheck:automation_456" },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const events = parseMessageEvents(payload);
+    expect(events).toHaveLength(1);
+    expect(events[0].payload).toBe("followcheck:automation_456");
+  });
+
+  it("drops echo events (bot's own outbound messages)", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "acct_123" },
+                recipient: { id: "user_999" },
+                message: {
+                  mid: "mid_echo",
+                  is_echo: true,
+                  text: "Here's your link!",
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
+  });
+
+  it("drops messages without a matching quick_reply payload", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "user_999" },
+                recipient: { id: "acct_123" },
+                message: { mid: "mid_plain", text: "hello" },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
+  });
+
+  it("drops messages whose payload does not match known patterns", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "user_999" },
+                recipient: { id: "acct_123" },
+                message: {
+                  quick_reply: { payload: "UNKNOWN_PAYLOAD" },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
+  });
+
+  it("drops self-sent messages (sender === account)", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "acct_123" },
+                recipient: { id: "acct_123" },
+                message: { quick_reply: { payload: "reveal:automation_456" } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
+  });
+
+  it("ignores non-messages change fields", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "comments",
+              value: {
+                sender: { id: "user_999" },
+                message: { quick_reply: { payload: "reveal:automation_456" } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
+  });
+
+  it("parses quick-reply from Messenger-platform entry.messaging format", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          messaging: [
+            {
+              sender: { id: "user_999" },
+              recipient: { id: "acct_123" },
+              message: {
+                mid: "mid_msg",
+                quick_reply: { payload: "reveal:automation_456" },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const events = parseMessageEvents(payload);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({
+      instagramAccountId: "acct_123",
+      userId: "user_999",
+      payload: "reveal:automation_456",
+      mid: "mid_msg",
+    });
+  });
+
+  it("skips entry.messaging items that already have a postback (handled elsewhere)", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          messaging: [
+            {
+              sender: { id: "user_999" },
+              recipient: { id: "acct_123" },
+              postback: { payload: "reveal:automation_456" },
+              message: { quick_reply: { payload: "reveal:automation_456" } },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
+  });
+
+  it("ignores non-instagram objects", () => {
+    const payload = {
+      object: "page",
+      entry: [
+        {
+          id: "acct_123",
+          time: 1234567890,
+          changes: [
+            {
+              field: "messages",
+              value: {
+                sender: { id: "user_999" },
+                message: { quick_reply: { payload: "reveal:automation_456" } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseMessageEvents(payload)).toHaveLength(0);
   });
 });
 
