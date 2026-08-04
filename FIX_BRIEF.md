@@ -219,8 +219,28 @@ after a run stays dead ~24h. The daily cron is a backstop; an external monitor
 actual detection path. Documented under "Health alerting" in HANDOFF.md, along
 with why UptimeRobot's free tier cannot be used here.
 
-**Still requires an operator action:** `ALERT_EMAIL` must be set on Vercel or no
-email is sent.
+~~**Still requires an operator action:** `ALERT_EMAIL`~~ — set on Vercel
+2026-08-04, so alerting is live.
+
+### Known gap: this alerts on worker *death*, not worker *failure*
+
+Observed 2026-08-04: the diagnostics page showed 3 failed jobs and seven worker
+alerts (Meta `"An unknown error has occurred"` and a Transaction API timeout),
+while the worker itself reported healthy and **no alert email was sent**.
+
+That is working as written, and the definition is too narrow.
+`buildHealthReport()` marks the system degraded only when a check *throws* —
+database, Redis, queue, or heartbeat. A queue containing failed jobs is still a
+healthy queue by that test, so a worker that is alive and failing every send
+looks identical to one that is alive and fine.
+
+**Fix when someone picks this up:** give `checkQueue()` a failed-job threshold
+(and/or compare against the previous run) so a rising failure count degrades the
+report the same way a dead worker does. `recordWorkerAlert()` already writes
+every failure to Redis, so the data is there — nothing reads it for alerting.
+
+Worth pairing with C2: an error tracker would have surfaced those seven with
+stack traces on the first occurrence.
 
 Note the brief's claim that Resend "is already a dependency" was inaccurate — only
 `next-auth/providers/resend` is installed, not the `resend` SDK. `lib/ops/alert-email.ts`

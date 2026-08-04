@@ -262,6 +262,16 @@ All three operational endpoints — both crons and `/api/health` — require
 `lib/ops/cron-auth.ts`. It fails closed: no `CRON_SECRET`, no access. Do not
 reintroduce a fallback secret or an `if (secret)` wrapper.
 
+### It alerts on worker death, not on a worker that is failing
+
+The health check degrades only when a check *throws*. A queue full of failed jobs
+is still a healthy queue by that definition, so **a worker that is alive and
+failing every send sends no alert** — confirmed on 2026-08-04, when three failed
+jobs and seven Meta errors produced nothing. See C1 in
+[FIX_BRIEF.md](FIX_BRIEF.md) for the fix.
+
+Until then, **failed sends are only visible by opening the diagnostics page.**
+
 ### The daily cron is a backstop, not worker-death detection
 
 **Vercel's free tier fires crons once per day.** `vercel.json` schedules the
