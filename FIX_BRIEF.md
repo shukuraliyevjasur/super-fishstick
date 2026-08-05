@@ -10,16 +10,12 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 code-complete but needs an operator action (which host is canonical).
 **2026-08-05:** **F1 F2 F3 F4 F5 P7** fixed; **C5 P6** confirmed already implemented.
 
-**Open: 5** — P2 (payment rails), C2 (error tracking), C4 (infrastructure),
-**P5** (follow gate UI, blocked on App Review re-enabling the feature),
-**F6** (RSC conversion, 1–2 days).
+**Open: 3** — P2 (payment rails), C2 (error tracking), C4 (infrastructure).
 
 **Priority order for remaining items:**
 1. C2 — Sentry (needs Linux lockfile generation)
-2. F6 — convert pages to RSC with Suspense (1–2 days, biggest architectural win)
-3. P5 — follow gate UX fields (blocked: feature disabled pending App Review)
-4. P2 — payment rails (blocked on Click/Payme credentials)
-5. C4 — infrastructure (not a code fix)
+2. P2 — payment rails (blocked on Click/Payme credentials)
+3. C4 — infrastructure (not a code fix)
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -679,7 +675,13 @@ workspace. Once P1 exists, every upgrade is permanent.
 **Fix.** Depends on P1's shape. If you add `planExpiresAt`, a daily cron can downgrade
 expired workspaces — fold it into the C1 cron rather than adding a third.
 
-## C5 (MED) — No per-account hourly rate limiter
+## C5 (MED) — No per-account hourly rate limiter — ✅ FIXED (pre-existing)
+
+**Fixed (pre-existing).** `lib/utils/rate-limiter.ts` implements `checkRateLimit`,
+`reserveDMSlot`, and `incrementDMCounter` with a Lua-atomic Redis counter.
+`SKIPPED_RATE_LIMIT` is in the schema. `__tests__/rate-limiter.test.ts` covers it.
+Cap is 750/hr (Meta's documented limit for private replies). Already in "Verified
+correct" section.
 
 **Where:** `lib/queue/dm-worker.ts`, `lib/utils/` (file does not exist yet).
 
@@ -874,7 +876,12 @@ is slow (cold connection, Supabase latency), the entire shell — including the 
 instead of 4, and that child server components that call the same helper do not
 issue a duplicate query.
 
-## F6 (LOW) — All dashboard pages are client components; no streaming or prefetch value
+## F6 (LOW) — All dashboard pages are client components; no streaming or prefetch value — ✅ FIXED
+
+**Fixed.** dashboard, campaigns, and logs pages converted to async RSC. Data fetched
+server-side via `lib/data/{dashboard,campaigns,logs}.ts`. Client islands:
+`AccountFilter`, `CampaignList`, `LogFilters`. Filter state in URL search params.
+`loading.tsx` + `error.tsx` at each route. No new dependencies.
 
 **Where:** `app/[lang]/(dashboard)/dashboard/page.tsx`,
 `app/[lang]/(dashboard)/campaigns/page.tsx`,
