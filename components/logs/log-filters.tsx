@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useTransition } from "react";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import type { Dict } from "@/lib/i18n/types";
 
@@ -37,6 +38,8 @@ export default function LogFilters({
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [optimisticStatus, setOptimisticStatus] = useState(currentStatus);
 
   function pushParams(updates: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -47,10 +50,13 @@ export default function LogFilters({
         params.set(key, value);
       }
     }
-    router.push(`?${params.toString()}`);
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
   }
 
   function handleFilterChange(status: string) {
+    setOptimisticStatus(status);
     pushParams({ status: status === "ALL" ? null : status, page: null });
   }
 
@@ -66,13 +72,15 @@ export default function LogFilters({
             <button
               key={value}
               onClick={() => handleFilterChange(value)}
+              disabled={isPending}
               className={`
                 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
                 ${
-                  currentStatus === value
+                  optimisticStatus === value
                     ? "bg-accent/10 text-accent border border-accent/20"
                     : "bg-surface text-muted border border-border hover:border-border-hover hover:text-foreground"
                 }
+                ${isPending ? "opacity-60 cursor-wait" : ""}
               `}
             >
               {key ? dict.dmStatus[key] : dict.logs.filterAll}
