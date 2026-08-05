@@ -108,9 +108,10 @@ the repo.
 **Web app (Vercel):** `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `CRON_SECRET`,
 `ENCRYPTION_KEY`, `DATABASE_URL`, `REDIS_URL`, `RESEND_API_KEY`, `EMAIL_FROM`,
 `META_GRAPH_API_VERSION`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`,
-`FACEBOOK_APP_SECRET`, `WEBHOOK_VERIFY_TOKEN`, `APP_URL`.
+`FACEBOOK_APP_SECRET`, `WEBHOOK_VERIFY_TOKEN`, `APP_URL`,
+`NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`.
 
-**Worker (GCP):** `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `APP_URL`, `NODE_ENV`.
+**Worker (GCP):** `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `APP_URL`, `NODE_ENV`, `SENTRY_DSN`.
 
 Optional: `DATABASE_POOL_MAX` overrides the per-instance connection cap
 (default 1 — see [Database connections](#database-connections)).
@@ -824,6 +825,15 @@ reaches `/uz` through the locale middleware. Key decisions:
    [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
    [FIX_BRIEF.md](FIX_BRIEF.md) for what will be needed once access arrives.
 
+~~**Error tracking**~~ — fixed 2026-08-05 (C2): Sentry wired into Next.js
+(client + server + edge), error boundaries, and the worker. DSN set on Vercel
+and must also be set in the worker's `docker run` as `SENTRY_DSN`.
+
+~~**Dashboard pages were client-only with useEffect waterfall**~~ — fixed
+2026-08-05 (F6): dashboard, campaigns, and logs are now async RSC. Data fetched
+server-side via `lib/data/{dashboard,campaigns,logs}.ts`. Client islands handle
+filters and interactivity. `loading.tsx` + `error.tsx` at each route.
+
 ~~Redis eviction policy~~ — fixed 2026-08-04: now `noeviction`, so queued jobs
 can no longer be evicted under memory pressure.
 ~~`ALERT_EMAIL` and `ADMIN_EMAILS` unset~~ — set on Vercel 2026-08-04, so health
@@ -920,6 +930,8 @@ while verification is pending.
 | `t()` interpolation (server-safe) | `lib/i18n/t.ts` |
 | Locale middleware | `proxy.ts` |
 | Dashboard layout (lang) | `app/[lang]/(dashboard)/layout.tsx` |
+| Sentry config (client / server / edge) | `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts` |
+| Dashboard data layer (server-only) | `lib/data/dashboard.ts`, `lib/data/campaigns.ts`, `lib/data/logs.ts` |
 | Worker entry | `worker/dm-worker.ts` |
 | Worker job logic | `lib/queue/dm-worker.ts` |
 | Worker image CI | `.github/workflows/worker-image.yml` |
