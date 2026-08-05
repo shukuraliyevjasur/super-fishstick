@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/top-bar";
 import { useDict } from "@/components/dictionary-provider";
@@ -23,7 +22,6 @@ export default function DashboardShell({
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const dict = useDict();
-  const params = useParams();
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar

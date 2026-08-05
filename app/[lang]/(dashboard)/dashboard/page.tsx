@@ -58,10 +58,12 @@ export default function DashboardPage() {
     const cacheKey = `dashboard:stats:${selectedAccountId}`;
 
     const cached = readCache<DashboardStats>(cacheKey, 30_000);
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (cached.data) {
       setStats(cached.data);
       setLoading(false);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     fetch(`/api/dashboard/stats${qs.size ? `?${qs}` : ""}`)
       .then((r) => r.json())
