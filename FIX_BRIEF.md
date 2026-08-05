@@ -315,7 +315,7 @@ cannot reintroduce the pattern — C1 adds one.
 **Verify:** with `CRON_SECRET` unset the route returns 401 rather than accepting
 `NEXTAUTH_SECRET`.
 
-## P2 (HIGH) — No payment integration — ⛔ BLOCKED on provider access (2026-08-04)
+## P2 (HIGH) — No payment integration — 🔮 FUTURE FIX (deferred 2026-08-05)
 
 **Not startable yet, and not for code reasons.** Click / Payme require a merchant
 account and API credentials before anything can be built against them. Owner is
@@ -711,7 +711,12 @@ dependencies; ioredis is already installed.
 **Verify:** mock Redis returning cap-reached → job requeues with delay; after max
 attempts → status is `SKIPPED_RATE_LIMIT`, not `FAILED`.
 
-## P5 (LOW) — Follow gate has no customisable prompt text or button label
+## P5 (LOW) — Follow gate has no customisable prompt text or button label — 🔮 FUTURE FIX (deferred 2026-08-05)
+
+**Deferred reason:** schema (`followPromptMessage`, `followPromptButtonLabel`) and
+worker code are already implemented. The only missing piece is the campaign builder UI,
+but the follow gate feature itself is **disabled in the UI pending App Review** (see
+HANDOFF.md §Messaging webhooks). Re-open this when the follow gate is re-enabled.
 
 **Where:** `prisma/schema.prisma`, `components/campaign-builder.tsx`,
 `lib/queue/dm-worker.ts`.
@@ -721,13 +726,13 @@ sends a hardcoded "follow me first" message with a hardcoded button label. Busin
 want their own tone. kimthangk added `followPromptMessage` and `followPromptButtonLabel`
 to the `Automation` model; the worker falls back to the hardcoded strings when null.
 
-**Fix.**
-1. Migration: add `followPromptMessage TEXT` and `followPromptButtonLabel TEXT` to
-   `Automation` (both nullable, no default).
+**Fix (only the builder UI remains).**
+1. ~~Migration~~ — already in `20260724170000_add_follow_gate`.
 2. Campaign builder: add optional inputs under the Follow Gate section, shown only when
-   `requireFollow` is toggled on. Include i18n keys in both `uz.ts` and `ru.ts`.
-3. Worker: use `automation.followPromptMessage ?? "hardcoded default"` and
-   `automation.followPromptButtonLabel ?? "hardcoded default"`.
+   `requireFollow` is toggled on. i18n keys (`followPromptPlaceholder`, `defaultFollowBtn`)
+   already exist in both `uz.ts` and `ru.ts`.
+3. ~~Worker~~ — already uses `automation.followPromptMessage ?? hardcoded` and
+   `automation.followPromptButtonLabel ?? hardcoded`.
 
 **Verify:** save a campaign with custom prompt text; comment keyword; confirm DM sent
 contains the custom text.
