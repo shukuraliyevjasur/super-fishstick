@@ -58,45 +58,78 @@ Push to `main`. Vercel builds with `prisma generate && prisma migrate deploy && 
 
 The e2-micro is too small to build the image itself — `npm ci` took over 40
 minutes and ran out of memory before swap was added. **Build on GitHub Actions,
-pull on the VM.**
+deploy from there.**
 
-1. `.github/workflows/worker-image.yml` builds and pushes
-   `ghcr.io/shukuraliyevjasur/replie-worker:latest`. It triggers on pushes that
-   touch `worker/`, `lib/`, `prisma/`, `Dockerfile`, or `package*.json`, and can
-   be run manually via **Actions → Build & Push Worker Image → Run workflow**.
-   The GHCR package must stay **public** for the VM to pull without auth.
+`.github/workflows/worker-image.yml` builds and pushes
+`ghcr.io/shukuraliyevjasur/replie-worker:latest`, then SSHs into the VM and
+restarts the container automatically. It triggers on pushes that touch
+`worker/`, `lib/`, `prisma/`, `Dockerfile`, or `package*.json`, and can be run
+manually via **Actions → Build & Push Worker Image → Run workflow**.
 
-2. On the VM (GCP Console → Compute Engine → `replie` → SSH):
+The GHCR package must stay **public** for the VM to pull without auth.
 
-```bash
-docker pull ghcr.io/shukuraliyevjasur/replie-worker:latest
-docker stop replie-worker && docker rm replie-worker
-docker run -d --name replie-worker --restart always \
-  -e NODE_ENV=production \
-  -e DATABASE_URL="..." -e REDIS_URL="..." \
-  -e ENCRYPTION_KEY="..." -e APP_URL="..." \
-  ghcr.io/shukuraliyevjasur/replie-worker:latest
-```
+#### One-time setup to enable auto-deploy
 
-3. Confirm: `docker logs replie-worker` → `[DM Worker] Started`.
+**On the VM** (GCP Console → Compute Engine → `replie` → SSH):
 
-`--restart always` means it survives VM reboots.
-
-**Recovering the env values for step 2.** They are not in this repo. Read them
-off the container that is already running, *before* you remove it:
+1. Write the env file (fill in real values — read from the running container first):
 
 ```bash
 docker inspect replie-worker --format '{{range .Config.Env}}{{println .}}{{end}}'
 ```
 
-Copy that output somewhere before `docker rm`, or you will have to re-derive
-each value from the Vercel env settings (Project → Settings → Environment
-Variables).
+Then create `/etc/replie-worker.env` with those values:
 
-> **The running container is older than the image on GHCR.** As of 2026-08-01 it
-> still runs the Node 20 base; the current image is Node 24. Same application
-> code — only the base image differs — so this is not urgent, but the VM has not
-> pulled since. The steps above bring it current.
+```bash
+sudo tee /etc/replie-worker.env > /dev/null <<'EOF'
+NODE_ENV=production
+DATABASE_URL=...
+REDIS_URL=...
+ENCRYPTION_KEY=...
+APP_URL=https://replie.uz
+SENTRY_DSN=...
+EOF
+sudo chmod 600 /etc/replie-worker.env
+```
+
+2. Generate an SSH key for CI (on the VM, not locally):
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy -N ""
+cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/github_deploy  # copy this — it goes into GitHub as a secret
+```
+
+**In GitHub** (repo → Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|--------|-------|
+| `GCP_VM_IP` | External IP of the `replie` VM (Compute Engine → VM instances → External IP) |
+| `GCP_VM_USER` | Your Linux username on the VM (usually your Google account name, run `whoami` on the VM) |
+| `GCP_SSH_KEY` | Contents of `~/.ssh/github_deploy` from the VM |
+
+**In GitHub** (repo → Settings → Variables → Actions):
+
+| Variable | Value |
+|----------|-------|
+| `GCP_DEPLOY` | `true` |
+
+Setting `GCP_DEPLOY=true` activates the deploy job. Leave it unset (or `false`)
+to build-and-push only, without touching the VM.
+
+#### Manual deploy (if CI is unavailable)
+
+```bash
+# On the VM:
+docker pull ghcr.io/shukuraliyevjasur/replie-worker:latest
+docker stop replie-worker && docker rm replie-worker
+docker run -d --name replie-worker --restart always \
+  --env-file /etc/replie-worker.env \
+  ghcr.io/shukuraliyevjasur/replie-worker:latest
+docker logs --tail 20 replie-worker
+```
+
+`--restart always` means it survives VM reboots and container crashes.
 
 ---
 
@@ -298,6 +331,22 @@ against this route.
 Do not work around a monitor's missing header support by accepting the secret as
 a URL query parameter — that puts `CRON_SECRET` into request logs and referrer
 headers.
+
+### Setting up cron-job.org (one-time operator task)
+
+1. Create a free account at **cron-job.org**.
+2. New cronjob:
+   - **URL:** `https://replie.uz/api/cron/health-check`
+   - **Schedule:** every 5 minutes (or 1 minute — both are free)
+   - **Request method:** GET
+   - **Headers:** add one header — `Authorization: Bearer <your CRON_SECRET>`
+     (read `CRON_SECRET` from Vercel → Project → Settings → Environment Variables)
+   - **Expected HTTP status:** 200 (alerts on anything else, including 503)
+   - **Enable email notifications** on failure
+3. Save and trigger a test request — confirm status 200 in the cronjob history.
+4. Stop the worker (`docker stop replie-worker` on the VM), wait 5 minutes,
+   confirm the monitor fires a 503 and sends an alert email. Then restart:
+   `docker start replie-worker`.
 
 ---
 
@@ -800,15 +849,12 @@ reaches `/uz` through the locale middleware. Key decisions:
    linked Facebook Page (confirmed 2026-08-04 with `foundersyrio`). Hidden in
    the UI until App Review grants Advanced Access for all users. Code intact.
    See [Messaging webhooks](#messaging-webhooks--archived-pending-app-review-2026-08-04).
-3. **Add an external uptime monitor** — *not done as of 2026-08-04.* Vercel's
-   free tier fires crons once a day, so the health check alone cannot detect
-   worker death promptly: the worker can be dead for ~24h before anyone is told,
-   and while it is down **no DMs are sent for any customer**.
-   [Health alerting](#health-alerting) has the exact URL and header, explains why
-   cron-job.org's free tier works and UptimeRobot's does not, and why the secret
-   must not be moved into a query parameter.
-   Also check whether Vercel Hobby caps cron jobs per project — `vercel.json` now
-   has three. If it does, drop the `health-check` entry and let the monitor do it.
+3. **Add an external uptime monitor** — runbook now in [Health alerting →
+   Setting up cron-job.org](#setting-up-cron-joborg-one-time-operator-task).
+   Takes ~5 minutes. Until done, a dead worker stays dead for ~24h before anyone
+   is told. Also check whether Vercel Hobby caps cron jobs per project —
+   `vercel.json` has three. If it does, drop the `health-check` entry and let
+   the monitor cover it.
 4. **Pick a canonical host** — *not done as of 2026-08-04.* See item 7 below;
    listed twice because it is cheap and affects every link already going out.
 5. **Session revocation** — sessions are JWT-backed and cannot be revoked
@@ -824,6 +870,11 @@ reaches `/uz` through the locale middleware. Key decisions:
    code. Until then, plans are granted manually through
    [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
    [FIX_BRIEF.md](FIX_BRIEF.md) for what will be needed once access arrives.
+
+~~**Worker auto-deploy not wired**~~ — fixed 2026-08-05 (C4): CI now SSHs into
+the VM and restarts the container after each build. Enable with `GCP_DEPLOY=true`
+repo variable + three secrets. Env vars moved to `/etc/replie-worker.env` on the
+VM. See [Worker → One-time setup to enable auto-deploy](#one-time-setup-to-enable-auto-deploy).
 
 ~~**Error tracking**~~ — fixed 2026-08-05 (C2): Sentry wired into Next.js
 (client + server + edge), error boundaries, and the worker. DSN set on Vercel

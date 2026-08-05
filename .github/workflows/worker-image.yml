@@ -17,6 +17,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      image: ghcr.io/${{ github.repository_owner }}/replie-worker:latest
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +35,29 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/replie-worker:latest
+
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    # Set repository variable GCP_DEPLOY=true (Settings → Variables → Actions) to enable auto-deploy
+    if: vars.GCP_DEPLOY == 'true'
+    steps:
+      - name: Deploy to GCP VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_KEY }}
+          script: |
+            set -e
+            docker pull ghcr.io/shukuraliyevjasur/replie-worker:latest
+            docker stop replie-worker 2>/dev/null || true
+            docker rm replie-worker 2>/dev/null || true
+            docker run -d \
+              --name replie-worker \
+              --restart always \
+              --env-file /etc/replie-worker.env \
+              ghcr.io/shukuraliyevjasur/replie-worker:latest
+            echo "Worker restarted. Logs:"
+            sleep 5
+            docker logs --tail 20 replie-worker

@@ -9,12 +9,16 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 **Q1 Q2 Q3 Q5 Q6** (2026-08-03) and **P1 P4** (2026-08-04). **Q4** is
 code-complete but needs an operator action (which host is canonical).
 **2026-08-05:** **F1 F2 F3 F4 F5 P7** fixed; **C5 P6** confirmed already implemented; **F6 C2** fixed.
+**2026-08-05:** **C4** mitigated — auto-deploy CI step added, env-file approach documented, cron-job.org runbook in HANDOFF. Accepted SPOF: single GCP e2-micro; within free-tier budget constraints.
 
-**Open: 2** — P2 (payment rails), C4 (infrastructure).
+**Open: 1** — P2 (payment rails, blocked on Click/Payme credentials).
 
 **Priority order for remaining items:**
 1. P2 — payment rails (blocked on Click/Payme credentials)
-2. C4 — infrastructure (not a code fix)
+
+**Operator actions still pending (not code):**
+- Q4 — pick canonical host in Vercel (apex vs www)
+- C4 monitoring — set up cron-job.org (runbook in HANDOFF)
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -1020,17 +1024,32 @@ it appears to. `/api/` and `/r/` are correct — those are not locale-prefixed.
 
 **Fix.** Use `/*/dashboard` or list both locale paths.
 
-## C4 (LOW) — Single points of failure
-
-One `e2-micro` running the worker under `--restart always` — survives a reboot, not a
-VM failure or a Docker daemon problem. Redis is a free tier whose eviction policy can
-drop queued jobs.
+## C4 (LOW) — Single points of failure — ✅ MITIGATED 2026-08-05
 
 ~~**Related and already tracked:** the Redis eviction policy is `volatile-lru`~~ —
 **done 2026-08-04: it is now `noeviction`**, so queued jobs can no longer be
-evicted under memory pressure. That was the actionable half of this finding.
+evicted under memory pressure.
 
-Not a code fix. Worth naming so it is a decision rather than an accident.
+**Mitigated (2026-08-05):**
+
+- **Auto-deploy CI step** added to `.github/workflows/worker-image.yml`. A
+  `deploy` job SSHs into the VM and restarts the container after every successful
+  build. Enable by setting repo variable `GCP_DEPLOY=true` and adding secrets
+  `GCP_VM_IP`, `GCP_VM_USER`, `GCP_SSH_KEY`. Full runbook in HANDOFF under
+  "Worker → One-time setup to enable auto-deploy".
+- **Env file approach**: worker env vars now live at `/etc/replie-worker.env` on
+  the VM (one-time setup), replacing the fragile "read vars off running container
+  before deleting it" pattern documented in old HANDOFF.
+- **cron-job.org monitoring runbook** added to HANDOFF under "Health alerting →
+  Setting up cron-job.org". 5-minute monitoring catches worker death without
+  requiring Vercel plan upgrade.
+
+**Accepted SPOF (by decision, within $0 budget):** the GCP e2-micro is a single
+VM. A hardware failure at Google would require restarting the VM or provisioning a
+new one and rerunning `docker run --env-file /etc/replie-worker.env ...`. GCP's
+`--restart always` handles container crashes and VM reboots. This is the accepted
+risk at the free tier. Revisit when paying customers justify a second VM or a GCP
+Managed Instance Group.
 
 ---
 
