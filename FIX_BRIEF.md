@@ -14,10 +14,8 @@ code-complete but needs an operator action (which host is canonical).
 
 **Priority order for remaining items:**
 1. C2 — Sentry (needs Linux lockfile generation)
-2. F6 — convert pages to RSC with Suspense (1–2 days, biggest architectural win)
-3. P5 — follow gate UX fields (blocked: feature disabled pending App Review)
-4. P2 — payment rails (blocked on Click/Payme credentials)
-5. C4 — infrastructure (not a code fix)
+2. P2 — payment rails (blocked on Click/Payme credentials)
+3. C4 — infrastructure (not a code fix)
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).

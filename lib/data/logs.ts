@@ -25,7 +25,7 @@ export async function getLogs(
   workspaceId: string,
   opts: { page?: number; status?: string | null; accountId?: string | null; limit?: number }
 ): Promise<{ logs: LogEntry[]; pagination: LogPagination }> {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = Number.isFinite(opts.page) ? Math.max(1, opts.page!) : 1;
   const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
   const skip = (page - 1) * limit;
 

@@ -21,8 +21,10 @@ export default async function DashboardPage({ params, searchParams }: Props) {
   const dict = await getDictionary(locale);
   const d = dict.dashboard;
 
-  const workspaceId = await getCurrentWorkspaceId();
-  const userId = await getCurrentUserId();
+  const [workspaceId, userId] = await Promise.all([
+    getCurrentWorkspaceId(),
+    getCurrentUserId(),
+  ]);
   if (!workspaceId) redirect(`/${locale}/login`);
 
   const stats = await getDashboardStats(workspaceId, userId, accountId);

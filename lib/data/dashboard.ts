@@ -118,17 +118,20 @@ export async function getDashboardStats(
     }),
   ]);
 
-  const dailyDMs: { date: string; count: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const dayStart = new Date(todayStart);
-    dayStart.setDate(dayStart.getDate() - i);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-    const count = await prisma.dmLog.count({
-      where: { workspaceId, status: "SENT", createdAt: { gte: dayStart, lt: dayEnd }, ...accountFilter },
-    });
-    dailyDMs.push({ date: dayStart.toLocaleDateString("en-US", { weekday: "short" }), count });
-  }
+  const dailyDMs = await Promise.all(
+    Array.from({ length: 7 }, (_, idx) => {
+      const i = 6 - idx;
+      const dayStart = new Date(todayStart);
+      dayStart.setDate(dayStart.getDate() - i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      return prisma.dmLog
+        .count({
+          where: { workspaceId, status: "SENT", createdAt: { gte: dayStart, lt: dayEnd }, ...accountFilter },
+        })
+        .then((count) => ({ date: dayStart.toLocaleDateString("en-US", { weekday: "short" }), count }));
+    })
+  );
 
   const monthlyStatusSummary = summarizeDmStatuses(
     dmStatusCountsThisMonth.map((row) => ({ status: row.status, _count: row._count._all }))

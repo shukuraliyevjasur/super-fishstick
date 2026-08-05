@@ -23,7 +23,8 @@ export default async function LogsPage({ params, searchParams }: Props) {
   const workspaceId = await getCurrentWorkspaceId();
   if (!workspaceId) redirect(`/${locale}/login`);
 
-  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10));
+  const _parsedPage = Number.parseInt(sp.page ?? "1", 10);
+  const page = Number.isFinite(_parsedPage) ? Math.max(1, _parsedPage) : 1;
   const status = sp.status ?? "ALL";
   const accountId = sp.accountId ?? "all";
 
@@ -99,6 +100,7 @@ export default async function LogsPage({ params, searchParams }: Props) {
                       day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZone: "Asia/Tashkent",
                     })}
                   </td>
                 </tr>

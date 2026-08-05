@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import { t } from "@/components/dictionary-provider";
 import type { CampaignData } from "@/lib/data/campaigns";
@@ -193,18 +194,18 @@ export default function CampaignList({
               onChange={handleAccountChange}
             />
           )}
-          <a
+          <Link
             href={`/${lang}/campaigns/import`}
             className="px-4 py-2 rounded-md border border-border text-sm font-medium text-muted hover:text-foreground"
           >
             {c.importBtn}
-          </a>
-          <a
+          </Link>
+          <Link
             href={`/${lang}/campaigns/new`}
             className="px-4 py-2 rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
           >
             {c.newBtn}
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -241,12 +242,12 @@ export default function CampaignList({
         <div className="panel rounded-md p-12 text-center">
           <h3 className="text-lg font-semibold mb-2">{c.emptyTitle}</h3>
           <p className="text-sm text-muted mb-6 max-w-sm mx-auto">{c.emptyDesc}</p>
-          <a
+          <Link
             href={`/${lang}/campaigns/new`}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
           >
             {c.emptyBtn}
-          </a>
+          </Link>
         </div>
       )}
 
