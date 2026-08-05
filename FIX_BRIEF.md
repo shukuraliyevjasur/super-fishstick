@@ -8,14 +8,13 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 **Status.** Fixed: **S1 S2 S3 S4 S5** — every security finding — plus **C1 C3**,
 **Q1 Q2 Q3 Q5 Q6** (2026-08-03) and **P1 P4** (2026-08-04). **Q4** is
 code-complete but needs an operator action (which host is canonical).
-**2026-08-05:** **F1 F2 F3 F4 F5 P7** fixed; **C5 P6** confirmed already implemented.
+**2026-08-05:** **F1 F2 F3 F4 F5 P7** fixed; **C5 P6** confirmed already implemented; **F6 C2** fixed.
 
-**Open: 3** — P2 (payment rails), C2 (error tracking), C4 (infrastructure).
+**Open: 2** — P2 (payment rails), C4 (infrastructure).
 
 **Priority order for remaining items:**
-1. C2 — Sentry (needs Linux lockfile generation)
-2. P2 — payment rails (blocked on Click/Payme credentials)
-3. C4 — infrastructure (not a code fix)
+1. P2 — payment rails (blocked on Click/Payme credentials)
+2. C4 — infrastructure (not a code fix)
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -465,7 +464,15 @@ anyway).
 
 **Verify:** a fresh non-admin account gets 403.
 
-## C2 (MED) — No error tracking
+## C2 (MED) — No error tracking — ✅ FIXED 2026-08-05
+
+**Fixed.** `@sentry/nextjs` installed (lockfile generated on Linux GCP VM).
+`sentry.{client,server,edge}.config.ts` added. `next.config.ts` wrapped with
+`withSentryConfig`. Error boundaries (`dashboard`, `campaigns`, `logs`) call
+`Sentry.captureException` on render errors. Worker (`worker/dm-worker.ts`) inits
+Sentry at startup and captures `uncaughtException` / `unhandledRejection`.
+
+DSN set as `NEXT_PUBLIC_SENTRY_DSN` and `SENTRY_DSN` on Vercel (EU ingest endpoint).
 
 **Where:** `package.json` — the only observability dependency is `@vercel/analytics`
 (page views).
@@ -474,10 +481,6 @@ anyway).
 cost: diagnosing the Instagram linking failure on 2026-08-02 took six deploys, much of
 it reading log lines by hand and adding temporary instrumentation to capture request
 detail a tracker would have caught on the first occurrence.
-
-**Fix.** Add Sentry (or equivalent). **This adds a dependency — read the Windows
-lockfile warning above and generate the lockfile on Linux.** Wire it into the API
-routes, the worker, and the Next.js error boundaries.
 
 ## C3 (MED) — Token-refresh failures are recorded but never surfaced — ✅ FIXED 2026-08-03
 
