@@ -24,8 +24,6 @@ export default function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const dict = useDict();
   const params = useParams();
-  const lang = (params.lang as string) || "uz";
-
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar

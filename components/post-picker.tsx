@@ -92,7 +92,7 @@ export default function PostPicker({
     return () => {
       cancelled = true;
     };
-  }, [instagramAccountId]);
+  }, [instagramAccountId, t]);
 
   if (loading) {
     return (
