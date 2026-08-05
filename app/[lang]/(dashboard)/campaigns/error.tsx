@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 
 const LABELS: Record<string, { title: string; retry: string }> = {
   uz: { title: "Xatolik yuz berdi", retry: "Qayta urinish" },
@@ -18,6 +20,10 @@ export default function CampaignsError({
   const params = useParams();
   const lang = (params?.lang as string) || "uz";
   const labels = LABELS[lang] ?? LABELS.en;
+
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
 
   return (
     <div className="panel rounded-lg p-8 text-center space-y-3">

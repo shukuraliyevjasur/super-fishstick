@@ -1,7 +1,24 @@
+import * as Sentry from "@sentry/nextjs";
 import { createDMWorker } from "@/lib/queue/dm-worker";
 import { recordWorkerHeartbeat } from "@/lib/ops/worker-health";
 import { reconcileComments } from "@/lib/polling/comment-reconciler";
 import os from "node:os";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 0.1,
+  environment: process.env.NODE_ENV,
+});
+
+process.on("uncaughtException", (error) => {
+  Sentry.captureException(error);
+  console.error("[DM Worker] Uncaught exception:", error);
+});
+
+process.on("unhandledRejection", (reason) => {
+  Sentry.captureException(reason);
+  console.error("[DM Worker] Unhandled rejection:", reason);
+});
 
 const worker = createDMWorker();
 const startedAt = new Date().toISOString();
