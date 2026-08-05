@@ -48,16 +48,23 @@ export async function GET(request: NextRequest) {
     prisma.dmLog.count({ where }),
   ]);
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+  return NextResponse.json(
+    {
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       },
     },
-  });
+    {
+      headers: {
+        "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
+      },
+    }
+  );
 }

@@ -21,21 +21,23 @@ export default async function DashboardLayout({
     redirect(`/${locale}/login`);
   }
 
-  // Accounts created by a magic link (and any predating password sign-in) have
-  // no password yet. Prompt once, so the next sign-in does not need an email.
-  // /set-password sits outside this layout, so this cannot loop.
-  const credentials = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { passwordHash: true, emailVerified: true },
-  });
+  // Run credentials check and workspace fetch in parallel — both only need
+  // the user id from the already-resolved session.
+  const [credentials, workspace] = await Promise.all([
+    // Accounts created by a magic link (and any predating password sign-in)
+    // have no password yet. Prompt once; /set-password is outside this layout
+    // so this cannot loop.
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { passwordHash: true, emailVerified: true },
+    }),
+    ensureWorkspaceForUser(session.user.id, session.user.email),
+  ]);
+
   if (!credentials?.passwordHash) {
     redirect(`/${locale}/set-password`);
   }
 
-  const workspace = await ensureWorkspaceForUser(
-    session.user.id,
-    session.user.email
-  );
   const accounts = await prisma.instagramAccount.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { connectedAt: "desc" },

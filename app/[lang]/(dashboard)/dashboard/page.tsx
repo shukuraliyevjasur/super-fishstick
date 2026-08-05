@@ -7,6 +7,7 @@ import AccountSelect, { type AccountOption } from "@/components/account-select";
 import StatCard from "@/components/stat-card";
 import StatusBadge from "@/components/status-badge";
 import { useDict, t } from "@/components/dictionary-provider";
+import { readCache, writeCache } from "@/lib/client-cache";
 
 interface DashboardStats {
   userName: string | null;
@@ -54,11 +55,21 @@ export default function DashboardPage() {
     if (selectedAccountId !== "all") {
       qs.set("instagramAccountId", selectedAccountId);
     }
+    const cacheKey = `dashboard:stats:${selectedAccountId}`;
+
+    const cached = readCache<DashboardStats>(cacheKey, 30_000);
+    if (cached.data) {
+      setStats(cached.data);
+      setLoading(false);
+    }
 
     fetch(`/api/dashboard/stats${qs.size ? `?${qs}` : ""}`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) setStats(data.data);
+        if (data.success) {
+          setStats(data.data);
+          writeCache(cacheKey, data.data);
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));

@@ -8,10 +8,18 @@ code gaps, product gaps). Written to be executed by someone with no prior contex
 **Status.** Fixed: **S1 S2 S3 S4 S5** — every security finding — plus **C1 C3**,
 **Q1 Q2 Q3 Q5 Q6** (2026-08-03) and **P1 P4** (2026-08-04). **Q4** is
 code-complete but needs an operator action (which host is canonical).
+**2026-08-05:** **F1 F2 F3 F4 F5 P7** fixed; **C5 P6** confirmed already implemented.
 
-**Open: 3** — P2 (payment rails, unblocked by P1 but needs commercial decisions),
-C2 (error tracking, the only one needing a dependency), C4 (infrastructure, not
-a code fix). Each finding below carries its own status line.
+**Open: 5** — P2 (payment rails), C2 (error tracking), C4 (infrastructure),
+**P5** (follow gate UI, blocked on App Review re-enabling the feature),
+**F6** (RSC conversion, 1–2 days).
+
+**Priority order for remaining items:**
+1. C2 — Sentry (needs Linux lockfile generation)
+2. F6 — convert pages to RSC with Suspense (1–2 days, biggest architectural win)
+3. P5 — follow gate UX fields (blocked: feature disabled pending App Review)
+4. P2 — payment rails (blocked on Click/Payme credentials)
+5. C4 — infrastructure (not a code fix)
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -671,6 +679,220 @@ workspace. Once P1 exists, every upgrade is permanent.
 **Fix.** Depends on P1's shape. If you add `planExpiresAt`, a daily cron can downgrade
 expired workspaces — fold it into the C1 cron rather than adding a third.
 
+## C5 (MED) — No per-account hourly rate limiter
+
+**Where:** `lib/queue/dm-worker.ts`, `lib/utils/` (file does not exist yet).
+
+**Problem.** Meta enforces an hourly DM cap per Instagram account (~190/hr). Replie has
+monthly quota enforcement (`reserveWorkspaceDMSend`) and the Redis NX lock for reveal
+deduplication, but no hourly per-account cap. When volume is high the worker hits Meta's
+limit and every send fails with an opaque error — no log status distinguishes this from
+a real failure, the job retries on backoff, and the health check does not alert.
+
+Confirmed by cross-repo review: kimthangk/openreply implemented this with a Redis Lua
+`eval` for atomic slot reservation (key `rate:dm:<instagramAccountId>`, TTL 3600s,
+cap 190). On denial: requeue with backoff delay up to N attempts, then `SKIPPED_RATE_LIMIT`.
+
+**Fix.**
+1. Add `lib/utils/rate-limiter.ts`: `checkRateLimit`, `reserveDMSlot`, `incrementDMCounter`,
+   `RATE_LIMIT_MAX = 190`. Use a Lua script so the check+increment is atomic. On denial
+   return `{ allowed: false, shouldRequeue: boolean, shouldSkip: boolean, requeueDelayMs }`.
+2. In `lib/queue/dm-worker.ts` `processComment`: after `reserveWorkspaceDMSend` succeeds,
+   call `reserveDMSlot(instagramAccountId, requeueAttempt)`. If denied + `shouldRequeue`:
+   release the usage reservation, re-add the job with `delay: requeueDelayMs`, set log
+   status `PENDING`. If denied + `shouldSkip`: release reservation, set `SKIPPED_RATE_LIMIT`.
+3. Add `SKIPPED_RATE_LIMIT` to the `DmLog.status` enum in `prisma/schema.prisma`.
+4. Guard with `__tests__/rate-limiter.test.ts` (mock ioredis eval).
+
+**Note:** this is a new file (`lib/utils/rate-limiter.ts`) and a schema change — two
+migrations: one adds the enum value, one is a no-op type-only change. Zero new npm
+dependencies; ioredis is already installed.
+
+**Verify:** mock Redis returning cap-reached → job requeues with delay; after max
+attempts → status is `SKIPPED_RATE_LIMIT`, not `FAILED`.
+
+## P5 (LOW) — Follow gate has no customisable prompt text or button label
+
+**Where:** `prisma/schema.prisma`, `components/campaign-builder.tsx`,
+`lib/queue/dm-worker.ts`.
+
+**Problem.** When `requireFollow` is true and a commenter doesn't follow, the worker
+sends a hardcoded "follow me first" message with a hardcoded button label. Businesses
+want their own tone. kimthangk added `followPromptMessage` and `followPromptButtonLabel`
+to the `Automation` model; the worker falls back to the hardcoded strings when null.
+
+**Fix.**
+1. Migration: add `followPromptMessage TEXT` and `followPromptButtonLabel TEXT` to
+   `Automation` (both nullable, no default).
+2. Campaign builder: add optional inputs under the Follow Gate section, shown only when
+   `requireFollow` is toggled on. Include i18n keys in both `uz.ts` and `ru.ts`.
+3. Worker: use `automation.followPromptMessage ?? "hardcoded default"` and
+   `automation.followPromptButtonLabel ?? "hardcoded default"`.
+
+**Verify:** save a campaign with custom prompt text; comment keyword; confirm DM sent
+contains the custom text.
+
+## P6 (LOW) — Link button label is not customisable
+
+**Where:** `prisma/schema.prisma`, `components/campaign-builder.tsx`,
+`lib/queue/dm-worker.ts`.
+
+**Problem.** Every campaign's CTA button reads the same hardcoded label. kimthangk added
+a `linkButtonLabel TEXT` column. Small win: agencies want "Get the price" not "Open link".
+
+**Fix.**
+1. Migration: add `linkButtonLabel TEXT` (nullable) to `Automation`.
+2. Campaign builder: one optional text input in the Link section. i18n keys in both
+   locale files.
+3. Worker `buildLinkButtons`: use `automation.linkButtonLabel` as `primaryLabel` for the
+   first button, falling back to the link's own `label` then "Open link".
+
+**Verify:** set a custom label → tap flow → DM button shows custom text.
+
+## P7 (LOW) — Shareable reports are not gated by plan
+
+**Where:** `app/reports/[shareSlug]/page.tsx`, `lib/reports/data.ts`
+(or equivalent).
+
+**Problem.** Every plan gets identical clean reports. This is a missed monetisation lever:
+free-plan reports branded with the replie watermark are an organic growth loop
+(agency clients see the tool name) and an incentive to upgrade.
+
+**Fix.**
+1. `getCampaignReportBySlug` returns the workspace plan alongside report data.
+2. Report page: render a small "Powered by replie.uz" footer on `FREE` plan. Hide it on
+   `STANDART`/`PRO`.
+3. No new migration needed — plan is already on `Workspace`.
+
+**Verify:** free workspace share link shows watermark; after plan grant to PRO, watermark
+is gone.
+
+---
+
+# TIER 2b — dashboard performance (added 2026-08-05)
+
+Root cause: every dashboard page is a `"use client"` component that mounts blank,
+fires `useEffect`, awaits a fetch, then renders. No streaming, no server rendering,
+no prefetch value. Combined with 4 DB queries in the shared layout on every navigation,
+tab switching feels slow even when the server is healthy.
+
+## F1 (MED) — No `loading.tsx` — shell is blank until all layout queries finish
+
+**Where:** `app/[lang]/(dashboard)/` — no `loading.tsx` files exist in any route.
+
+**Problem.** Without `loading.tsx`, Next.js waits for the layout's 4 DB queries
+(`auth`, `user.findUnique`, `ensureWorkspaceForUser`, `instagramAccount.findMany`)
+and the page's data before showing anything. The sidebar disappears between tab
+switches; the whole viewport is blank.
+
+**Fix.** Add `loading.tsx` to each dashboard route with a skeleton matching the page
+shape. Next.js renders the full shell (sidebar + topbar) immediately and streams
+the skeleton into the content area while data loads.
+
+Routes to cover: `dashboard/`, `campaigns/`, `logs/`, `overview/`, `inbox/`,
+`settings/`, `diagnostics/`.
+
+**Verify:** click a sidebar link — sidebar stays visible, skeleton appears in the
+content area within one paint, content fills in within ~300ms.
+
+## F2 (MED) — No client-side SWR cache for API responses
+
+**Where:** `app/[lang]/(dashboard)/dashboard/page.tsx`,
+`app/[lang]/(dashboard)/campaigns/page.tsx`,
+`app/[lang]/(dashboard)/logs/page.tsx`.
+
+**Problem.** `client-cache.ts` (stale-while-revalidate via sessionStorage) is wired
+only to Instagram post thumbnails. Campaign list, dashboard stats and logs all start
+blank on every visit. `campaigns/page.tsx` even passes `cache: "no-store"` explicitly.
+
+**Fix.** Before each `useEffect` fetch, read the cache and set state immediately
+(shows stale data with zero delay). Let the fetch resolve and update state + write
+cache. Same pattern already used for thumbnails. Max-age: 5 min for campaigns,
+30 s for logs and stats.
+
+**Verify:** navigate to campaigns, navigate away, navigate back — data appears
+instantly; a fresh fetch completes in the background within a few seconds.
+
+## F3 (MED) — Campaigns and logs both call `/api/dashboard/stats` for the account dropdown
+
+**Where:** `app/[lang]/(dashboard)/campaigns/page.tsx:90`,
+`app/[lang]/(dashboard)/logs/page.tsx:79`.
+
+**Problem.** Both pages fetch `/api/dashboard/stats` — a heavy aggregation query
+(DM counts, CTR, top keywords, daily chart) — just to populate the account-select
+dropdown. That is two heavy queries per tab switch that return 95% unused data.
+
+**Fix.** Add `GET /api/instagram/accounts` — a 3-column select
+(`id`, `username`, `instagramId`) on `InstagramAccount` scoped to the session
+workspace. Replace both `dashboard/stats` calls with this cheap endpoint.
+Alternatively, pass `instagramAccounts` down from the layout through `DashboardShell`
+context so no second fetch is needed at all.
+
+**Verify:** campaigns and logs pages make no call to `/api/dashboard/stats` in the
+network panel.
+
+## F4 (LOW) — API routes set no `Cache-Control`; revisiting a tab always re-fetches
+
+**Where:** `app/api/automations/route.ts`, `app/api/logs/route.ts`,
+`app/api/dashboard/stats/route.ts`.
+
+**Problem.** No `Cache-Control` header. Browser treats the response as uncacheable;
+every tab revisit is a fresh network request even if nothing changed.
+
+**Fix.** Add `Cache-Control: private, max-age=10, stale-while-revalidate=30` on
+GET handlers for automations, logs and stats. `private` ensures Vercel's shared
+cache never serves one user's data to another. 10 s fresh window covers rapid
+tab switching; 30 s SWR means a slightly stale response shows while revalidating.
+Pair with F2 so the browser cache and the sessionStorage cache agree.
+
+**Verify:** open DevTools → Network, switch away and back to campaigns within 10 s
+→ response status is `304` or served from disk cache.
+
+## F5 (LOW) — Dashboard layout runs 4 DB queries on every navigation
+
+**Where:** `app/[lang]/(dashboard)/layout.tsx`.
+
+**Problem.** `auth()`, `prisma.user.findUnique`, `ensureWorkspaceForUser`, and
+`prisma.instagramAccount.findMany` run serially on every page navigation. If any
+is slow (cold connection, Supabase latency), the entire shell — including the sidebar
+— is blank.
+
+**Fix (two parts):**
+1. Wrap the workspace fetch in `React.cache()` so child server components that also
+   need the workspace reuse the same in-flight promise rather than issuing a second
+   query.
+2. Move the `passwordHash` check to middleware (`proxy.ts`) so it runs at the edge
+   and the layout drops one DB query. The check is session-stable — a user with a
+   password will always have one.
+
+**Verify:** add timing logs to the layout; confirm each navigation makes 3 queries
+instead of 4, and that child server components that call the same helper do not
+issue a duplicate query.
+
+## F6 (LOW) — All dashboard pages are client components; no streaming or prefetch value
+
+**Where:** `app/[lang]/(dashboard)/dashboard/page.tsx`,
+`app/[lang]/(dashboard)/campaigns/page.tsx`,
+`app/[lang]/(dashboard)/logs/page.tsx`.
+
+**Problem.** Every page is `"use client"` + `useEffect` fetch. The JS bundle ships
+the page, hydrates, mounts, fires the effect, awaits the response, then renders.
+No server-side data means Next.js has nothing to prefetch on `<Link>` hover beyond
+the JS bundle. This is the permanent slow path.
+
+**Fix.** Convert each page to a React Server Component. Move the data fetch to the
+server (direct Prisma call or `fetch` with `next: { revalidate: 30 }`). Wrap
+interactive sub-components (status toggles, filters, search, pagination) in small
+`"use client"` islands. Use `<Suspense>` with a skeleton fallback so the shell
+streams before data is ready.
+
+This is the largest change (~1–2 days) but eliminates the `useEffect` waterfall
+permanently and gives `<Link>` prefetch real content to cache.
+
+**Verify:** disable JS in DevTools — pages should render meaningful content.
+In the network panel, prefetch requests on sidebar hover should return full HTML,
+not just the JS bundle.
+
 ---
 
 # TIER 3 — cleanup
@@ -846,17 +1068,24 @@ itself.
 ## Suggested order
 
 1. ~~**S1**~~ — done 2026-08-03.
-2. ~~**C1 + C3 + S4**~~ — done 2026-08-03. Landed as three commits, not one: the
-   auth helper and the alerting cron are independently revertable.
+2. ~~**C1 + C3 + S4**~~ — done 2026-08-03.
 3. ~~**S3 + S5**~~ — done 2026-08-03.
 4. ~~**S2**~~ — done 2026-08-03.
 5. ~~**P1**~~ — done 2026-08-04, along with **P4**.
 6. ~~**Q1–Q6**~~ — done 2026-08-03, except Q4's operator action.
 7. ~~**P3**~~ — done 2026-08-04, seven commits.
-8. **P2** — unblocked by P1; the webhook calls `grantWorkspacePlan()`. Needs a
-   provider and merchant account first, which is a commercial decision.
-9. **C2** — the only remaining finding that adds a dependency. **Generate the
-   lockfile on Linux**, not on Windows.
+8. **F1** — `loading.tsx` per route. Instant shell, highest perceived-speed win. ~1h.
+9. **F2** — SWR cache for automations + stats. ~1h. Pairs with F4.
+10. **F3** — `/api/instagram/accounts` endpoint, remove double stats fetch. ~30min.
+11. **F4** — `Cache-Control` headers on API routes. ~30min.
+12. **C5** — hourly rate limiter + `SKIPPED_RATE_LIMIT`. Before real users.
+13. **P5** — follow gate prompt fields. Schema migration + builder UI + i18n.
+14. **P6** — link button label. Same pattern as P5, smaller.
+15. **F5** — `React.cache()` + middleware password check. ~1h.
+16. **C2** — Sentry. Only finding that adds a dependency. **Generate lockfile on Linux.**
+17. **P7** — report branding gate. No migration, purely UI.
+18. **F6** — RSC conversion. 1–2 days. Permanent fix for the useEffect waterfall.
+19. **P2** — payment rails. Needs Click/Payme credentials first.
+20. **C4** — infrastructure. Not a code fix.
 
-Findings are independent unless noted. The only hard dependencies are
-P2 → P1 and P4 → P1.
+Hard dependencies: P2 → P1 (done), P4 → P1 (done), F4 pairs with F2.

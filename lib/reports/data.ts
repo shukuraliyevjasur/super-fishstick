@@ -4,7 +4,7 @@ import {
   normalizeTopKeywords,
   summarizeDmStatuses,
 } from "@/lib/tracking/analytics";
-import { buildReportUrl, isReportBranded } from "@/lib/reports/share";
+import { buildReportUrl } from "@/lib/reports/share";
 
 function getHostname(url: string) {
   try {
@@ -45,6 +45,7 @@ export async function getCampaignReportBySlug(shareSlug: string) {
       workspace: {
         select: {
           name: true,
+          plan: true,
         },
       },
       instagramAccount: {
@@ -153,7 +154,7 @@ export async function getCampaignReportBySlug(shareSlug: string) {
     shareSlug: automation.reportShareSlug,
     reportUrl: buildReportUrl(automation.reportShareSlug),
     generatedAt: new Date(),
-    branded: isReportBranded(),
+    branded: automation.workspace.plan === "FREE",
     workspace: {
       name: automation.workspace.name,
     },

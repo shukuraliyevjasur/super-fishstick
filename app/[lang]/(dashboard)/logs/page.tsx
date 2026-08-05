@@ -6,6 +6,7 @@ import StatusBadge from "@/components/status-badge";
 import { useDict } from "@/components/dictionary-provider";
 import { intlLocale } from "@/lib/i18n/format";
 import type { Dict } from "@/lib/i18n/types";
+import { readCache, writeCache } from "@/lib/client-cache";
 
 interface DmLog {
   id: string;
@@ -56,17 +57,30 @@ export default function LogsPage() {
   const [page, setPage] = useState(1);
 
   const fetchLogs = useCallback(async () => {
+    const urlParams = new URLSearchParams({ page: String(page), limit: "20" });
+    if (statusFilter !== "ALL") urlParams.set("status", statusFilter);
+    if (selectedAccountId !== "all") {
+      urlParams.set("instagramAccountId", selectedAccountId);
+    }
+    const cacheKey = `logs:${statusFilter}:${page}:${selectedAccountId}`;
+
     try {
-      const params = new URLSearchParams({ page: String(page), limit: "20" });
-      if (statusFilter !== "ALL") params.set("status", statusFilter);
-      if (selectedAccountId !== "all") {
-        params.set("instagramAccountId", selectedAccountId);
+      const cached = readCache<{ logs: DmLog[]; pagination: Pagination }>(
+        cacheKey,
+        30_000
+      );
+      if (cached.data) {
+        setLogs(cached.data.logs);
+        setPagination(cached.data.pagination);
+        setLoading(false);
       }
-      const res = await fetch(`/api/logs?${params}`);
+
+      const res = await fetch(`/api/logs?${urlParams}`);
       const data = await res.json();
       if (data.success) {
         setLogs(data.data.logs);
         setPagination(data.data.pagination);
+        writeCache(cacheKey, data.data);
       }
     } catch (err) {
       console.error("Failed to fetch logs:", err);
@@ -76,7 +90,7 @@ export default function LogsPage() {
   }, [page, statusFilter, selectedAccountId]);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats")
+    fetch("/api/instagram/accounts")
       .then((res) => res.json())
       .then((payload) => {
         if (payload.success) setAccounts(payload.data.instagramAccounts ?? []);

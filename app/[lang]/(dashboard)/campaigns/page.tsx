@@ -73,12 +73,23 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
 
   const fetchAutomations = useCallback(async () => {
+    const qs = new URLSearchParams();
+    if (selectedAccountId !== "all") qs.set("instagramAccountId", selectedAccountId);
+    const cacheKey = `campaigns:${selectedAccountId}`;
+
+    const cached = readCache<Campaign[]>(cacheKey, 5 * 60_000);
+    if (cached.data) {
+      setAutomations(cached.data);
+      setLoading(false);
+    }
+
     try {
-      const qs = new URLSearchParams();
-      if (selectedAccountId !== "all") qs.set("instagramAccountId", selectedAccountId);
-      const res = await fetch(`/api/automations${qs.size ? `?${qs}` : ""}`, { cache: "no-store" });
+      const res = await fetch(`/api/automations${qs.size ? `?${qs}` : ""}`);
       const data = await res.json();
-      if (data.success) setAutomations(data.data);
+      if (data.success) {
+        setAutomations(data.data);
+        writeCache(cacheKey, data.data);
+      }
     } catch (err) {
       console.error("Failed to fetch campaigns:", err);
     } finally {
@@ -87,7 +98,7 @@ export default function CampaignsPage() {
   }, [selectedAccountId]);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats")
+    fetch("/api/instagram/accounts")
       .then((res) => res.json())
       .then((payload) => {
         if (payload.success) setAccounts(payload.data.instagramAccounts ?? []);

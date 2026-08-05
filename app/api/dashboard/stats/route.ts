@@ -197,34 +197,41 @@ export async function GET(request: NextRequest) {
   const effectivePlan = workspace ? getEffectivePlan(workspace) : null;
   const planLimits = effectivePlan ? getPlanLimits(effectivePlan) : null;
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      userName: firstName,
-      contactsCount: contactRows.length,
-      workspace,
-      plan: effectivePlan ?? "FREE",
-      dmQuota: planLimits ? {
-        used: workspace!.dmsSentThisPeriod,
-        limit: planLimits.maxDmsPerMonth === Infinity ? null : planLimits.maxDmsPerMonth,
-      } : null,
-      instagramAccount,
-      instagramAccounts,
-      selectedInstagramAccountId: selectedAccountId,
-      totalAutomations,
-      activeAutomations,
-      dmsSentToday,
-      dmsSentWeek,
-      dmsSentMonth,
-      dmsSkippedMonth: monthlyStatusSummary.skipped,
-      dmsFailedMonth: monthlyStatusSummary.failed,
-      totalDMs,
-      clicksThisMonth,
-      totalClicks,
-      ctrThisMonth: calculateCtr(clicksThisMonth, dmsSentMonth),
-      topKeywords,
-      dailyDMs,
-      recentLogs,
+  return NextResponse.json(
+    {
+      success: true,
+      data: {
+        userName: firstName,
+        contactsCount: contactRows.length,
+        workspace,
+        plan: effectivePlan ?? "FREE",
+        dmQuota: planLimits ? {
+          used: workspace!.dmsSentThisPeriod,
+          limit: planLimits.maxDmsPerMonth === Infinity ? null : planLimits.maxDmsPerMonth,
+        } : null,
+        instagramAccount,
+        instagramAccounts,
+        selectedInstagramAccountId: selectedAccountId,
+        totalAutomations,
+        activeAutomations,
+        dmsSentToday,
+        dmsSentWeek,
+        dmsSentMonth,
+        dmsSkippedMonth: monthlyStatusSummary.skipped,
+        dmsFailedMonth: monthlyStatusSummary.failed,
+        totalDMs,
+        clicksThisMonth,
+        totalClicks,
+        ctrThisMonth: calculateCtr(clicksThisMonth, dmsSentMonth),
+        topKeywords,
+        dailyDMs,
+        recentLogs,
+      },
     },
-  });
+    {
+      headers: {
+        "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
+      },
+    }
+  );
 }
