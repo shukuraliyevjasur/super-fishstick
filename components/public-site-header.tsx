@@ -31,11 +31,7 @@ export default function PublicSiteHeader() {
           <span style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.03em" }}>eplie</span>
         </Link>
 
-        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 32 }}>
-          <Link href={`/${lang}/pricing`} style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none" }}>
-            {dict.nav.pricing}
-          </Link>
-        </nav>
+        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 32 }} />
 
         <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", background: "#F1F5F9", borderRadius: 6, padding: 3, gap: 2, marginRight: 4 }}>
@@ -50,9 +46,9 @@ export default function PublicSiteHeader() {
           <Link href={`/${lang}/login`} style={{ fontSize: 14, fontWeight: 500, color: "#5B6472", textDecoration: "none", padding: "10px 18px" }}>
             {dict.nav.login}
           </Link>
-          <Link href={`/${lang}/pricing`} style={{ fontSize: 14, fontWeight: 600, color: "#fff", background: "#0145F2", padding: "10px 22px", borderRadius: 8, textDecoration: "none" }}>
+          <a href="https://t.me/ceo_syr" target="_blank" rel="noreferrer" style={{ fontSize: 14, fontWeight: 600, color: "#fff", background: "#0145F2", padding: "10px 22px", borderRadius: 8, textDecoration: "none" }}>
             {dict.nav.start}
-          </Link>
+          </a>
         </div>
 
         <button
@@ -76,15 +72,12 @@ export default function PublicSiteHeader() {
 
       {open && (
         <div className="md:hidden" style={{ position: "fixed", top: 68, left: 0, right: 0, zIndex: 49, background: "#fff", borderBottom: "1px solid #E2E8EF", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
-          <Link href={`/${lang}/pricing`} onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>
-            {dict.nav.pricing}
-          </Link>
           <Link href={`/${lang}/login`} onClick={() => setOpen(false)} style={{ fontSize: 15, fontWeight: 500, color: "#1A1A1A", padding: "14px 0", borderBottom: "1px solid #E2E8EF", textDecoration: "none" }}>
             {dict.nav.login}
           </Link>
-          <Link href={`/${lang}/pricing`} onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: "#fff", background: "#0145F2", padding: 14, borderRadius: 8, textDecoration: "none", marginTop: 8 }}>
+          <a href="https://t.me/ceo_syr" target="_blank" rel="noreferrer" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 600, color: "#fff", background: "#0145F2", padding: 14, borderRadius: 8, textDecoration: "none", marginTop: 8 }}>
             {dict.nav.start}
-          </Link>
+          </a>
           <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: "12px 0" }}>
             {(["uz", "ru", "en"] as const).flatMap((l, i) => [
               ...(i > 0 ? [<span key={`sep-${l}`} style={{ color: "#CBD5E1" }}>|</span>] : []),

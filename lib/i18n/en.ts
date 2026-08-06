@@ -6,7 +6,7 @@ export const en: Dict = {
   nav: {
     pricing: "Pricing",
     login: "Sign in",
-    start: "Get started",
+    start: "Contact us",
     menuOpen: "Open menu",
     menuClose: "Close menu",
   },
@@ -60,7 +60,7 @@ export const en: Dict = {
     heroSub:
       "Someone comments 'link?' or 'price?' — replie sends a DM instantly. At 3am, on weekends. You do nothing.",
     ctaPrimary: "Start for free",
-    ctaSecondary: "See pricing",
+    ctaSecondary: "Message us",
     stepsH2: "3 steps. Then forget about it.",
     stepsSub:
       "Set it up once — replie keeps working. You keep creating content.",

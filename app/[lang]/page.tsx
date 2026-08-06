@@ -135,8 +135,10 @@ export default async function Home({ params }: Props) {
                 >
                   {h.ctaPrimary}
                 </Link>
-                <Link
-                  href={`/${lang}/pricing`}
+                <a
+                  href="https://t.me/ceo_syr"
+                  target="_blank"
+                  rel="noreferrer"
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     background: "#fff", color: "#1A1A1A", fontSize: 15, fontWeight: 600,
@@ -145,7 +147,7 @@ export default async function Home({ params }: Props) {
                   }}
                 >
                   {h.ctaSecondary}
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -292,60 +294,6 @@ export default async function Home({ params }: Props) {
       </section>
 
       {/* ── PRICING TEASER ── */}
-      <section style={{ background: "#fff", padding: "96px 0" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <h2 style={{
-              margin: 0, fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.75rem)",
-              fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.025em", color: "#1A1A1A",
-            }}>
-              {h.pricingH2}
-            </h2>
-            <p style={{ margin: "14px 0 0", fontSize: 16, color: "#5B6472" }}>
-              {h.pricingSub}
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row" style={{ gap: 16 }}>
-            {(
-              [
-                { tier: d.pricing.freeName, price: "0", note: h.pricingFreeNote, color: "#5B6472" },
-                { tier: d.pricing.stdName,  price: "47 000", note: h.pricingStdNote, color: "#0145F2" },
-                { tier: d.pricing.proName,  price: "87 000", note: h.pricingProNote, color: "#0145F2" },
-              ] as const
-            ).map(({ tier, price, note, color }) => (
-              <div
-                key={tier}
-                style={{
-                  flex: 1, background: "#F8F9FB", border: "1px solid #E2E8EF",
-                  borderRadius: 12, padding: "24px", display: "flex", flexDirection: "column", gap: 4,
-                }}
-              >
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#949CA9", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {tier}
-                </div>
-                <div style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: "-0.02em" }}>{price}</div>
-                <div style={{ fontSize: 13, color: "#5B6472" }}>{note}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: 28 }}>
-            <Link
-              href={`/${lang}/pricing`}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "13px 28px", borderRadius: 10, fontSize: 15, fontWeight: 600,
-                color: "#0145F2", background: "#EEF2FF", border: "1px solid #C7D2FE",
-                textDecoration: "none",
-              }}
-            >
-              {h.pricingLink}
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* ── CTA ── */}
       <section style={{ background: "#0145F2", padding: "96px 0" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>

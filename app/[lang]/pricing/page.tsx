@@ -30,168 +30,27 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-function CheckIcon({ className }: { className: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-    </svg>
-  );
-}
-
 export default async function PricingPage({ params }: Props) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const d = await getDictionary(lang);
   const p = d.pricing;
-  const f = p.features;
-
-  const freeFeatures = [f.ig1, f.campaigns2, f.dms100, f.keywordTrigger, f.autoDm, f.commentReply, f.analytics];
-  const freeExcluded = [f.inboundDm, f.followGate, f.trackedLinks, f.clientReports, f.csvImport, f.multiUser];
-
-  const stdFeatures = [f.ig1, f.campaignsUnlimited, f.dms3000, f.keywordTrigger, f.autoDm, f.commentReply, f.analytics, f.inboundDm, f.followGate, f.trackedLinks];
-  const stdExcluded = [f.clientReports, f.csvImport, f.multiUser];
-
-  const proFeatures = [p.ig5, f.campaignsUnlimited, f.dmsUnlimited, f.keywordTrigger, f.autoDm, f.commentReply, f.analytics, f.inboundDm, f.followGate, f.trackedLinks, f.clientReports, f.csvImport, f.multiUser, f.prioritySupport];
-
-  const plans = [
-    {
-      name: p.freeName, desc: p.freeDesc, price: "0", period: lang === "ru" ? "сум/мес" : "so'm/oy",
-      features: freeFeatures, excluded: freeExcluded,
-      cta: p.freeCta, ctaHref: `/${lang}/signup`, highlighted: false,
-    },
-    {
-      name: p.stdName, desc: p.stdDesc,
-      originalPrice: "79 000", price: "47 000", savings: p.stdSavings, discountPct: "40%",
-      period: lang === "ru" ? "сум/мес" : "so'm/oy",
-      badge: p.badge, features: stdFeatures, excluded: stdExcluded,
-      cta: p.stdCta,
-      ctaHref: `https://t.me/ceo_syr?text=${encodeURIComponent(p.stdCta)}`,
-      highlighted: true,
-    },
-    {
-      name: p.proName, desc: p.proDesc,
-      originalPrice: "149 000", price: "87 000", savings: p.proSavings, discountPct: "41%",
-      period: lang === "ru" ? "сум/мес" : "so'm/oy",
-      features: proFeatures, excluded: [],
-      cta: p.proCta,
-      ctaHref: `https://t.me/ceo_syr?text=${encodeURIComponent(p.proCta)}`,
-      highlighted: false,
-    },
-  ] as const;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <PublicSiteHeader />
-
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:py-24">
-        <div className="mb-14 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-1.5 text-sm font-medium text-orange-400 mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-            </span>
-            {p.banner}
-          </div>
-          <h1 className="text-4xl font-bold text-foreground sm:text-5xl">{p.h1}</h1>
-          <p className="mt-4 text-lg text-muted">{p.sub}</p>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative flex flex-col rounded-xl p-8 ${
-                plan.highlighted
-                  ? "border-2 border-accent shadow-lg shadow-accent/10"
-                  : "border border-border bg-surface"
-              }`}
-            >
-              {"badge" in plan && plan.badge && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-4 py-1 text-xs font-bold text-white tracking-wide uppercase">
-                  {plan.badge}
-                </span>
-              )}
-
-              <h2 className="text-xl font-bold text-foreground">{plan.name}</h2>
-              <p className="mt-1 text-sm text-muted">{plan.desc}</p>
-
-              <div className="mt-5">
-                {"originalPrice" in plan && plan.originalPrice ? (
-                  <>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg line-through text-muted opacity-60">{plan.originalPrice}</span>
-                      <span className="text-xs text-muted opacity-60">{plan.period}</span>
-                      <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-bold text-red-400 border border-red-500/20">
-                        −{plan.discountPct}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-4xl font-extrabold text-green-400">{plan.price}</span>
-                      <span className="text-base text-muted">{plan.period}</span>
-                    </div>
-                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-green-500/10 border border-green-500/20 px-2.5 py-1 text-xs font-semibold text-green-400">
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.25 4.75a.75.75 0 0 1 0 1.06L7.56 10.5a.75.75 0 0 1-1.06 0L4.75 8.75a.75.75 0 0 1 1.06-1.06l1.22 1.22 3.13-3.13a.75.75 0 0 1 1.06 0Z" />
-                      </svg>
-                      {plan.savings}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-foreground">{plan.price}</span>
-                    <span className="text-base text-muted">{plan.period}</span>
-                  </div>
-                )}
-              </div>
-
-              <ul className="mt-8 flex-1 space-y-3">
-                {plan.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2.5 text-sm text-foreground">
-                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    {feat}
-                  </li>
-                ))}
-                {plan.excluded.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2.5 text-sm text-muted opacity-40">
-                    <XIcon className="mt-0.5 h-4 w-4 shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-
-              <a
-                href={plan.ctaHref}
-                target={plan.ctaHref.startsWith("http") ? "_blank" : undefined}
-                rel={plan.ctaHref.startsWith("http") ? "noreferrer" : undefined}
-                className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-colors ${
-                  plan.highlighted
-                    ? "bg-accent text-white hover:bg-accent-hover"
-                    : "border border-border bg-surface-hover text-foreground hover:border-border-hover"
-                }`}
-              >
-                {plan.cta}
-              </a>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-10 text-center text-sm text-muted">
-          {p.questions}{" "}
-          <a href="https://t.me/ceo_syr" target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">
-            {p.telegramLink}
-          </a>
-          .
-        </p>
+      <section className="flex flex-col items-center justify-center px-5 py-32 text-center">
+        <h1 className="text-4xl font-bold sm:text-5xl">{p.questions}</h1>
+        <p className="mt-4 max-w-md text-lg text-muted">{p.metaDesc}</p>
+        <a
+          href="https://t.me/ceo_syr"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-10 inline-flex items-center gap-2 rounded-lg bg-accent px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-accent-hover"
+        >
+          {p.telegramLink}
+        </a>
       </section>
-
       <PublicSiteFooter />
     </main>
   );

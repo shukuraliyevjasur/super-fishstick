@@ -18,8 +18,7 @@ export default function PublicSiteFooter() {
   const lang = (params.lang as string) || "uz";
 
   const links = [
-    { href: `/${lang}/pricing`,      label: dict.footer.pricing },
-    { href: `/${lang}/privacy`,      label: dict.footer.privacy },
+{ href: `/${lang}/privacy`,      label: dict.footer.privacy },
     { href: `/${lang}/terms`,        label: dict.footer.terms },
     { href: `/${lang}/data-deletion`, label: dict.footer.dataDeletion },
   ];

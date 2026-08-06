@@ -6,7 +6,7 @@ export const uz: Dict = {
   nav: {
     pricing: "Narxlar",
     login: "Kirish",
-    start: "Boshlash",
+    start: "Bogʻlaning",
     menuOpen: "Menyuni ochish",
     menuClose: "Menyuni yopish",
   },
@@ -60,7 +60,7 @@ export const uz: Dict = {
     heroSub:
       "Kimdir «link?» yoki «narx?» deb izoh yozdi — replie darhol DM jo’natadi. Tun o’rtasida ham, dam olish kunlari ham. Siz hech narsa qilmaysiz.",
     ctaPrimary: "Bepul boshlash",
-    ctaSecondary: "Narxlarni ko'rish",
+    ctaSecondary: "Telegram orqali yozing",
     stepsH2: "3 qadam. Keyin unutib yuboring.",
     stepsSub:
       "Bir marta sozlang — replie ishlay beradi. Siz kontent yaratishda davom eting.",

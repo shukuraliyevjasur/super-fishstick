@@ -17,8 +17,7 @@ import { PUBLIC_LOCALES, getSiteUrl } from "@/lib/site";
 /** Public paths worth indexing, relative to the locale prefix. */
 const PUBLIC_PATHS = [
   { path: "", priority: 1, changeFrequency: "monthly" as const },
-  { path: "/pricing", priority: 0.8, changeFrequency: "monthly" as const },
-  { path: "/privacy", priority: 0.3, changeFrequency: "yearly" as const },
+{ path: "/privacy", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/data-deletion", priority: 0.3, changeFrequency: "yearly" as const },
 ];
