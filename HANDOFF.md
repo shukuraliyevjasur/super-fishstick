@@ -318,7 +318,7 @@ Daily is therefore not sufficient on its own. For real coverage, point an
 external uptime monitor at the same route every few minutes:
 
 ```
-URL:     https://replie.uz/api/cron/health-check
+URL:     https://www.replie.uz/api/cron/health-check   ← www, not apex (apex 308s; cron-job.org won't follow)
 Header:  Authorization: Bearer <CRON_SECRET>
 Alert:   on any non-200 (the route returns 503 when degraded)
 ```
@@ -334,9 +334,9 @@ headers.
 
 ### Setting up cron-job.org (one-time operator task)
 
-1. Create a free account at **cron-job.org**.
+1. ~~Create a free account at **cron-job.org**.~~ **Done 2026-08-05.** Cronjob live at every-1-minute schedule.
 2. New cronjob:
-   - **URL:** `https://replie.uz/api/cron/health-check`
+   - **URL:** `https://www.replie.uz/api/cron/health-check` (use `www` — the apex 308s and cron-job.org does not follow redirects)
    - **Schedule:** every 5 minutes (or 1 minute — both are free)
    - **Request method:** GET
    - **Headers:** add one header — `Authorization: Bearer <your CRON_SECRET>`

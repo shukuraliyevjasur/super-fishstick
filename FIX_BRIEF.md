@@ -18,7 +18,7 @@ code-complete but needs an operator action (which host is canonical).
 
 **Operator actions still pending (not code):**
 - Q4 — pick canonical host in Vercel (apex vs www)
-- C4 monitoring — set up cron-job.org (runbook in HANDOFF)
+- C4 auto-deploy — create `/etc/replie-worker.env` on VM + add 3 GitHub secrets + set `GCP_DEPLOY=true` variable (runbook in HANDOFF under "Worker → One-time setup")
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -1040,9 +1040,10 @@ evicted under memory pressure.
 - **Env file approach**: worker env vars now live at `/etc/replie-worker.env` on
   the VM (one-time setup), replacing the fragile "read vars off running container
   before deleting it" pattern documented in old HANDOFF.
-- **cron-job.org monitoring runbook** added to HANDOFF under "Health alerting →
-  Setting up cron-job.org". 5-minute monitoring catches worker death without
-  requiring Vercel plan upgrade.
+- **cron-job.org monitoring live** (2026-08-05) — 1-minute interval, hits
+  `https://www.replie.uz/api/cron/health-check` with `Authorization: Bearer`
+  header, alerts on failure + recovery. Use `www` not apex — the apex 308s and
+  cron-job.org does not follow redirects.
 
 **Accepted SPOF (by decision, within $0 budget):** the GCP e2-micro is a single
 VM. A hardware failure at Google would require restarting the VM or provisioning a
