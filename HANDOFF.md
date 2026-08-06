@@ -871,10 +871,10 @@ reaches `/uz` through the locale middleware. Key decisions:
    [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
    [FIX_BRIEF.md](FIX_BRIEF.md) for what will be needed once access arrives.
 
-~~**Worker auto-deploy not wired**~~ — fixed 2026-08-05 (C4): CI now SSHs into
-the VM and restarts the container after each build. Enable with `GCP_DEPLOY=true`
-repo variable + three secrets. Env vars moved to `/etc/replie-worker.env` on the
-VM. See [Worker → One-time setup to enable auto-deploy](#one-time-setup-to-enable-auto-deploy).
+~~**Worker auto-deploy not wired**~~ — fixed and live 2026-08-05 (C4): CI SSHs
+into the VM and restarts the container after each build. `GCP_DEPLOY=true`,
+`GCP_VM_IP`, `GCP_VM_USER`, `GCP_SSH_KEY` all configured. Env vars at
+`/etc/replie-worker.env` on the VM.
 
 ~~**Error tracking**~~ — fixed 2026-08-05 (C2): Sentry wired into Next.js
 (client + server + edge), error boundaries, and the worker. DSN set on Vercel

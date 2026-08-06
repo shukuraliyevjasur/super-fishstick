@@ -18,7 +18,6 @@ code-complete but needs an operator action (which host is canonical).
 
 **Operator actions still pending (not code):**
 - Q4 — pick canonical host in Vercel (apex vs www)
-- C4 auto-deploy — create `/etc/replie-worker.env` on VM + add 3 GitHub secrets + set `GCP_DEPLOY=true` variable (runbook in HANDOFF under "Worker → One-time setup")
 
 Source documents, if you want the reasoning behind a finding:
 [SECURITY_AUDIT.md](SECURITY_AUDIT.md), [LAUNCH_REVIEW.md](LAUNCH_REVIEW.md).
@@ -1032,11 +1031,10 @@ evicted under memory pressure.
 
 **Mitigated (2026-08-05):**
 
-- **Auto-deploy CI step** added to `.github/workflows/worker-image.yml`. A
-  `deploy` job SSHs into the VM and restarts the container after every successful
-  build. Enable by setting repo variable `GCP_DEPLOY=true` and adding secrets
-  `GCP_VM_IP`, `GCP_VM_USER`, `GCP_SSH_KEY`. Full runbook in HANDOFF under
-  "Worker → One-time setup to enable auto-deploy".
+- **Auto-deploy CI step** live (2026-08-05). `deploy` job in
+  `.github/workflows/worker-image.yml` SSHs into the VM and restarts the
+  container after every successful build. Secrets `GCP_VM_IP`, `GCP_VM_USER`,
+  `GCP_SSH_KEY` and variable `GCP_DEPLOY=true` configured in GitHub.
 - **Env file approach**: worker env vars now live at `/etc/replie-worker.env` on
   the VM (one-time setup), replacing the fragile "read vars off running container
   before deleting it" pattern documented in old HANDOFF.
