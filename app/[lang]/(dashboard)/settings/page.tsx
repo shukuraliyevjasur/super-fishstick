@@ -370,21 +370,25 @@ export default function SettingsPage() {
             <h2 className="text-base font-semibold text-foreground">{d.usageHeading}</h2>
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                data?.plan === "PRO"
-                  ? "bg-amber-100 text-amber-700 border border-amber-200"
-                  : data?.plan === "STANDART"
-                    ? "bg-accent/10 text-accent border border-accent/20"
-                    : "bg-border text-muted border border-border-hover"
+                data?.plan === "AGENCY"
+                  ? "bg-purple-100 text-purple-700 border border-purple-200"
+                  : data?.plan === "PRO"
+                    ? "bg-amber-100 text-amber-700 border border-amber-200"
+                    : data?.plan === "STANDART"
+                      ? "bg-accent/10 text-accent border border-accent/20"
+                      : "bg-border text-muted border border-border-hover"
               }`}
             >
-              {data?.plan === "PRO"
-                ? dict.sidebar.planPro
-                : data?.plan === "STANDART"
-                  ? dict.sidebar.planStandard
-                  : dict.sidebar.planFree}
+              {data?.plan === "AGENCY"
+                ? dict.sidebar.planAgency
+                : data?.plan === "PRO"
+                  ? dict.sidebar.planPro
+                  : data?.plan === "STANDART"
+                    ? dict.sidebar.planStandard
+                    : dict.sidebar.planFree}
             </span>
           </div>
-          {data?.plan !== "PRO" && (
+          {data?.plan !== "PRO" && data?.plan !== "AGENCY" && (
             <Link
               href={`/${lang}/pricing`}
               className="text-xs font-semibold text-accent hover:text-accent-hover transition-colors"

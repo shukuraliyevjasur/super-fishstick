@@ -30,6 +30,7 @@ export interface Dict {
     planFree: string
     planStandard: string
     planPro: string
+    planAgency: string
   }
 
   topBar: {

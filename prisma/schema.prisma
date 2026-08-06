@@ -338,6 +338,7 @@ enum WorkspacePlan {
   FREE
   STANDART
   PRO
+  AGENCY
 }
 
 enum WorkspaceRole {

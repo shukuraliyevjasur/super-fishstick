@@ -30,6 +30,7 @@ export const en: Dict = {
     planFree: "Free",
     planStandard: "Standard",
     planPro: "Pro",
+    planAgency: "Agency",
   },
 
   topBar: {

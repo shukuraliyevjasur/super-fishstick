@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: `${{ FREE: "Bepul", STANDART: "Standart", PRO: "Pro" }[plan]} rejim ${limits.maxActiveAutomations} ta kampaniya bilan cheklangan`,
+        error: `${{ FREE: "Bepul", STANDART: "Standart", PRO: "Pro", AGENCY: "Agency" }[plan]} rejim ${limits.maxActiveAutomations} ta kampaniya bilan cheklangan`,
       },
       { status: 403 }
     );

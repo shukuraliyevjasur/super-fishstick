@@ -5,6 +5,7 @@ import {
   summarizeDmStatuses,
 } from "@/lib/tracking/analytics";
 import { buildReportUrl } from "@/lib/reports/share";
+import { canUseFeature, getEffectivePlan } from "@/lib/billing/plan";
 
 function getHostname(url: string) {
   try {
@@ -46,6 +47,7 @@ export async function getCampaignReportBySlug(shareSlug: string) {
         select: {
           name: true,
           plan: true,
+          planExpiresAt: true,
         },
       },
       instagramAccount: {
@@ -155,6 +157,7 @@ export async function getCampaignReportBySlug(shareSlug: string) {
     reportUrl: buildReportUrl(automation.reportShareSlug),
     generatedAt: new Date(),
     branded: automation.workspace.plan === "FREE",
+    whitelabeled: canUseFeature(getEffectivePlan(automation.workspace), "whitelabelReports"),
     workspace: {
       name: automation.workspace.name,
     },

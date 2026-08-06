@@ -136,18 +136,22 @@ export default function Sidebar({
             <p className="text-xs font-medium text-foreground truncate">{workspaceName}</p>
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none ${
-                plan === "PRO"
-                  ? "bg-amber-100 text-amber-700 border border-amber-200"
-                  : plan === "STANDART"
-                    ? "bg-accent/10 text-accent border border-accent/20"
-                    : "bg-border text-muted border border-border-hover"
+                plan === "AGENCY"
+                  ? "bg-purple-100 text-purple-700 border border-purple-200"
+                  : plan === "PRO"
+                    ? "bg-amber-100 text-amber-700 border border-amber-200"
+                    : plan === "STANDART"
+                      ? "bg-accent/10 text-accent border border-accent/20"
+                      : "bg-border text-muted border border-border-hover"
               }`}
             >
-              {plan === "PRO"
-                ? dict.sidebar.planPro
-                : plan === "STANDART"
-                  ? dict.sidebar.planStandard
-                  : dict.sidebar.planFree}
+              {plan === "AGENCY"
+                ? dict.sidebar.planAgency
+                : plan === "PRO"
+                  ? dict.sidebar.planPro
+                  : plan === "STANDART"
+                    ? dict.sidebar.planStandard
+                    : dict.sidebar.planFree}
             </span>
           </div>
 

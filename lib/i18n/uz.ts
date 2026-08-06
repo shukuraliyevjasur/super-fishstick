@@ -29,6 +29,7 @@ export const uz: Dict = {
     planFree: "Bepul",
     planStandard: "Standart",
     planPro: "Pro",
+    planAgency: "Agency",
     diagnostics: "Diagnostika",
   },
 

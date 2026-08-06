@@ -29,6 +29,7 @@ export const ru: Dict = {
     planFree: "Бесплатный",
     planStandard: "Стандарт",
     planPro: "Pro",
+    planAgency: "Agency",
     diagnostics: "Диагностика",
   },
 

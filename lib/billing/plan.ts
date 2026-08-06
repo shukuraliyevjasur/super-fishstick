@@ -12,6 +12,7 @@ export const PLAN_LIMITS = {
     multiUser: false,
     clientReports: false,
     prioritySupport: false,
+    whitelabelReports: false,
   },
   STANDART: {
     maxInstagramAccounts: 1,
@@ -24,6 +25,7 @@ export const PLAN_LIMITS = {
     multiUser: false,
     clientReports: false,
     prioritySupport: false,
+    whitelabelReports: false,
   },
   PRO: {
     maxInstagramAccounts: 5,
@@ -36,6 +38,20 @@ export const PLAN_LIMITS = {
     multiUser: true,
     clientReports: true,
     prioritySupport: true,
+    whitelabelReports: false,
+  },
+  AGENCY: {
+    maxInstagramAccounts: 20,
+    maxActiveAutomations: Infinity,
+    maxDmsPerMonth: Infinity,
+    trackedLinks: true,
+    followGate: true,
+    openingDm: true,
+    csvImport: true,
+    multiUser: true,
+    clientReports: true,
+    prioritySupport: true,
+    whitelabelReports: true,
   },
 } satisfies Record<WorkspacePlan, {
   maxInstagramAccounts: number;
@@ -48,6 +64,7 @@ export const PLAN_LIMITS = {
   multiUser: boolean;
   clientReports: boolean;
   prioritySupport: boolean;
+  whitelabelReports: boolean;
 }>;
 
 type BooleanFeatureKeys = {
