@@ -6,11 +6,13 @@ import {
   generateInvitationToken,
   getInvitationExpiry,
   normalizeInvitationEmail,
+  sendInvitationEmail,
 } from "@/lib/workspace-invitations";
 import {
   canManageWorkspace,
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
+import { canUseFeature, getEffectivePlan, getPlanLimits } from "@/lib/billing/plan";
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -104,6 +106,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Plan gate: multiUser feature + seat cap
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: context.workspaceId },
+    select: { plan: true, planExpiresAt: true, name: true },
+  });
+  if (!workspace) {
+    return NextResponse.json({ success: false, error: "Workspace not found" }, { status: 404 });
+  }
+  const effectivePlan = getEffectivePlan(workspace);
+  if (!canUseFeature(effectivePlan, "multiUser")) {
+    return NextResponse.json(
+      { success: false, error: "Team members require a Pro or Agency plan" },
+      { status: 403 }
+    );
+  }
+  const limits = getPlanLimits(effectivePlan);
+  if (limits.maxTeamSeats !== Infinity) {
+    const [memberCount, pendingCount] = await Promise.all([
+      prisma.workspaceMember.count({ where: { workspaceId: context.workspaceId } }),
+      prisma.workspaceInvitation.count({
+        where: { workspaceId: context.workspaceId, status: "PENDING" },
+      }),
+    ]);
+    if (memberCount + pendingCount >= limits.maxTeamSeats) {
+      return NextResponse.json(
+        { success: false, error: `Seat limit reached (${limits.maxTeamSeats} seats on ${effectivePlan} plan)` },
+        { status: 403 }
+      );
+    }
+  }
+
   const body = await request.json();
   const parsed = inviteSchema.safeParse(body);
   if (!parsed.success) {
@@ -137,6 +170,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } else {
+    const token = generateInvitationToken();
     await prisma.workspaceInvitation.upsert({
       where: {
         workspaceId_email: {
@@ -148,17 +182,28 @@ export async function POST(request: NextRequest) {
         workspaceId: context.workspaceId,
         email,
         role: parsed.data.role,
-        token: generateInvitationToken(),
+        token,
         invitedByUserId: context.userId,
         expiresAt: getInvitationExpiry(),
       },
       update: {
         role: parsed.data.role,
         status: "PENDING",
-        token: generateInvitationToken(),
+        token,
         invitedByUserId: context.userId,
         expiresAt: getInvitationExpiry(),
       },
+    });
+
+    const inviterUser = await prisma.user.findUnique({
+      where: { id: context.userId },
+      select: { name: true, email: true },
+    });
+    void sendInvitationEmail({
+      to: email,
+      inviterName: inviterUser?.name ?? inviterUser?.email ?? "A teammate",
+      workspaceName: workspace.name,
+      inviteUrl: buildInvitationUrl(token),
     });
   }
 

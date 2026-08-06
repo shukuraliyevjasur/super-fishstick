@@ -5,6 +5,7 @@ export const PLAN_LIMITS = {
     maxInstagramAccounts: 1,
     maxActiveAutomations: 2,
     maxDmsPerMonth: 100,
+    maxTeamSeats: 0,
     trackedLinks: false,
     followGate: false,
     openingDm: false,
@@ -18,6 +19,7 @@ export const PLAN_LIMITS = {
     maxInstagramAccounts: 1,
     maxActiveAutomations: Infinity,
     maxDmsPerMonth: 3_000,
+    maxTeamSeats: 0,
     trackedLinks: true,
     followGate: true,
     openingDm: true,
@@ -31,6 +33,7 @@ export const PLAN_LIMITS = {
     maxInstagramAccounts: 5,
     maxActiveAutomations: Infinity,
     maxDmsPerMonth: Infinity,
+    maxTeamSeats: 5,
     trackedLinks: true,
     followGate: true,
     openingDm: true,
@@ -44,6 +47,7 @@ export const PLAN_LIMITS = {
     maxInstagramAccounts: 20,
     maxActiveAutomations: Infinity,
     maxDmsPerMonth: Infinity,
+    maxTeamSeats: Infinity,
     trackedLinks: true,
     followGate: true,
     openingDm: true,
@@ -57,6 +61,7 @@ export const PLAN_LIMITS = {
   maxInstagramAccounts: number;
   maxActiveAutomations: number;
   maxDmsPerMonth: number;
+  maxTeamSeats: number;
   trackedLinks: boolean;
   followGate: boolean;
   openingDm: boolean;

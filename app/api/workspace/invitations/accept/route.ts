@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { normalizeInvitationEmail } from "@/lib/workspace-invitations";
+import { canUseFeature, getEffectivePlan } from "@/lib/billing/plan";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   const invitation = await prisma.workspaceInvitation.findUnique({
     where: { token },
-    include: { workspace: { select: { name: true } } },
+    include: { workspace: { select: { name: true, plan: true, planExpiresAt: true } } },
   });
   if (!invitation || invitation.status !== "PENDING") {
     return NextResponse.json(
@@ -46,6 +47,13 @@ export async function POST(request: NextRequest) {
   if (normalizeInvitationEmail(session.user.email) !== invitation.email) {
     return NextResponse.json(
       { success: false, error: "This invitation is for a different email" },
+      { status: 403 }
+    );
+  }
+
+  if (!canUseFeature(getEffectivePlan(invitation.workspace), "multiUser")) {
+    return NextResponse.json(
+      { success: false, error: "This workspace no longer supports team members" },
       { status: 403 }
     );
   }
