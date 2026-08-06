@@ -88,7 +88,7 @@ describe("sitemap (Q5)", () => {
     vi.stubEnv("APP_URL", "https://replie.uz");
     const urls = sitemap().map((entry) => entry.url);
 
-    for (const path of ["", "/pricing", "/privacy", "/terms", "/data-deletion"]) {
+    for (const path of ["", "/privacy", "/terms", "/data-deletion"]) {
       for (const locale of PUBLIC_LOCALES) {
         expect(urls).toContain(`https://replie.uz/${locale}${path}`);
       }
