@@ -48,7 +48,7 @@ Critical context: many features require App Review + Business Verification, whic
 ```
 Available NOW (no App Review):
   ✓ Comment trigger → outgoing DM         (core feature, live)
-  ✓ Public comment auto-reply             (respond to public comments on posts)
+  ✓ Public comment auto-reply             (respond to public comments — BUILT)
 
 Requires instagram_manage_messages (App Review pending):
   ✗ Read incoming DMs
@@ -71,7 +71,7 @@ Do NOT build inbound DM features until App Review passes. Build around the block
 
 | Feature | What it does | Why now |
 |---|---|---|
-| **Public comment auto-reply** | When post gets a comment → auto-reply publicly to that comment | No App Review. Extends existing comment webhook. |
+| ~~**Public comment auto-reply**~~ | ✅ Already built. Responds publicly to comments on posts. | No App Review needed. |
 | **Telegram bot automation** | Keyword triggers + auto-DM flows inside a Telegram channel/bot | Zero approval process. Telegram Bot API is fully open. Uzbekistan runs on Telegram. SMMshiki can sell Telegram funnels TODAY while Meta review is pending. |
 | **Telegram lead ping** | New lead arrives → Telegram bot notifies the agency | 1 day of work. SMMshiki already live on Telegram all day. Instant ROI. |
 | **Quick reply templates** | Manual: SMM worker opens DM, presses one button, sends pre-written answer | No API needed. Pure UX. Saves manual typing for repetitive questions (price, address, hours). |
@@ -106,7 +106,7 @@ Do NOT build inbound DM features until App Review passes. Build around the block
 ## Recommended build order
 
 ```
-1. Public comment auto-reply      — extends existing webhook, fast win
+1. ✅ Public comment auto-reply   — already built
 2. Telegram lead ping             — 1 day, immediate agency value
 3. Telegram bot automation        — buys sellable product while Meta review waits
 4. Quick reply templates          — UX only, no API
