@@ -36,6 +36,8 @@ const baseAutomation = {
   reportShareSlug: "report_123",
   workspace: {
     name: "Acme Studio",
+    plan: "PRO" as const,
+    planExpiresAt: null,
   },
   instagramAccount: {
     username: "acme",
