@@ -1,19 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockPrisma, mockWorkerHealth, mockSendAlert, mockJobCounts, mockPing } =
-  vi.hoisted(() => ({
-    mockPrisma: {
-      $queryRaw: vi.fn(),
-      operationalEvent: {
-        findMany: vi.fn(),
-        create: vi.fn(),
-      },
+const {
+  mockPrisma,
+  mockWorkerHealth,
+  mockWorkerAlerts,
+  mockSendAlert,
+  mockJobCounts,
+  mockPing,
+} = vi.hoisted(() => ({
+  mockPrisma: {
+    $queryRaw: vi.fn(),
+    operationalEvent: {
+      findMany: vi.fn(),
+      create: vi.fn(),
     },
-    mockWorkerHealth: vi.fn(),
-    mockSendAlert: vi.fn(),
-    mockJobCounts: vi.fn(),
-    mockPing: vi.fn(),
-  }));
+  },
+  mockWorkerHealth: vi.fn(),
+  mockWorkerAlerts: vi.fn(),
+  mockSendAlert: vi.fn(),
+  mockJobCounts: vi.fn(),
+  mockPing: vi.fn(),
+}));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
 
@@ -24,6 +31,7 @@ vi.mock("@/lib/queue/client", () => ({
 
 vi.mock("@/lib/ops/worker-health", () => ({
   getWorkerHealth: mockWorkerHealth,
+  getWorkerAlerts: mockWorkerAlerts,
 }));
 
 vi.mock("@/lib/ops/alert-email", () => ({
@@ -50,6 +58,7 @@ function healthyState() {
     heartbeat: { status: "running", worker: "dm", pid: 1, checkedAt: "now" },
     ageMs: 5_000,
   });
+  mockWorkerAlerts.mockResolvedValue([]);
   mockPrisma.operationalEvent.findMany.mockResolvedValue([]);
   mockPrisma.operationalEvent.create.mockResolvedValue({});
   mockSendAlert.mockResolvedValue({ sent: true });
@@ -88,6 +97,25 @@ describe("health-check cron", () => {
     const [subject, lines] = mockSendAlert.mock.calls[0];
     expect(subject).toContain("degraded");
     expect(lines.join("\n")).toContain("No worker heartbeat");
+  });
+
+  it("returns 200 but emails when worker is alive but failing sends", async () => {
+    const now = new Date().toISOString();
+    mockWorkerAlerts.mockResolvedValue([
+      { level: "error", message: "Meta API 400", createdAt: now },
+      { level: "error", message: "Meta API 400", createdAt: now },
+      { level: "error", message: "Decrypt failed", createdAt: now },
+    ]);
+
+    const response = await GET(authorizedRequest());
+
+    // System is up (200), but operator gets an email about failing sends.
+    expect(response.status).toBe(200);
+    expect(mockSendAlert).toHaveBeenCalledTimes(1);
+
+    const [subject, lines] = mockSendAlert.mock.calls[0];
+    expect(subject).toContain("worker failing sends");
+    expect(lines.join("\n")).toContain("Worker failures");
   });
 
   it("emails about token refresh failures even while healthy", async () => {

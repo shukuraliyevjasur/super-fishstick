@@ -44,6 +44,7 @@ vi.mock("@/lib/ops/worker-health", () => ({
     heartbeat: null,
     ageMs: 0,
   }),
+  getWorkerAlerts: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/ops/alert-email", () => ({

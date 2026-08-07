@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
   });
 
   const degraded = !report.healthy;
-  const shouldAlert = degraded || refreshErrors.length > 0;
+  const workerFailing = report.checks.workerAlerts.failing;
+  const shouldAlert = degraded || workerFailing || refreshErrors.length > 0;
 
   let alert: AlertResult = { sent: false, reason: "no alert needed" };
 
@@ -72,6 +73,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (report.checks.workerAlerts.failing) {
+      const alerts = report.checks.workerAlerts.recentAlerts;
+      lines.push(
+        "",
+        `Worker failures (last 10min): ${alerts.length}`,
+      );
+      for (const a of alerts.slice(0, 5)) {
+        lines.push(`  ${a.createdAt} ${a.level}: ${a.message}`);
+      }
+      lines.push(
+        "The worker is alive but failing sends. Check docker logs replie-worker.",
+      );
+    }
+
     if (refreshErrors.length > 0) {
       lines.push("", `Token refresh failures (last 26h): ${refreshErrors.length}`);
       for (const failure of refreshErrors.slice(0, 5)) {
@@ -82,10 +97,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    alert = await sendOperationalAlert(
-      degraded ? "replie: system degraded" : "replie: token refresh failing",
-      lines
-    );
+    const subject = degraded
+      ? "replie: system degraded"
+      : workerFailing
+        ? "replie: worker failing sends"
+        : "replie: token refresh failing";
+    alert = await sendOperationalAlert(subject, lines);
 
     // Record the alert regardless of whether the email got out, so a Resend
     // outage does not also erase the evidence that something was wrong.

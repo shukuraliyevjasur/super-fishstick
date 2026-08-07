@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/db/client";
 import { getDMQueue, getRedisConnection } from "@/lib/queue/client";
-import { getWorkerHealth, type WorkerHeartbeat } from "@/lib/ops/worker-health";
+import {
+  getWorkerHealth,
+  getWorkerAlerts,
+  type WorkerHeartbeat,
+  type WorkerAlert,
+} from "@/lib/ops/worker-health";
 
 /**
  * The liveness checks behind `/api/health` and `/api/cron/health-check`.
@@ -27,6 +32,11 @@ export interface WorkerCheck {
   error?: string;
 }
 
+export interface WorkerAlertsCheck {
+  recentAlerts: WorkerAlert[];
+  failing: boolean;
+}
+
 export interface HealthReport {
   healthy: boolean;
   checks: {
@@ -34,6 +44,7 @@ export interface HealthReport {
     redis: HealthCheck;
     queue: QueueCheck;
     worker: WorkerCheck;
+    workerAlerts: WorkerAlertsCheck;
   };
 }
 
@@ -78,8 +89,20 @@ async function checkQueue(): Promise<QueueCheck> {
   }
 }
 
+const ALERT_WINDOW_MS = 10 * 60 * 1000;
+const ALERT_THRESHOLD = 3;
+
+async function checkWorkerAlerts(): Promise<WorkerAlertsCheck> {
+  const alerts = await getWorkerAlerts(25).catch(() => []);
+  const cutoff = Date.now() - ALERT_WINDOW_MS;
+  const recent = alerts.filter(
+    (a) => new Date(a.createdAt).getTime() >= cutoff
+  );
+  return { recentAlerts: recent, failing: recent.length >= ALERT_THRESHOLD };
+}
+
 export async function buildHealthReport(): Promise<HealthReport> {
-  const [database, redis, queue, worker] = await Promise.all([
+  const [database, redis, queue, worker, workerAlerts] = await Promise.all([
     checkDatabase(),
     checkRedis(),
     checkQueue(),
@@ -91,6 +114,7 @@ export async function buildHealthReport(): Promise<HealthReport> {
         error: error instanceof Error ? error.message : "Worker check failed",
       })
     ),
+    checkWorkerAlerts(),
   ]);
 
   return {
@@ -99,7 +123,7 @@ export async function buildHealthReport(): Promise<HealthReport> {
       redis.status === "ok" &&
       queue.status === "ok" &&
       worker.healthy,
-    checks: { database, redis, queue, worker },
+    checks: { database, redis, queue, worker, workerAlerts },
   };
 }
 
