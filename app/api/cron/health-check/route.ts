@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const lines: string[] = [`replie health: ${degraded ? "DEGRADED" : "ok"}`, ""];
 
     for (const [name, check] of Object.entries(report.checks)) {
-      const ok = "status" in check ? check.status === "ok" : check.healthy;
+      const ok = "status" in check ? check.status === "ok" : "healthy" in check ? check.healthy : !check.failing;
       const detail =
         "detail" in check && check.detail
           ? ` — ${check.detail}`

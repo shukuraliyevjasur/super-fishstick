@@ -1,4 +1,6 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CampaignBuilder from "@/components/campaign-builder";
 
@@ -274,8 +276,9 @@ describe("CampaignBuilder save payload", () => {
     const dmInput = screen.getByPlaceholderText("message");
     fireEvent.change(dmInput, { target: { value: "DM" } });
 
-    // Enable public reply and enter a message
-    fireEvent.click(screen.getByText("public reply"));
+    // Enable public reply — click the toggle button, not the label span
+    const toggleContainer = screen.getByText("public reply").closest("div")!;
+    fireEvent.click(toggleContainer.querySelector("button")!);
     const replyInput = screen.getByPlaceholderText("reply");
     fireEvent.change(replyInput, { target: { value: "Check your DMs!" } });
 
