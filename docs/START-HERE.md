@@ -9,6 +9,38 @@ for what is settled, and [reference/traps.md](reference/traps.md) before touchin
 
 ---
 
+## If you read nothing else, read these two
+
+Both were nearly lost during the review pass that produced this plan. Both are cheap to
+respect now and expensive to discover later.
+
+### 1. E3 and E7 must land together, in one lockfile pass, on Linux
+
+grammY (**E3**) and the component-test infrastructure (**E7**) both edit `package.json`
+and `package-lock.json`. The lockfile must be generated on Linux — WSL, the GCP VM, or CI.
+
+Doing them on separate branches produces **two individually valid lockfiles that break
+`npm ci` when merged.** Each one passes its own CI. The breakage only appears at the merge,
+which is the worst place to find it.
+
+One dependency pass. One machine. Both packages.
+
+### 2. Flow-level validation is a condition, not a feature
+
+**D5** in the S3 table looks like one more editor task. It is not. It is the thing that
+made the list-with-drill-in editing model acceptable instead of a node canvas (see D7 in
+[decisions](product/decisions.md)).
+
+Drill-in means you never see the whole flow at once, so a branch broken three levels down
+is off-screen. Validation is what compensates. A live test send only exercises the path the
+builder personally taps, so it does **not** substitute.
+
+It nearly got dropped as a side effect of an unrelated question about how to test flows.
+If you find yourself cutting it for scope, you are also reversing the editing-model
+decision — say that out loud rather than doing it quietly.
+
+---
+
 ## Confirm the baseline first
 
 ```bash

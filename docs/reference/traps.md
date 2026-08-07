@@ -29,6 +29,17 @@ This is how `@sentry/nextjs` was added.
 > `package-lock.json` and never writes it, so it is safe on Windows. `npm install` is the
 > one that breaks CI.
 
+### The corollary nobody expects: batch your dependency additions
+
+Two branches that each add a dependency produce **two individually valid lockfiles**. Each
+passes its own CI. They break `npm ci` when merged, and the breakage surfaces at the merge
+rather than in either branch.
+
+The Telegram work has exactly this shape: grammY and the component-test libraries
+(`@testing-library/react` + `happy-dom`) are separate tasks in separate slices, and both
+need the Linux lockfile pass. **They must land together.** See
+[../START-HERE.md](../START-HERE.md).
+
 ---
 
 ## Prisma 7 keeps the datasource URL in `prisma.config.ts`, not `schema.prisma`
