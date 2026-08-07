@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 239 tests passing across 26 files.**
+Expected: **typecheck silent, lint 0 errors, 240 tests passing across 26 files.**
 
 If those do not match, the code changed since 2026-08-07. Find out why before starting.
 Use `npm ci`, never `npm install` — see [traps](reference/traps.md).
@@ -76,10 +76,10 @@ valid lockfiles that break `npm ci` when merged. **One dependency pass, one mach
 
 | id | What | Effort (human / CC) |
 |----|------|---------------------|
-| **T16** | Make the apex `replie.uz` primary in Vercel. No code change; `APP_URL` is already the apex. Must happen before any Telegram bot webhook is registered. | 5 min / — |
-| **T17** | Move Supabase to the transaction-mode pooler (port 6543). `max: 1` is per-instance, not global. | 2h / — |
-| **T15** | Ceiling probe: check whether individual/identity verification or a borrowed legal entity lifts the tester cap from 50 to 500. External, not code. | 2d / — |
-| **E2** | Health signal: base the failed-job threshold on `getWorkerAlerts()`, **not** `getJobCounts().failed`. Files: `lib/ops/health-report.ts`, `lib/ops/worker-health.ts`. | 4h / 30min |
+| ~~**T16**~~ | ~~Make the apex `replie.uz` primary in Vercel.~~ **Done 2026-08-07.** | — |
+| ~~**T17**~~ | ~~Move Supabase to the transaction-mode pooler (port 6543).~~ **Done 2026-08-07.** Worker env updated, Vercel updated. | — |
+| ~~**T15**~~ | ~~Ceiling probe.~~ **Done 2026-08-07.** No shortcut exists — Meta offers only Business Verification via a legal entity (YaTT). Individual verification is not available for apps. The known path stands: register YaTT → verify → link. | — |
+| ~~**E2**~~ | ~~Health signal: base the failed-job threshold on `getWorkerAlerts()`.~~ **Done 2026-08-07.** `checkWorkerAlerts()` reads the durable alert store; 3+ failures in 10 min triggers an email. Does not mark system degraded — worker is alive, just failing sends. | — |
 
 > **E2 supersedes T9.** The CEO review specified a threshold on `getJobCounts().failed`;
 > the eng review found that counter is swept every 300s (`removeOnFail: { age: 300 }`), so

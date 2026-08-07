@@ -300,15 +300,17 @@ All three operational endpoints — both crons and `/api/health` — require
 `lib/ops/cron-auth.ts`. It fails closed: no `CRON_SECRET`, no access. Do not
 reintroduce a fallback secret or an `if (secret)` wrapper.
 
-### It alerts on worker death, not on a worker that is failing
+### ~~It alerts on worker death, not on a worker that is failing~~
 
-The health check degrades only when a check *throws*. A queue full of failed jobs
+~~The health check degrades only when a check *throws*. A queue full of failed jobs
 is still a healthy queue by that definition, so **a worker that is alive and
-failing every send sends no alert** — confirmed on 2026-08-04, when three failed
-jobs and seven Meta errors produced nothing. See C1 in
-[FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md) for the fix.
+failing every send sends no alert**.~~
 
-Until then, **failed sends are only visible by opening the diagnostics page.**
+**Fixed 2026-08-07 (E2).** `buildHealthReport()` now includes `checkWorkerAlerts()`,
+which reads the durable `getWorkerAlerts()` store in Redis. When 3+ failures occur
+within 10 minutes, the health-check cron emails the operator with subject "worker
+failing sends". This does **not** mark the system as degraded (the worker is alive,
+infrastructure is up) — it returns 200, not 503 — but the email goes out.
 
 ### The daily cron is a backstop, not worker-death detection
 
@@ -881,17 +883,12 @@ reaches `/uz` through the locale middleware. Key decisions:
    One live dependency worth knowing: that 60s poll is what makes any failed-job
    health signal work at all, because failed jobs are swept after 300s. See
    [traps](../reference/traps.md).
-4. **Pick a canonical host** — *not done as of 2026-08-04.* See item 7 below;
-   listed twice because it is cheap and affects every link already going out.
+4. ~~**Pick a canonical host**~~ — **done 2026-08-07.** Apex `replie.uz` is now
+   primary in Vercel; `www` redirects to it.
 5. **Session revocation** — sessions are JWT-backed and cannot be revoked
    server-side (see [Auth](#auth--password-sign-in-magic-link-as-fallback)).
-6. **Connection pool headroom** — `max: 1` is per-instance; enough concurrent
-   Vercel instances still reach Supabase's 15-client cap. Move to the
-   transaction-mode pooler (port 6543) before real traffic.
-7. **Pick a canonical host.** `replie.uz` currently 308s to `www.replie.uz`, so
-   every advertised URL and every tracked link in a DM pays a redirect hop.
-   Recommended: make the apex primary in Vercel, which needs no code change since
-   `APP_URL` is already the apex. See Q4 in [FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md).
+6. ~~**Connection pool headroom**~~ — **done 2026-08-07.** Moved to Supabase
+   transaction-mode pooler (port 6543) on both Vercel and the GCP worker.
 8. **Payment rails** — blocked on merchant credentials from Click or Payme, not on
    code. Until then, plans are granted manually through
    [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
@@ -954,6 +951,12 @@ from zero.
   the left sidebar with a **Review** section containing *Testing*, *Verification*, and
   *App Review*.
 - At least one successful API call, which Advanced Access requires.
+- **Domain `replie.uz` added to Business Manager** (2026-08-07). Meta domain
+  verification meta tag deployed via Next.js `metadata.verification`. Pending
+  click of "Verify domain" in the dashboard.
+- **Ceiling probe completed** (2026-08-07). No shortcut to Business Verification
+  exists — Meta does not offer individual/identity verification for apps.
+  The only path is: register a YaTT → submit Business Verification → link to app.
 
 **Next, in this order:**
 

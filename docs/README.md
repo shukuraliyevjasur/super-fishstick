@@ -29,7 +29,7 @@ that are not negotiable.
 ## Current state (verified 2026-08-07 against the code, not the docs)
 
 ```
-tests      239 passing across 26 files   (npm test)
+tests      240 passing across 26 files   (npm test)
 lint       0 errors                      (npm run lint)
 typecheck  silent                        (npm run typecheck)
 ```
