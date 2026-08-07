@@ -3,6 +3,10 @@
 Reorganized 2026-08-07. Everything below is current; anything superseded lives in
 [archive/](archive/) with its original date.
 
+**Picking up the work?** → **[START-HERE.md](START-HERE.md)** — the ordered execution
+plan, with every task resolved to files and verify steps, and the ordering constraints
+that are not negotiable.
+
 ## Read in this order
 
 | # | Doc | What it is |

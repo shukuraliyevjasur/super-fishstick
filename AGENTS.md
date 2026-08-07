@@ -9,6 +9,11 @@ writing any code. Heed deprecation notices.
 Docs live in **[docs/](docs/)**. Start with **[docs/README.md](docs/README.md)** — it is
 the map and it names the reading order.
 
+**If you are here to build something**, go straight to
+**[docs/START-HERE.md](docs/START-HERE.md)** — the ordered execution plan from the
+2026-08-07 review pass, with every task resolved to concrete files, verify steps, and the
+ordering constraints that will bite if ignored.
+
 The four that matter most:
 
 - **[docs/product/decisions.md](docs/product/decisions.md)** — settled product and
