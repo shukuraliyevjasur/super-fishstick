@@ -33,6 +33,11 @@ type Props = { children: ReactNode; params: Promise<{ lang: string }> };
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
+  verification: {
+    other: {
+      "facebook-domain-verification": "0vhaeitxugf2wyq1tv31j4l0dv2csc",
+    },
+  },
 };
 
 export async function generateStaticParams() {
