@@ -1,11 +1,15 @@
+> **ARCHIVED — not current.** Superseded by [../product/roadmap.md](../product/roadmap.md)
+> and [../product/decisions.md](../product/decisions.md). If this file disagrees with those,
+> they win. Context: [README.md](README.md). Kept for the reasoning, not the conclusions.
+
 # Launch review — 2026-08-02
 
 Pre-launch review of replie, run in phases. Findings only; nothing here is fixed yet.
 Delete an item when it lands and note the commit.
 
-Security findings live separately in [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
+Security findings live separately in [SECURITY_AUDIT.md](2026-08-02-security-audit.md).
 
-- [Phase 1 — Security](SECURITY_AUDIT.md) — 5 findings, 1 HIGH
+- [Phase 1 — Security](2026-08-02-security-audit.md) — 5 findings, 1 HIGH
 - [Phase 2 — Live QA](#phase-2--live-qa) — 6 findings
 - [Phase 3 — Code gaps](#phase-3--code-gaps) — 4 findings, 1 HIGH
 - [Phase 4 — Product gaps for launch](#phase-4--product-gaps-for-launch) — 4 findings, 2 HIGH

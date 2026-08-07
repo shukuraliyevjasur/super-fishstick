@@ -1,6 +1,10 @@
-# replie — Agent Handoff
+# Operations handbook
 
-**Last updated:** 2026-08-03
+**Last updated:** 2026-08-07. Moved here from `HANDOFF.md` in the docs reorganization;
+kept whole because its sections cross-link by anchor.
+
+The landmines this file used to carry are now consolidated in
+[../reference/traps.md](../reference/traps.md), which is the copy to keep current.
 
 ## What this is
 
@@ -159,7 +163,7 @@ who may see cross-tenant data and (once P1 lands) grant plans. Unset means nobod
 which fails closed. **The listed account must exist and have a verified email**,
 or the allowlist entry does nothing: an address nobody has registered is claimable
 by whoever signs up with it first, so verification is what makes the entry safe.
-See D3 in [DECISIONS.md](DECISIONS.md).
+See D3 in [DECISIONS.md](../product/decisions.md).
 
 > `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` are the **Instagram-specific**
 > credentials from **Use cases → Instagram API setup** in the Meta dashboard, not
@@ -261,7 +265,7 @@ confirm payment, you grant the plan. Payment rails (Click / Payme / Uzum) replac
 this trigger later; the granting logic itself does not change (D2).
 
 **Requires `ADMIN_EMAILS` to include your address, on an account with a verified
-email.** Without that the endpoint 403s — see D3 in [DECISIONS.md](DECISIONS.md).
+email.** Without that the endpoint 403s — see D3 in [DECISIONS.md](../product/decisions.md).
 
 ```bash
 curl -X POST https://replie.uz/api/admin/plan \
@@ -302,7 +306,7 @@ The health check degrades only when a check *throws*. A queue full of failed job
 is still a healthy queue by that definition, so **a worker that is alive and
 failing every send sends no alert** — confirmed on 2026-08-04, when three failed
 jobs and seven Meta errors produced nothing. See C1 in
-[FIX_BRIEF.md](FIX_BRIEF.md) for the fix.
+[FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md) for the fix.
 
 Until then, **failed sends are only visible by opening the diagnostics page.**
 
@@ -458,11 +462,24 @@ without an app role.
 - Tester role alone: added `shukuraliyevvs` as Instagram tester, no change.
   `foundersyrio` (king0073112) also a tester — worked, but they had a Facebook
   Page linked. Tester role without FB Page linkage is not sufficient.
-- **Facebook Page linkage: confirmed required (2026-08-04).** `foundersyrio`
-  linked a Facebook Page to their Instagram account and `messaging_postbacks`
-  started being delivered within minutes. `shukuraliyevvs` had no FB Page linked,
-  which is why adding them as a tester had no effect. This means the feature works
-  today for any account that has a connected FB Page, even under Standard Access.
+- ~~**Facebook Page linkage: confirmed required (2026-08-04).**~~ **RETRACTED
+  2026-08-07 — this was a confound.** `foundersyrio` linked a Facebook Page and
+  `messaging_postbacks` began delivering within minutes, which was credited to the
+  Page. But that account was **also an Instagram tester**, which is the actual
+  explanation. `shukuraliyevvs` had neither.
+
+  The governing rule is the one stated at the top of this section: the **interacting
+  user** needs a role on the app. A random follower never will, so no amount of Page
+  linkage helps. **Do not plan around FB Page linkage and do not add it to
+  onboarding** — it is a step that buys nothing.
+
+  Independently corroborated: an n8n community thread (Aug 2025) reports the same
+  behaviour, with webhooks firing only when the sender is a designated tester.
+
+  **The way around it for button taps** is `lib/meta/reveal-token.ts` +
+  `app/api/reveal/[token]/route.ts` — a `web_url` button instead of a postback, so
+  no webhook is involved. `sendPrivateReplyWithLinkButton` already ships `web_url`
+  buttons in production, which proves the mechanism works under Standard Access.
 
 **403s on `/api/webhook`:** Harmless. These are GET requests from
 `facebookexternalua` (Meta's link-preview crawler). They lack
@@ -808,7 +825,7 @@ for a one-off value.
 **Exception:** `components/campaign-preview.tsx` intentionally uses dark zinc and
 `rounded-2xl` bubbles to mimic the Instagram UI. Do not "fix" it.
 
-See [DESIGN_REVIEW.md](DESIGN_REVIEW.md) for the full audit.
+See [DESIGN_REVIEW.md](../reference/design-system.md) for the full audit.
 
 ---
 
@@ -844,17 +861,26 @@ reaches `/uz` through the locale middleware. Key decisions:
    **Use cases → Instagram API setup → Generate access tokens → Add account**. The
    OAuth flow itself is already self-serve and needs no code changes.
    See [Meta verification status](#meta-verification-status) below and
-   [META_APP_REVIEW.md](META_APP_REVIEW.md).
-2. **Opening DM and follow gate hidden** — works today for accounts with a
-   linked Facebook Page (confirmed 2026-08-04 with `foundersyrio`). Hidden in
-   the UI until App Review grants Advanced Access for all users. Code intact.
-   See [Messaging webhooks](#messaging-webhooks--archived-pending-app-review-2026-08-04).
-3. **Add an external uptime monitor** — runbook now in [Health alerting →
-   Setting up cron-job.org](#setting-up-cron-joborg-one-time-operator-task).
-   Takes ~5 minutes. Until done, a dead worker stays dead for ~24h before anyone
-   is told. Also check whether Vercel Hobby caps cron jobs per project —
-   `vercel.json` has three. If it does, drop the `health-check` entry and let
-   the monitor cover it.
+   [META_APP_REVIEW.md](../reference/meta-app-review.md).
+2. **Opening DM and follow gate hidden** — hidden in the UI, code intact
+   (`openingDmEnabled` and `requireFollow` are hardcoded `false` in the campaign
+   builder's save payload). **Do not wait on App Review for these.** As built they
+   depend on `messaging_postbacks`, which can never fire for an ordinary follower —
+   the *interacting user* needs an app role. The route around it is the
+   reveal-token `web_url` button, already written and unwired. Follow gate is worth
+   restoring that way; opening DM is not, because it adds a browser-sheet hop to a
+   path that already delivers the link in one tap. See
+   [Messaging webhooks](#messaging-webhooks--archived-pending-app-review-2026-08-04)
+   and [../product/roadmap.md](../product/roadmap.md).
+3. ~~**Add an external uptime monitor**~~ — **done 2026-08-05.** cron-job.org
+   polls `https://www.replie.uz/api/cron/health-check` every 60s with a bearer
+   header and alerts on failure and recovery. Runbook kept in [Health alerting →
+   Setting up cron-job.org](#setting-up-cron-joborg-one-time-operator-task). Use
+   `www`, not the apex — the apex 308s and cron-job.org does not follow redirects.
+
+   One live dependency worth knowing: that 60s poll is what makes any failed-job
+   health signal work at all, because failed jobs are swept after 300s. See
+   [traps](../reference/traps.md).
 4. **Pick a canonical host** — *not done as of 2026-08-04.* See item 7 below;
    listed twice because it is cheap and affects every link already going out.
 5. **Session revocation** — sessions are JWT-backed and cannot be revoked
@@ -865,11 +891,11 @@ reaches `/uz` through the locale middleware. Key decisions:
 7. **Pick a canonical host.** `replie.uz` currently 308s to `www.replie.uz`, so
    every advertised URL and every tracked link in a DM pays a redirect hop.
    Recommended: make the apex primary in Vercel, which needs no code change since
-   `APP_URL` is already the apex. See Q4 in [FIX_BRIEF.md](FIX_BRIEF.md).
+   `APP_URL` is already the apex. See Q4 in [FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md).
 8. **Payment rails** — blocked on merchant credentials from Click or Payme, not on
    code. Until then, plans are granted manually through
    [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
-   [FIX_BRIEF.md](FIX_BRIEF.md) for what will be needed once access arrives.
+   [FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md) for what will be needed once access arrives.
 
 ~~**Worker auto-deploy not wired**~~ — fixed and live 2026-08-05 (C4): CI SSHs
 into the VM and restarts the container after each build. `GCP_DEPLOY=true`,
@@ -943,7 +969,7 @@ from zero.
    > verification is slower and more scrutinised to re-submit than getting it right
    > once.
 
-2. **Review → App Review.** [META_APP_REVIEW.md](META_APP_REVIEW.md) already has
+2. **Review → App Review.** [META_APP_REVIEW.md](../reference/meta-app-review.md) already has
    permission justifications and a screencast script, but it is **stale in three ways**
    and will fail review as written:
    - It lists 3 permissions; the code requests **4**. `instagram_business_manage_insights`

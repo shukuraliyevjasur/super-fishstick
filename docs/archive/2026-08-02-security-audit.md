@@ -1,9 +1,13 @@
+> **ARCHIVED — not current.** Superseded by [../product/roadmap.md](../product/roadmap.md)
+> and [../product/decisions.md](../product/decisions.md). If this file disagrees with those,
+> they win. Context: [README.md](README.md). Kept for the reasoning, not the conclusions.
+
 # Security audit — 2026-08-02
 
 Full-scope audit of the app before opening it to real users. Nothing was fixed as
 part of the audit itself; **all five findings were fixed on 2026-08-03.**
 
-This is not the disclosure policy — see [SECURITY.md](SECURITY.md) for that.
+This is not the disclosure policy — see SECURITY.md (removed in the rebrand) for that.
 
 ## Findings
 

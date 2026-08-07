@@ -1,3 +1,7 @@
+> **ARCHIVED — not current.** Superseded by [../product/roadmap.md](../product/roadmap.md)
+> and [../product/decisions.md](../product/decisions.md). If this file disagrees with those,
+> they win. Context: [README.md](README.md). Kept for the reasoning, not the conclusions.
+
 # Product Expansion — replie.uz
 **Date:** 2026-08-06  
 **Status:** findings only, no implementation started  

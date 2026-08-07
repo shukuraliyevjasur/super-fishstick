@@ -1,3 +1,7 @@
+> **ARCHIVED — not current.** Superseded by [../product/roadmap.md](../product/roadmap.md)
+> and [../product/decisions.md](../product/decisions.md). If this file disagrees with those,
+> they win. Context: [README.md](README.md). Kept for the reasoning, not the conclusions.
+
 # Starting prompt for the next agent
 
 Copy the block below into a fresh agent session pointed at this repo.

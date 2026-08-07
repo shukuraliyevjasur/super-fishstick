@@ -308,7 +308,7 @@ Everything above is enough to run OpenReply for your own accounts, or a handful 
 For a stranger to connect their own Instagram to your hosted instance, Meta requires App Review granting Advanced Access on the messaging and comments permissions. That means:
 
 - A screencast of the full flow working, recorded on real accounts in one take.
-- A written justification for each permission. Drafts are in [../META_APP_REVIEW.md](../META_APP_REVIEW.md).
+- A written justification for each permission. Drafts are in [../META_APP_REVIEW.md](meta-app-review.md).
 - Business verification, which asks for a document proving a legal business entity: a business registration or license, articles of incorporation, a business tax document, or a business bank statement.
 
 Meta scrutinizes automated-DM apps and often rejects the first submission, so budget for a resubmit. If you do not have a registered business, most self-hosters skip this entirely by running their own instance for their own account, which never needs review.
