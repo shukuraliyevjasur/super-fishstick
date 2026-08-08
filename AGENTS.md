@@ -45,6 +45,6 @@ same entity. Do not design around either without asking.
 dependency change, discard it — a lockfile regenerated on Windows installs fine locally
 and breaks `npm ci` on Linux.
 
-**Baseline** (verified against the code 2026-08-07): **257 tests passing across 29 files**,
+**Baseline** (verified against the code 2026-08-07): **257 tests passing across 29 files** (does not include Prisma client — run `npm run db:generate` first),
 lint **0 errors**, typecheck silent after `npm ci`. If those stop matching, the code
 changed — find out why before starting.

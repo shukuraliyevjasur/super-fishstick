@@ -51,6 +51,8 @@ npm run typecheck && npm run lint && npm test
 
 Expected: **typecheck silent, lint 0 errors, 257 tests passing across 29 files.**
 
+> **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
+
 If those do not match, the code changed since 2026-08-07. Find out why before starting.
 Use `npm ci`, never `npm install` — see [traps](reference/traps.md).
 
@@ -116,15 +118,17 @@ All 248 tests pass unchanged. **Done.**
 Verify S1 the way it actually matters: comment the keyword from an account with **no app
 role**, and confirm the bot responds. A test from a role-holding account proves nothing.
 
-## S2 — Flows
+## S2 — Flows (started 2026-08-07, incomplete)
 
-| id | What |
-|----|------|
-| **T3** | `TelegramFlow` + `TelegramConversation` models. Flow state in Postgres, TTL sweep folded into the existing health cron. State keys on **(telegramUserId, workspaceId)**. |
-| **T5** | `/start` payload: valid, missing, garbage, campaign deleted. Resume last workspace if known. |
-| **T6** | Fallback reply when input matches no expected option, so the bot never goes silent. |
-| **E6** | Generalise `renderMessageWithoutLink` (`lib/tracking/message.ts:41`) to serve both platforms rather than writing a second renderer. |
-| **E9** | Index `lastActiveAt`, delete in batches. Unindexed sweep is a full scan on the hottest new table. |
+**⚠️ RESUME HERE.** Session ended mid-S2 due to quota exhaustion.
+
+| id | What | Status |
+|----|------|--------|
+| ~~**T3**~~ | ~~`TelegramFlow` + `TelegramConversation` models.~~ | **Done.** Schema + migration `20260807120000_add_telegram_models`. **Run `prisma migrate deploy` on the VM.** |
+| **E6** | Generalise `renderMessageWithoutLink` (`lib/tracking/message.ts:41`) to serve both platforms. Add a `platform` param (default `"instagram"`) so Telegram calls can reuse it without a second renderer. | **Start here first** — it's pure lib, no schema/infra deps. |
+| **T5** | `/start` payload handling in the webhook: valid campaign id → load flow → start conversation; missing/garbage → branded fallback; campaign deleted → graceful message. Resume last workspace if known. | Needs E6 done first. |
+| **T6** | Fallback reply in the webhook when input matches no expected option, so the bot never goes silent. | Needs T5. |
+| **E9** | TTL sweep: add a cron job (or fold into `app/api/cron/health-check/route.ts`) that deletes `TelegramConversation` rows with `lastActiveAt` older than 30 days in batches. The index exists — just needs the sweep code. | Independent, do alongside T5/T6. |
 
 ## S3 — Flow editor
 
