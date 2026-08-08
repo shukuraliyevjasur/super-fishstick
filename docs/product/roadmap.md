@@ -87,6 +87,11 @@ What the user feels: they stop drowning. The 200-DM flood becomes 200 qualified 
 
 ## Scope Decisions
 
+> **These `E` ids are not the engineering-review `E` ids.** Both sequences exist and they
+> collide at `E2`, `E4`, `E5`, `E6` — the CEO `E2` here is the conversational funnel, while
+> the engineering `E2` is a health-check threshold. See the table at the top of
+> [START-HERE.md](../START-HERE.md). Match on description, never on number alone.
+
 | # | Proposal | Effort (human / CC) | Decision | Reasoning |
 |---|----------|---------------------|----------|-----------|
 | E1′ | Telegram bot as an **optional** campaign destination, with campaign ID in the `/start` payload | ~2d / ~2h | **ACCEPTED** | Reshaped after the no-fusion ruling. Opt-in destination type; invisible to non-Telegram customers. Pasting a `t.me` link already works — this adds bot connection plus automatic campaign attribution, which is what makes per-campaign flows possible. |

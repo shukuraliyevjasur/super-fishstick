@@ -17,6 +17,46 @@ product direction.
 
 ---
 
+## D9 — The flow step schema, and how a campaign finds its flow
+
+**Date:** 2026-08-08
+**Status:** active
+**Applies to:** `TelegramFlow.steps`, the flow engine, the S3 editor
+
+### The decision
+
+`TelegramFlow.steps` is an array of steps, defined in `lib/telegram/flow-types.ts`:
+
+```ts
+{ id, message, options?: [{ label, nextStepId }], saveAnswerAs?, nextStepId? }
+```
+
+**The first step in the array is the entry point.** Every edge out of a step is either an
+option's `nextStepId` or the step's own `nextStepId`, and `null` means the path ends here.
+Answers are a flat string map keyed by `saveAnswerAs`.
+
+Buttons carry their option's **index** in `callback_data`, not the label: Telegram caps
+`callback_data` at 64 bytes, and a readable Uzbek label is UTF-8, so labels silently break
+the cap and Telegram rejects the whole message.
+
+**Until D8's flow-picker exists**, a `/start` campaign id resolves to its workspace's most
+recently updated active flow.
+
+### Why
+
+The engine had to ship before the editor, so something had to define the serialization
+format. One traversal model — "an edge is a `nextStepId`, `null` ends the path" — is what
+makes D5's validation cheap: an unreachable branch is a step nothing points at, and a path
+with no terminal state is a cycle with no `null`. A shape that needed a second traversal
+model for validation would have made D5 expensive enough to be at risk, and D5 is the
+condition on which D7's drill-in editing model was accepted.
+
+The campaign→flow resolution is explicitly a **placeholder for D8**, not a competing
+design. Every workspace that exists today has at most one flow, so the ambiguity is
+theoretical; when the flow-picker lands, this rule is deleted rather than adjusted.
+
+---
+
 ## D8 — Flows are a top-level, reusable asset
 
 **Date:** 2026-08-07

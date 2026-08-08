@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { createDMWorker } from "@/lib/queue/dm-worker";
+import { createTelegramWorker } from "@/lib/queue/telegram-worker";
 import { recordWorkerHeartbeat } from "@/lib/ops/worker-health";
 import { reconcileComments } from "@/lib/polling/comment-reconciler";
 import os from "node:os";
@@ -21,6 +22,11 @@ process.on("unhandledRejection", (reason) => {
 });
 
 const worker = createDMWorker();
+// One process, two processors (E4). A second process would be a second thing
+// that can die silently, and the health signal only watches this one.
+const telegramWorker = process.env.TELEGRAM_BOT_TOKEN
+  ? createTelegramWorker()
+  : null;
 const startedAt = new Date().toISOString();
 const HEARTBEAT_INTERVAL_MS = 30_000;
 // Polling safety net for comments that webhooks miss. Runs in the worker because
@@ -29,7 +35,11 @@ const POLL_INTERVAL_MS = Number(
   process.env.COMMENT_POLL_INTERVAL_MS ?? 5 * 60_000
 );
 
-console.log("[DM Worker] Started");
+console.log(
+  telegramWorker
+    ? "[DM Worker] Started (Instagram + Telegram)"
+    : "[DM Worker] Started (Instagram only — TELEGRAM_BOT_TOKEN not set)"
+);
 
 async function heartbeat() {
   try {
@@ -64,7 +74,7 @@ async function shutdown(signal: string) {
   console.log(`[DM Worker] ${signal} received, closing worker`);
   clearInterval(heartbeatTimer);
   clearInterval(pollTimer);
-  await worker.close();
+  await Promise.all([worker.close(), telegramWorker?.close()]);
   process.exit(0);
 }
 

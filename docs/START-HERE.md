@@ -49,18 +49,39 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 262 tests passing across 29 files.**
+Expected: **typecheck silent, lint 0 errors, 288 tests passing across 31 files.**
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
-> **Note (2026-08-08):** Every Vercel production build since `55f34e4` failed by hanging
-> for the full 45-minute limit in `prisma migrate deploy` against the port-6543
-> transaction pooler. `prisma.config.ts` now uses `DIRECT_URL` for migrations — **set
-> `DIRECT_URL` in Vercel to the session pooler on port 5432** or the builds keep hanging.
-> See [traps](reference/traps.md). Production is still serving `5112597`.
+> **Note (2026-08-08, resolved):** Every Vercel production build between `55f34e4` and
+> `6621abc` failed by hanging the full 45-minute limit in `prisma migrate deploy` against
+> the port-6543 transaction pooler. Fixed in `7dbfddd`: `prisma.config.ts` reads
+> `DIRECT_URL` for migrations, and `DIRECT_URL` is set in Vercel to the session pooler on
+> port 5432. Deploys are green again and the T3 migration applied on the way through.
+> **Anywhere else migrations run needs the same variable** — see [traps](reference/traps.md).
 
 If those do not match, the code changed since 2026-08-07. Find out why before starting.
 Use `npm ci`, never `npm install` — see [traps](reference/traps.md).
+
+---
+
+## Read the ids carefully: `E` means two different things
+
+The three review passes numbered their findings independently and nobody reconciled them,
+so there are **two unrelated `E` sequences** and they collide at `E2`, `E4`, `E5` and `E6`:
+
+| id | In this file and the eng-review table | In the CEO scope table (`roadmap.md`) |
+|----|---------------------------------------|----------------------------------------|
+| `E2` | Health signal on `getWorkerAlerts()` | The whole conversational funnel |
+| `E4` | Split queue processors per platform | Mini App client reports |
+| `E5` | Decompose `campaign-builder.tsx` | Telegram Payments (deferred) |
+| `E6` | Generalise the message renderer | Broadcast to a campaign's audience |
+
+**Every `E` id in this file is the engineering-review one.** The CEO ids appear only in
+`roadmap.md`'s scope table, where two of them carry a prime (`E1′`, `E3′`) — a prime is a
+reliable tell, its absence is not. When in doubt, match on the description, not the number.
+
+The `T` and `D` sequences are unambiguous.
 
 ---
 
@@ -115,8 +136,8 @@ All 248 tests pass unchanged. **Done.**
 |----|------|--------|
 | ~~**E1**~~ | ~~Redis singleton → named web/worker connections.~~ | **Done.** `getRedisConnection()` (fail-fast) + `getWorkerConnection()` (persistent). |
 | ~~**E3**~~ | ~~grammY client wrapper.~~ | **Done.** `lib/telegram/client.ts` — Bot, sendMessage, error mapping. |
-| **E4** | Split queue processors into per-platform modules with one bootstrap. | Deferred — happens naturally when Telegram processing lands in S2. |
-| ~~**T1**~~ | ~~Telegram webhook endpoint.~~ | **Done.** `app/api/telegram/webhook/route.ts` — verifies secret token, returns 200. |
+| ~~**E4**~~ | ~~Split queue processors into per-platform modules with one bootstrap.~~ | **Done 2026-08-08 in S2**, as predicted — see the S2 table. |
+| ~~**T1**~~ | ~~Telegram webhook endpoint.~~ | **Done.** `app/api/telegram/webhook/route.ts` — verifies the secret token, enqueues to `telegram-processing`, returns 200. |
 | **T4** | Shared `@replie_bot` by default, optional own-bot token. | Shared bot works via env var. Own-bot schema deferred to when it's needed. |
 | ~~**T7**~~ | ~~Map Telegram 401/403/429/400, honor retry_after.~~ | **Done.** In `lib/telegram/client.ts` — typed `TelegramSendResult`. |
 | ~~**T13**~~ | ~~Reuse rate-limiter for Telegram's 30 msg/s.~~ | **Done.** `reserveTelegramSlot()` in `lib/telegram/client.ts`. |
@@ -132,9 +153,20 @@ role**, and confirm the bot responds. A test from a role-holding account proves 
 |----|------|--------|
 | ~~**T3**~~ | ~~`TelegramFlow` + `TelegramConversation` models.~~ | **Done.** Schema + migration `20260807120000_add_telegram_models`, **applied to production 2026-08-08** by the Vercel build. No VM step needed. |
 | ~~**E6**~~ | ~~Generalise `renderMessageWithoutLink`.~~ | **Done 2026-08-08.** `platform` param (default `"instagram"`), `recipientName` alongside the original `commenterName`, rules in `PLATFORM_RULES`. Both platforms render identically today — pinned by a test so a future divergence has to be deliberate. |
-| **T5** | `/start` payload handling in the webhook: valid campaign id → load flow → start conversation; missing/garbage → branded fallback; campaign deleted → graceful message. Resume last workspace if known. | **Start here** — E6 is done, so nothing blocks it. |
-| **T6** | Fallback reply in the webhook when input matches no expected option, so the bot never goes silent. | Needs T5. |
-| **E9** | TTL sweep: add a cron job (or fold into `app/api/cron/health-check/route.ts`) that deletes `TelegramConversation` rows with `lastActiveAt` older than 30 days in batches. The index exists — just needs the sweep code. | Independent, do alongside T5/T6. |
+| ~~**T5**~~ | ~~`/start` payload handling.~~ | **Done 2026-08-08.** `lib/queue/telegram-worker.ts`. Valid campaign id → workspace's active flow → conversation at the entry step. Deleted campaign and garbage payload give the same answer on purpose (distinguishing them leaks whether an id existed). Bare `/start` resumes the last workspace. Step schema is **D9**. |
+| ~~**T6**~~ | ~~Never-silent fallback.~~ | **Done 2026-08-08.** Unrecognised reply → "did not understand" + the prompt re-sent with its keyboard, and the step does **not** advance. Also covers: typing at a bot you never started, and a flow edited out from under a live conversation. |
+| ~~**E4**~~ | ~~Split queue processors per platform.~~ | **Done 2026-08-08** — landed with T5 exactly as predicted. Separate `telegram-processing` queue, one worker process boots both (`worker/dm-worker.ts`). |
+| **E9** | TTL sweep: add a cron job (or fold into `app/api/cron/health-check/route.ts`) that deletes `TelegramConversation` rows with `lastActiveAt` older than 30 days in batches. The index exists — just needs the sweep code. | **Only S2 item left.** Independent. |
+
+> **Not yet wired to anything.** The engine runs, but nothing creates a `TelegramFlow`
+> (that is S3) and no campaign emits a `t.me/…?start=<campaignId>` link (that is **T10**,
+> in S4). To exercise it end to end today you must insert a flow row by hand. The bot
+> answers every path safely meanwhile — an unstarted user gets `BOT_COPY.noPayload`, not
+> silence.
+>
+> Bot-facing copy is in `lib/telegram/copy.ts`, in one file so it can be rewritten without
+> touching the engine. It is placeholder-quality Uzbek written by an engineer — **it wants
+> a pass from someone who sells to these customers.**
 
 ## S3 — Flow editor
 

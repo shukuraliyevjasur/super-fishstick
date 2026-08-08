@@ -86,3 +86,39 @@ export function getDMQueue(): Queue<DmQueueJob> {
   }
   return dmQueue;
 }
+
+// ─── Telegram Queue (T5) ────────────────────────────────────────────────────────
+// A separate queue rather than a job type on `dm-processing`: the two have
+// different failure modes and different rate limits, and a backed-up Telegram
+// flow must not delay an Instagram DM. This is issue 4's per-platform split
+// (E4) arriving where the roadmap said it would — with the second processor.
+
+/** A raw Telegram update, handed off from the webhook untouched. */
+export interface ProcessTelegramUpdateJob {
+  update: unknown;
+}
+
+export type TelegramQueueJob = ProcessTelegramUpdateJob;
+
+export const TELEGRAM_UPDATE_JOB_NAME = "process-telegram-update";
+
+let telegramQueue: Queue<TelegramQueueJob> | null = null;
+
+export function getTelegramQueue(): Queue<TelegramQueueJob> {
+  if (!telegramQueue) {
+    telegramQueue = new Queue<TelegramQueueJob>("telegram-processing", {
+      connection: getRedisConnection(),
+      defaultJobOptions: {
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { age: 300, count: 2000 },
+        // Telegram redelivers an update if the webhook does not 200, and the
+        // webhook 200s before this job runs. Retries here are ours alone, so
+        // keep them few: a user waiting on a reply is not helped by attempt 3
+        // arriving a minute later.
+        attempts: 2,
+        backoff: { type: "fixed", delay: 2000 },
+      },
+    });
+  }
+  return telegramQueue;
+}
