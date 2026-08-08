@@ -62,6 +62,17 @@ export default function Sidebar({
       ),
     },
     {
+      label: dict.sidebar.flows,
+      path: "/flows",
+      icon: (
+        <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="3" width="16" height="5" rx="1.5"/>
+          <rect x="9" y="16" width="11" height="5" rx="1.5"/>
+          <path d="M7 8v6.5A1.5 1.5 0 008.5 16H9"/>
+        </svg>
+      ),
+    },
+    {
       label: dict.sidebar.logs,
       path: "/logs",
       icon: (

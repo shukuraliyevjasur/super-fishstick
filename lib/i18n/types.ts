@@ -23,6 +23,7 @@ export interface Dict {
     stats: string
     inbox: string
     campaigns: string
+    flows: string
     logs: string
     settings: string
     diagnostics: string
@@ -228,6 +229,62 @@ export interface Dict {
     noActivity: string
     noActivitySub: string
     createCampaign: string
+  }
+
+  flows: {
+    title: string
+    subtitle: string
+    newBtn: string
+    countLabel: string
+    emptyTitle: string
+    emptyDesc: string
+    templatePickerTitle: string
+    templatePickerDesc: string
+    startBlank: string
+    stepCount: string
+    conversationCount: string
+    statusActive: string
+    statusPaused: string
+    hasErrors: string
+    hasWarnings: string
+    deleteConfirm: string
+    deleteBtn: string
+    cancelBtn: string
+    createFailed: string
+    nameLabel: string
+    namePlaceholder: string
+  }
+
+  flowEditor: {
+    backToFlows: string
+    rootCrumb: string
+    save: string
+    saving: string
+    saved: string
+    saveFailed: string
+    tabEdit: string
+    tabPreview: string
+    messageLabel: string
+    messagePlaceholder: string
+    saveAnswerLabel: string
+    saveAnswerPlaceholder: string
+    optionsLabel: string
+    addOption: string
+    optionLabelPlaceholder: string
+    optionEnds: string
+    optionGoesTo: string
+    openBranch: string
+    addStep: string
+    deleteStep: string
+    deleteOption: string
+    stepBadge: string
+    validTitle: string
+    errorsTitle: string
+    warningsTitle: string
+    previewTitle: string
+    previewEmpty: string
+    activeLabel: string
+    enteredBranch: string
   }
 
   campaigns: {
