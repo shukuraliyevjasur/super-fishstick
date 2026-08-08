@@ -93,15 +93,17 @@ model Workspace {
   // plan stops working the moment it expires rather than when a cron notices.
   planExpiresAt     DateTime?
 
-  members           WorkspaceMember[]
-  invitations       WorkspaceInvitation[]
-  instagramAccounts InstagramAccount[]
-  automations       Automation[]
-  dmLogs            DmLog[]
-  trackedLinks      TrackedLink[]
-  linkClicks        LinkClick[]
-  webhookEvents     WebhookEvent[]
-  operationalEvents OperationalEvent[]
+  members                WorkspaceMember[]
+  invitations            WorkspaceInvitation[]
+  instagramAccounts      InstagramAccount[]
+  automations            Automation[]
+  dmLogs                 DmLog[]
+  trackedLinks           TrackedLink[]
+  linkClicks             LinkClick[]
+  webhookEvents          WebhookEvent[]
+  operationalEvents      OperationalEvent[]
+  telegramFlows          TelegramFlow[]
+  telegramConversations  TelegramConversation[]
 
   @@index([ownerId])
   @@index([planExpiresAt])
@@ -332,6 +334,45 @@ model OperationalEvent {
   @@index([source])
   @@index([level])
   @@index([createdAt])
+}
+
+// Top-level flow definition. Steps are a JSON tree — the editor reads and
+// writes the whole tree at once. Separate from Automation (Issue 4 in
+// roadmap.md): Automation is Instagram-shaped and already ~30 fields.
+model TelegramFlow {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  steps       Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace     Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversations TelegramConversation[]
+
+  @@index([workspaceId])
+}
+
+// Per-user conversation state, keyed on (telegramUserId, workspaceId) per D5.
+// lastActiveAt drives the TTL sweep (E9) folded into the existing health cron.
+model TelegramConversation {
+  id              String   @id @default(cuid())
+  telegramUserId  BigInt
+  workspaceId     String
+  flowId          String
+  currentStepId   String?
+  answers         Json     @default("{}")
+  lastActiveAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  flow      TelegramFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+
+  @@unique([telegramUserId, workspaceId])
+  @@index([workspaceId])
+  @@index([flowId])
+  @@index([lastActiveAt])
 }
 
 enum WorkspacePlan {
