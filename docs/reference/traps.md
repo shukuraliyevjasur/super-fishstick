@@ -62,6 +62,32 @@ Pushing to `main` runs `prisma migrate deploy` against the live database. Know w
 
 ---
 
+## `prisma migrate deploy` hangs forever on the transaction-mode pooler
+
+**Cost: six failed production deploys on 2026-08-07, each burning the full 45-minute
+build limit.** Symptom: the Vercel build log stops dead after
+
+```
+Datasource "db": PostgreSQL database "postgres", schema "public" at "…pooler.supabase.com:6543"
+```
+
+and nothing follows until the timeout. No error, no stack trace — which is why it reads
+like a Vercel outage rather than a config problem.
+
+Cause: T17 moved `DATABASE_URL` to Supabase's transaction-mode pooler (port **6543**),
+which is correct for serverless *runtime*. But `prisma migrate deploy` first takes a
+**session-level advisory lock**, and pgbouncer in transaction mode never grants one. The
+command waits, forever.
+
+Fix, already in the repo: `prisma.config.ts` reads `DIRECT_URL` for migrations and falls
+back to `DATABASE_URL`. **`DIRECT_URL` must be set in Vercel** (and anywhere else
+migrations run) to the *session*-mode pooler on port **5432**, same host and credentials.
+Runtime keeps 6543.
+
+Rule of thumb: 6543 for queries, 5432 for anything that migrates.
+
+---
+
 ## The middleware matcher is load-bearing
 
 `proxy.ts` prefixes every unprefixed path with a locale. Anything with no page under

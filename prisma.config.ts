@@ -9,6 +9,10 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations must not run over Supabase's transaction-mode pooler (port 6543):
+    // `migrate deploy` takes a session-level advisory lock, which pgbouncer in
+    // transaction mode never grants, so the command hangs until the build times out.
+    // DIRECT_URL is the session-mode pooler (port 5432). Runtime keeps DATABASE_URL.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });

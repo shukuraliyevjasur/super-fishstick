@@ -53,6 +53,12 @@ Expected: **typecheck silent, lint 0 errors, 257 tests passing across 29 files.*
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
+> **Note (2026-08-08):** Every Vercel production build since `55f34e4` failed by hanging
+> for the full 45-minute limit in `prisma migrate deploy` against the port-6543
+> transaction pooler. `prisma.config.ts` now uses `DIRECT_URL` for migrations — **set
+> `DIRECT_URL` in Vercel to the session pooler on port 5432** or the builds keep hanging.
+> See [traps](reference/traps.md). Production is still serving `5112597`.
+
 If those do not match, the code changed since 2026-08-07. Find out why before starting.
 Use `npm ci`, never `npm install` — see [traps](reference/traps.md).
 
