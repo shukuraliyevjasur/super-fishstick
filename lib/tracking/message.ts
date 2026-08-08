@@ -35,18 +35,49 @@ export function replaceUrlWithTrackedPlaceholder(
 }
 
 /**
+ * The platforms that share this renderer. Instagram is the default so every
+ * existing call site keeps its current behaviour without being touched (E6).
+ */
+export type MessagePlatform = "instagram" | "telegram";
+
+/**
+ * Per-platform rendering rules.
+ *
+ * Both entries are identical today, and that is the finding rather than an
+ * oversight: the two channels differ in how a link is *delivered* (Instagram
+ * attaches a generic-template button, Telegram an inline keyboard) but not in
+ * how the body text is substituted. The seam exists so a Telegram-specific rule
+ * — a different fallback name, say — has one obvious home, instead of a second
+ * renderer drifting out of sync with this one.
+ */
+const PLATFORM_RULES: Record<MessagePlatform, { fallbackName: string }> = {
+  instagram: { fallbackName: "do'stim" },
+  telegram: { fallbackName: "do'stim" },
+};
+
+/**
  * Personalize {username} and strip the {link} token — used when the link is
  * delivered as a separate button rather than inline in the message text.
+ *
+ * `recipientName` is whoever the message is addressed to: the commenter on
+ * Instagram, the Telegram user's first name on Telegram. `commenterName` is
+ * the original Instagram-shaped name for it and still works.
  */
 export function renderMessageWithoutLink({
   message,
+  recipientName,
   commenterName,
+  platform = "instagram",
 }: {
   message: string;
+  recipientName?: string | null;
   commenterName?: string | null;
+  platform?: MessagePlatform;
 }) {
+  const name = recipientName ?? commenterName;
+
   return message
-    .replace(/\{username\}/gi, commenterName ?? "do'stim")
+    .replace(/\{username\}/gi, name ?? PLATFORM_RULES[platform].fallbackName)
     .replace(/\s*\{link\}\s*/gi, " ")
     .trim();
 }

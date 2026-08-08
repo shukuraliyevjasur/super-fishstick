@@ -26,15 +26,15 @@ that are not negotiable.
 - [reference/setup.md](reference/setup.md) — local setup
 - [reference/stack.md](reference/stack.md) — stack overview
 
-## Current state (verified 2026-08-07 against the code, not the docs)
+## Current state (verified 2026-08-08 against the code, not the docs)
 
 ```
-tests      240 passing across 26 files   (npm test)
+tests      262 passing across 29 files   (npm test)
 lint       0 errors                      (npm run lint)
 typecheck  silent                        (npm run typecheck)
 ```
 
-All three verified green on 2026-08-07 after `npm ci`. If typecheck reports
+All three verified green on 2026-08-08 after `npm ci`. If typecheck reports
 `TS2307: Cannot find module '@sentry/nextjs'`, your `node_modules` is behind the
 lockfile — run `npm ci`, never `npm install` (see [traps](reference/traps.md)).
 

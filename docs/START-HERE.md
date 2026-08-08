@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 257 tests passing across 29 files.**
+Expected: **typecheck silent, lint 0 errors, 262 tests passing across 29 files.**
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
@@ -130,9 +130,9 @@ role**, and confirm the bot responds. A test from a role-holding account proves 
 
 | id | What | Status |
 |----|------|--------|
-| ~~**T3**~~ | ~~`TelegramFlow` + `TelegramConversation` models.~~ | **Done.** Schema + migration `20260807120000_add_telegram_models`. **Run `prisma migrate deploy` on the VM.** |
-| **E6** | Generalise `renderMessageWithoutLink` (`lib/tracking/message.ts:41`) to serve both platforms. Add a `platform` param (default `"instagram"`) so Telegram calls can reuse it without a second renderer. | **Start here first** — it's pure lib, no schema/infra deps. |
-| **T5** | `/start` payload handling in the webhook: valid campaign id → load flow → start conversation; missing/garbage → branded fallback; campaign deleted → graceful message. Resume last workspace if known. | Needs E6 done first. |
+| ~~**T3**~~ | ~~`TelegramFlow` + `TelegramConversation` models.~~ | **Done.** Schema + migration `20260807120000_add_telegram_models`, **applied to production 2026-08-08** by the Vercel build. No VM step needed. |
+| ~~**E6**~~ | ~~Generalise `renderMessageWithoutLink`.~~ | **Done 2026-08-08.** `platform` param (default `"instagram"`), `recipientName` alongside the original `commenterName`, rules in `PLATFORM_RULES`. Both platforms render identically today — pinned by a test so a future divergence has to be deliberate. |
+| **T5** | `/start` payload handling in the webhook: valid campaign id → load flow → start conversation; missing/garbage → branded fallback; campaign deleted → graceful message. Resume last workspace if known. | **Start here** — E6 is done, so nothing blocks it. |
 | **T6** | Fallback reply in the webhook when input matches no expected option, so the bot never goes silent. | Needs T5. |
 | **E9** | TTL sweep: add a cron job (or fold into `app/api/cron/health-check/route.ts`) that deletes `TelegramConversation` rows with `lastActiveAt` older than 30 days in batches. The index exists — just needs the sweep code. | Independent, do alongside T5/T6. |
 

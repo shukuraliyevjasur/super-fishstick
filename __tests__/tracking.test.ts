@@ -7,6 +7,7 @@ import {
 import {
   buildTrackedUrl,
   extractFirstUrl,
+  renderMessageWithoutLink,
   renderMessageWithTracking,
   replaceUrlWithTrackedPlaceholder,
 } from "../lib/tracking/message";
@@ -76,6 +77,59 @@ describe("tracked link messages", () => {
     expect(buildTrackedUrl("abc123", "https://manychat-alternative.com/")).toBe(
       "https://manychat-alternative.com/r/abc123"
     );
+  });
+});
+
+describe("renderMessageWithoutLink across platforms (E6)", () => {
+  it("substitutes the name and strips the link token", () => {
+    expect(
+      renderMessageWithoutLink({
+        message: "Salom {username}! Havola: {link}",
+        recipientName: "Aziz",
+      })
+    ).toBe("Salom Aziz! Havola:");
+  });
+
+  it("falls back to do'stim when no name is known", () => {
+    expect(
+      renderMessageWithoutLink({ message: "Salom {username}!" })
+    ).toBe("Salom do'stim!");
+  });
+
+  // The point of E6: one renderer, not two. If these ever diverge it must be a
+  // deliberate entry in PLATFORM_RULES, not an accident.
+  it("renders identically for Telegram and Instagram", () => {
+    const message = "Salom {username}! Havolangiz: {link} — rahmat";
+
+    expect(renderMessageWithoutLink({ message, platform: "telegram" })).toBe(
+      renderMessageWithoutLink({ message, platform: "instagram" })
+    );
+    expect(
+      renderMessageWithoutLink({
+        message,
+        recipientName: "Dilnoza",
+        platform: "telegram",
+      })
+    ).toBe("Salom Dilnoza! Havolangiz: — rahmat");
+  });
+
+  it("still accepts the Instagram-shaped commenterName", () => {
+    expect(
+      renderMessageWithoutLink({
+        message: "Salom {username}!",
+        commenterName: "Aziz",
+      })
+    ).toBe("Salom Aziz!");
+  });
+
+  it("prefers recipientName when both are given", () => {
+    expect(
+      renderMessageWithoutLink({
+        message: "Salom {username}!",
+        recipientName: "Dilnoza",
+        commenterName: "Aziz",
+      })
+    ).toBe("Salom Dilnoza!");
   });
 });
 
