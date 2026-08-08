@@ -317,6 +317,13 @@ export const en: Dict = {
     previewEmpty: "Write the message text and it appears here.",
     activeLabel: "Active",
     enteredBranch: "Opened the {{label}} branch",
+    testSend: "Test send",
+    testSending: "Sending...",
+    testSent: "Sent to Telegram ✅",
+    testFailed: "Could not send",
+    testNeedsLink: "Link your own Telegram account first.",
+    testLinkBtn: "Link Telegram",
+    testLinkHint: "The bot opens — press Start, then come back here.",
   },
 
   campaigns: {

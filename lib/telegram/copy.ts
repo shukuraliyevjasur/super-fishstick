@@ -41,4 +41,14 @@ export const BOT_COPY = {
 
   /** The conversation ran off the end of the flow. */
   finished: "Rahmat! 🙏 Javoblaringiz qabul qilindi.",
+
+  /** D4 — the builder's own account is now bound; test sends will arrive here. */
+  linked:
+    "Akkauntingiz ulandi ✅\n\nEndi replie'da «Sinov yuborish» tugmasini bosing — " +
+    "oqim shu yerga keladi.",
+
+  /** The link code was unknown, already used, or older than 15 minutes. */
+  linkFailed:
+    "Bu havola eskirgan yoki allaqachon ishlatilgan. " +
+    "replie'da yangi havola oling va qaytadan urinib ko'ring.",
 } as const;

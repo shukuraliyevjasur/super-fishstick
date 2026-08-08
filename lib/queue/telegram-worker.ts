@@ -18,12 +18,14 @@ import {
   getWorkerConnection,
   type TelegramQueueJob,
 } from "@/lib/queue/client";
+import { getSharedBot } from "@/lib/telegram/client";
 import {
-  getSharedBot,
-  reserveTelegramSlot,
-  sendMessage,
-  type TelegramSendResult,
-} from "@/lib/telegram/client";
+  CALLBACK_PREFIX,
+  sendStepTo,
+  sendText,
+  startConversation,
+} from "@/lib/telegram/engine";
+import { isLinkPayload, redeemLinkCode } from "@/lib/telegram/link";
 import { BOT_COPY } from "@/lib/telegram/copy";
 import {
   expectsFreeText,
@@ -36,9 +38,7 @@ import {
 } from "@/lib/telegram/flow-types";
 import { renderMessageWithoutLink } from "@/lib/tracking/message";
 
-const SHARED_BOT_ID = "shared";
 const START_COMMAND = "/start";
-const CALLBACK_PREFIX = "opt:";
 
 // ─── Update parsing ─────────────────────────────────────────────────────────────
 
@@ -138,49 +138,13 @@ export function isStartCommand(text: string): boolean {
 
 // ─── Sending ────────────────────────────────────────────────────────────────────
 
-/**
- * Buttons carry their option's index, not its label: `callback_data` is capped
- * at 64 bytes and Uzbek labels are UTF-8, so a readable label can silently
- * exceed the cap and Telegram rejects the whole message.
- */
-function buildKeyboard(step: FlowStep) {
-  if (!step.options?.length) return undefined;
-  return {
-    inline_keyboard: step.options.map((option, index) => [
-      { text: option.label, callback_data: `${CALLBACK_PREFIX}${index}` },
-    ]),
-  };
+/** Sending lives in lib/telegram/engine.ts so the test send (D4) shares it. */
+async function send(chatId: number, text: string, step?: FlowStep) {
+  return sendText(chatId, text, step);
 }
 
-async function send(
-  chatId: number,
-  text: string,
-  step?: FlowStep
-): Promise<TelegramSendResult> {
-  const allowed = await reserveTelegramSlot(SHARED_BOT_ID);
-  if (!allowed) {
-    // Out of budget for this second. Throwing hands it back to BullMQ, which
-    // is the only actor that can wait without holding a worker slot open.
-    throw new Error("Telegram rate limit reached");
-  }
-
-  const bot = getSharedBot();
-  const replyMarkup = step ? buildKeyboard(step) : undefined;
-  return sendMessage(
-    bot.api,
-    chatId,
-    text,
-    replyMarkup ? { reply_markup: replyMarkup } : undefined
-  );
-}
-
-async function sendStep(event: IncomingEvent, step: FlowStep): Promise<TelegramSendResult> {
-  const text = renderMessageWithoutLink({
-    message: step.message,
-    recipientName: event.firstName,
-    platform: "telegram",
-  });
-  return send(event.chatId, text, step);
+async function sendStep(event: IncomingEvent, step: FlowStep) {
+  return sendStepTo(event.chatId, step, event.firstName);
 }
 
 /**
@@ -200,6 +164,22 @@ async function acknowledgeTap(event: IncomingEvent) {
 // ─── /start (T5) ────────────────────────────────────────────────────────────────
 
 async function handleStart(event: IncomingEvent, payload: string | null) {
+  // D4: the builder linking their own Telegram so a test send has somewhere to
+  // go. Checked before the campaign lookup, since a link code is not a
+  // campaign id and must never be reported as a dead link.
+  if (payload && isLinkPayload(payload)) {
+    const userId = await redeemLinkCode(
+      payload,
+      event.telegramUserId,
+      BigInt(event.chatId)
+    );
+    await send(
+      event.chatId,
+      userId ? BOT_COPY.linked : BOT_COPY.linkFailed
+    );
+    return;
+  }
+
   if (!payload) {
     // No campaign id. Someone opened the bot directly, or tapped /start again
     // mid-conversation — resume where they were rather than dead-ending them.
@@ -257,31 +237,16 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     return;
   }
 
-  await prisma.telegramConversation.upsert({
-    where: {
-      telegramUserId_workspaceId: {
-        telegramUserId: event.telegramUserId,
-        workspaceId: automation.workspaceId,
-      },
-    },
-    create: {
-      telegramUserId: event.telegramUserId,
-      workspaceId: automation.workspaceId,
-      flowId: flow.id,
-      currentStepId: entry.id,
-      answers: {},
-    },
-    // A second /start restarts the funnel: same person, fresh run, previous
-    // answers cleared so a half-finished attempt cannot contaminate this one.
-    update: {
-      flowId: flow.id,
-      currentStepId: entry.id,
-      answers: {},
-      lastActiveAt: new Date(),
-    },
+  // A second /start restarts the funnel: same person, fresh run, previous
+  // answers cleared so a half-finished attempt cannot contaminate this one.
+  await startConversation({
+    workspaceId: automation.workspaceId,
+    flowId: flow.id,
+    entryStep: entry,
+    telegramUserId: event.telegramUserId,
+    chatId: event.chatId,
+    recipientName: event.firstName,
   });
-
-  await sendStep(event, entry);
 }
 
 /** The most recent workspace this user talked to, if any. */

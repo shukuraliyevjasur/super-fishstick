@@ -24,6 +24,8 @@ model User {
 
   accounts          Account[]
   sessions          Session[]
+  telegramLink      TelegramLink?
+  telegramLinkCodes TelegramLinkCode[]
   ownedWorkspaces   Workspace[]       @relation("WorkspaceOwner")
   workspaceMembers  WorkspaceMember[]
   sentInvitations   WorkspaceInvitation[] @relation("WorkspaceInvitationsSent")
@@ -349,6 +351,34 @@ model OperationalEvent {
 // Top-level flow definition. Steps are a JSON tree — the editor reads and
 // writes the whole tree at once. Separate from Automation (Issue 4 in
 // roadmap.md): Automation is Instagram-shaped and already ~30 fields.
+/// D4: binds a builder's own Telegram account to their replie user, so a test
+/// send has somewhere to go. One Telegram account per user — re-linking
+/// replaces the binding rather than accumulating rows.
+model TelegramLink {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  telegramUserId BigInt
+  chatId         BigInt
+  linkedAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Short-lived one-time code carried in a /start payload. Opaque and stored
+/// rather than signed: Telegram caps the payload at 64 characters, which an
+/// HMAC token does not fit, and a stored code can be revoked.
+model TelegramLinkCode {
+  code      String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 model TelegramFlow {
   id          String   @id @default(cuid())
   workspaceId String

@@ -285,6 +285,13 @@ export interface Dict {
     previewEmpty: string
     activeLabel: string
     enteredBranch: string
+    testSend: string
+    testSending: string
+    testSent: string
+    testFailed: string
+    testNeedsLink: string
+    testLinkBtn: string
+    testLinkHint: string
   }
 
   campaigns: {

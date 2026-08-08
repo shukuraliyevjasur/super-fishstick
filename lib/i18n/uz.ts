@@ -318,6 +318,13 @@ export const uz: Dict = {
     previewEmpty: "Xabar matnini yozing — bu yerda ko'rinadi.",
     activeLabel: "Faol",
     enteredBranch: "{{label}} tarmog'i ochildi",
+    testSend: "Sinov yuborish",
+    testSending: "Yuborilmoqda...",
+    testSent: "Telegramga yuborildi ✅",
+    testFailed: "Yuborilmadi",
+    testNeedsLink: "Avval o'z Telegram akkauntingizni ulang.",
+    testLinkBtn: "Telegramni ulash",
+    testLinkHint: "Bot ochiladi — «Start» tugmasini bosing, keyin qaytib keling.",
   },
 
   campaigns: {

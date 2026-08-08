@@ -317,6 +317,13 @@ export const ru: Dict = {
     previewEmpty: "Напишите текст — он появится здесь.",
     activeLabel: "Активен",
     enteredBranch: "Открыта ветка «{{label}}»",
+    testSend: "Тестовая отправка",
+    testSending: "Отправляем...",
+    testSent: "Отправлено в Telegram ✅",
+    testFailed: "Не отправилось",
+    testNeedsLink: "Сначала подключите свой Telegram-аккаунт.",
+    testLinkBtn: "Подключить Telegram",
+    testLinkHint: "Откроется бот — нажмите «Start» и вернитесь сюда.",
   },
 
   campaigns: {

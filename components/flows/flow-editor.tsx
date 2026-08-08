@@ -37,6 +37,10 @@ export default function FlowEditor({
   const [isActive, setIsActive] = useState(initialActive);
   const [crumbs, setCrumbs] = useState<Crumb[]>([]);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
+  const [testStatus, setTestStatus] = useState<
+    "idle" | "sending" | "sent" | "failed" | "needs-link"
+  >("idle");
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
   // D6: below the tablet breakpoint Edit and Preview are tabs, not columns —
   // a stacked preview falls below the fold and stops being a destination.
   const [tab, setTab] = useState<"edit" | "preview">("edit");
@@ -164,6 +168,35 @@ export default function FlowEditor({
     setCrumbs(safeCrumbs.slice(0, index));
   }
 
+  /**
+   * D4: a real send through the real bot, not a simulation. Needs the builder's
+   * own Telegram bound first — 409 is that case, and it is a step rather than
+   * a failure.
+   */
+  async function testSend() {
+    setTestStatus("sending");
+    setLinkUrl(null);
+
+    try {
+      const response = await fetch(`/api/flows/${flowId}/test-send`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (response.status === 409 && data.needsLink) {
+        const linkResponse = await fetch("/api/telegram/link", { method: "POST" });
+        const linkData = await linkResponse.json();
+        setLinkUrl(linkData.success ? linkData.url : null);
+        setTestStatus("needs-link");
+        return;
+      }
+
+      setTestStatus(response.ok && data.success ? "sent" : "failed");
+    } catch {
+      setTestStatus("failed");
+    }
+  }
+
   async function save() {
     setStatus("saving");
     try {
@@ -216,6 +249,22 @@ export default function FlowEditor({
             {e.activeLabel}
           </label>
 
+          {/* D4 — disabled while the flow is invalid: watching a broken funnel
+              half-work on your own phone is not information. */}
+          <button
+            onClick={() => void testSend()}
+            disabled={testStatus === "sending" || !validation.valid}
+            className="rounded-md border border-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            {testStatus === "sending"
+              ? e.testSending
+              : testStatus === "sent"
+                ? e.testSent
+                : testStatus === "failed"
+                  ? e.testFailed
+                  : e.testSend}
+          </button>
+
           <button
             onClick={() => void save()}
             disabled={status === "saving" || !validation.valid}
@@ -231,6 +280,25 @@ export default function FlowEditor({
           </button>
         </div>
       </div>
+
+      {testStatus === "needs-link" && (
+        <div className="rounded-md border border-border bg-surface px-3 py-2">
+          <p className="text-xs text-foreground">{e.testNeedsLink}</p>
+          {linkUrl && (
+            <>
+              <a
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+              >
+                {e.testLinkBtn}
+              </a>
+              <p className="mt-1 text-xs text-subtle">{e.testLinkHint}</p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* D5 summary. Errors block the save button above. */}
       <div className="space-y-2">

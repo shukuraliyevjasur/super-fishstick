@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockPrisma, mockSendMessage, mockReserveSlot, mockAnswerCallbackQuery } =
-  vi.hoisted(() => ({
+const {
+  mockPrisma,
+  mockSendMessage,
+  mockReserveSlot,
+  mockAnswerCallbackQuery,
+  mockRedeemLinkCode,
+} = vi.hoisted(() => ({
     mockPrisma: {
       automation: { findUnique: vi.fn() },
       telegramFlow: { findFirst: vi.fn() },
@@ -14,6 +19,7 @@ const { mockPrisma, mockSendMessage, mockReserveSlot, mockAnswerCallbackQuery } 
     mockSendMessage: vi.fn(),
     mockReserveSlot: vi.fn(),
     mockAnswerCallbackQuery: vi.fn(),
+    mockRedeemLinkCode: vi.fn(),
   }));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
@@ -22,6 +28,11 @@ vi.mock("@/lib/telegram/client", () => ({
   getSharedBot: () => ({ api: { answerCallbackQuery: mockAnswerCallbackQuery } }),
   reserveTelegramSlot: mockReserveSlot,
   sendMessage: mockSendMessage,
+}));
+
+vi.mock("@/lib/telegram/link", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/telegram/link")>()),
+  redeemLinkCode: mockRedeemLinkCode,
 }));
 
 const { processTelegramUpdate, parseStartPayload, parseIncomingEvent } =
@@ -195,6 +206,27 @@ describe("Telegram flow engine (T5, T6)", () => {
           create: expect.objectContaining({ flowId: "fallback" }),
         })
       );
+    });
+
+    // D4: a link code is not a campaign id, and must never be reported as a
+    // dead link — that would send the builder hunting a problem that is not
+    // there.
+    it("binds the builder's Telegram on a link payload", async () => {
+      mockRedeemLinkCode.mockResolvedValue("user1");
+
+      await processTelegramUpdate(textUpdate("/start lnk_abc123"));
+
+      expect(mockRedeemLinkCode).toHaveBeenCalledWith("lnk_abc123", BigInt(555), BigInt(999));
+      expect(mockPrisma.automation.findUnique).not.toHaveBeenCalled();
+      expect(sentTexts()).toEqual([BOT_COPY.linked]);
+    });
+
+    it("explains an expired link code instead of failing silently", async () => {
+      mockRedeemLinkCode.mockResolvedValue(null);
+
+      await processTelegramUpdate(textUpdate("/start lnk_stale"));
+
+      expect(sentTexts()).toEqual([BOT_COPY.linkFailed]);
     });
 
     it("answers gracefully when the campaign is gone", async () => {

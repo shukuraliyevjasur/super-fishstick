@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 296 tests passing across 32 files.**
+Expected: **typecheck silent, lint 0 errors, 346 tests passing across 37 files.**
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
@@ -169,22 +169,21 @@ something can create a `TelegramFlow`, the engine has nothing to run.
 > touching the engine. It is placeholder-quality Uzbek written by an engineer — **it wants
 > a pass from someone who sells to these customers.**
 
-## S3 — Flow editor
+## ~~S3 — Flow editor~~ Done 2026-08-08
 
-Design is fully specified — read the design section of
-[product/roadmap.md](product/roadmap.md) before writing any of it. Wireframes:
-`~/.gstack/projects/shukuraliyevjasur-super-fishstick/designs/telegram-flow-editor-20260807/board.html`
+| id | What | Status |
+|----|------|--------|
+| ~~**D1**~~ | ~~List spine with branch drill-in.~~ | **Done.** `components/flows/flow-editor.tsx`; traversal in `lib/telegram/flow-chain.ts`, shared with validation so the editor cannot disagree with the bot. |
+| ~~**D2**~~ | ~~Top-level Flows section + picker.~~ | **Done.** Section, CRUD API, and the campaign picker (landed with T10). |
+| ~~**D3**~~ | ~~Template picker empty state.~~ | **Done.** Three Uzbek funnels, each asserted valid by test. **Russian still missing** — needs a translator, not an engineer. |
+| ~~**D4**~~ | ~~Test send through the real bot.~~ | **Done.** Real conversation via `lib/telegram/engine.ts`, same path a customer hits. Builder links their own Telegram with a one-time `lnk_` code. |
+| ~~**D5**~~ | ~~Flow-level validation.~~ | **Done, and built first** so it could not be cut for scope. Enforced in the editor *and* server-side on save. |
+| ~~**D6**~~ | ~~Mobile tabs.~~ | **Done.** Measured at 375 / 800 / 1280. |
+| ~~**D7**~~ | ~~Drill-in transition + a11y.~~ | **Done.** Slide, focus to breadcrumb, live-region announce, `prefers-reduced-motion` fallback. |
+| ~~**D8**~~ | ~~Telegram-styled preview.~~ | **Done.** Carries the token exception backlog T-3 asks for, stated in the file. |
 
-| id | What |
-|----|------|
-| **D1** | List spine with branch drill-in and breadcrumb. **Not** a node canvas (D7). |
-| **D2** | Flows become a top-level section, reusable across campaigns and bots (D8). Needs a flow-picker in the campaign builder. |
-| **D3** | Empty state is a template picker with 3-4 complete Uzbek/Russian funnels, not a blank page. |
-| **D4** | Test send through the real bot to the builder's own Telegram. |
-| **D5** | Flow-level validation: unreachable branches, steps with no message, paths with no terminal state. **Not optional** — it is the condition on which the drill-in model was chosen. |
-| **D6** | Mobile: Edit and Preview become tabs below the tablet breakpoint. |
-| **D7** | Drill-in slide transition, focus to breadcrumb, live-region announce, `prefers-reduced-motion` fallback. |
-| **D8** | Telegram-styled live preview panel. Needs the same documented token exception `campaign-preview.tsx` has — see backlog T-3. |
+> The wireframe path the plan pointed at does not exist on this machine. Owner's call
+> 2026-08-08: it was a showcase, not a design decision, so the written spec governs.
 
 ## S4 — Bridge · S5 — Broadcast · S6 — Mini App
 
