@@ -163,15 +163,12 @@ stored token and all connected accounts must reconnect.
 
 ---
 
-## `getRedisConnection()` applies its options only on the first call
+## ~~`getRedisConnection()` applies its options only on the first call~~ Fixed (E1)
 
-`lib/queue/client.ts` holds one module-level connection. `getDMQueue()` calls it with **no
-options** (`persistent: false` → `maxRetriesPerRequest: 3`); the worker calls it with
-`{ persistent: true }` (→ `null`, which BullMQ requires for workers). **Whoever calls first
-wins for the whole process.**
-
-This works today only by import ordering. Adding any new queue is a live hazard — see the
-eng review decisions in [roadmap](../product/roadmap.md).
+`lib/queue/client.ts` now has two named singletons: `getRedisConnection()` (fail-fast, web)
+and `getWorkerConnection()` (persistent, `maxRetriesPerRequest: null`). The worker uses
+`getWorkerConnection()`; everything else uses `getRedisConnection()`. No import-ordering
+hazard remains.
 
 ---
 
@@ -186,11 +183,10 @@ failure, and it had no consumer until this was noticed.
 
 ---
 
-## There is no React component test capability
+## ~~There is no React component test capability~~ Fixed (E7)
 
-`vitest.config.ts` sets `environment: "node"` and matches only `__tests__/**/*.test.ts` —
-not `.tsx`. There is no `@testing-library/react` and no jsdom/happy-dom in
-`devDependencies`. All 26 test files are pure logic tests.
+Component tests now work: vitest matches `.tsx`, `@testing-library/react` + `happy-dom` are
+installed, and 8 pin tests cover the campaign builder save payload. 27 test files total.
 
 Any plan that refactors a component needs that infrastructure added first, **and that
-lockfile must be generated on Linux** (see the first trap).
+lockfile must be generated on Linux** (see the first trap).~~

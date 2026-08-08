@@ -1,31 +1,41 @@
 /**
  * BullMQ Queue Client
  *
- * Provides the DM processing queue and Redis connection for BullMQ.
+ * Provides the DM processing queue and Redis connections for BullMQ.
+ * Two named singletons: web (fail-fast) and worker (persistent, maxRetriesPerRequest: null).
  */
 
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-let connection: Redis | null = null;
+let webConn: Redis | null = null;
+let workerConn: Redis | null = null;
 
-export function getRedisConnection(opts: { persistent?: boolean } = {}): Redis {
-  if (connection?.status === "end" || connection?.status === "close") {
-    connection = null;
-  }
-  if (!connection) {
-    const persistent = opts.persistent ?? false;
-    connection = new Redis(process.env.REDIS_URL!, {
-      // BullMQ workers need null (retry forever); web handlers need fail-fast.
-      maxRetriesPerRequest: persistent ? null : 3,
-      enableOfflineQueue: persistent,
+function isAlive(c: Redis | null): c is Redis {
+  return c !== null && c.status !== "end" && c.status !== "close";
+}
+
+export function getRedisConnection(): Redis {
+  if (!isAlive(webConn)) {
+    webConn = new Redis(process.env.REDIS_URL!, {
+      maxRetriesPerRequest: 3,
+      enableOfflineQueue: false,
       connectTimeout: 5000,
-      retryStrategy: persistent
-        ? undefined
-        : (times) => (times > 2 ? null : Math.min(times * 500, 1500)),
+      retryStrategy: (times) => (times > 2 ? null : Math.min(times * 500, 1500)),
     });
   }
-  return connection;
+  return webConn;
+}
+
+export function getWorkerConnection(): Redis {
+  if (!isAlive(workerConn)) {
+    workerConn = new Redis(process.env.REDIS_URL!, {
+      maxRetriesPerRequest: null,
+      enableOfflineQueue: true,
+      connectTimeout: 5000,
+    });
+  }
+  return workerConn;
 }
 
 // ─── DM Queue ───────────────────────────────────────────────────────────────────
@@ -65,13 +75,7 @@ export function getDMQueue(): Queue<DmQueueJob> {
     dmQueue = new Queue<DmQueueJob>("dm-processing", {
       connection: getRedisConnection(),
       defaultJobOptions: {
-        removeOnComplete: { count: 1000 }, // Keep last 1000 completed jobs
-        // Clear failed jobs shortly after they exhaust retries. Job ids are
-        // deterministic (comment_<acct>_<id>), so a retained failed job would
-        // block the polling reconciler from ever retrying that comment. Clearing
-        // them lets a later sweep re-enqueue and try again once a transient
-        // failure (e.g. an Instagram rate-limit window) has passed. Failure
-        // detail is still preserved in DmLog.
+        removeOnComplete: { count: 1000 },
         removeOnFail: { age: 300, count: 2000 },
         attempts: 3,
         backoff: {

@@ -104,6 +104,7 @@ vi.mock("@/lib/queue/client", () => ({
     add: mockQueueAdd,
   }),
   getRedisConnection: vi.fn(),
+  getWorkerConnection: vi.fn(),
   POSTBACK_JOB_NAME: "process-postback",
 }));
 

@@ -2,6 +2,7 @@ import { Worker, type Job } from "bullmq";
 import {
   getDMQueue,
   getRedisConnection,
+  getWorkerConnection,
   POSTBACK_JOB_NAME,
   type DmQueueJob,
   type ProcessCommentJob,
@@ -810,7 +811,7 @@ export function createDMWorker(): Worker<DmQueueJob> {
     "dm-processing",
     processJob,
     {
-      connection: getRedisConnection({ persistent: true }),
+      connection: getWorkerConnection(),
       concurrency: 5,
       settings: {
         backoffStrategy: (attemptsMade: number) =>
