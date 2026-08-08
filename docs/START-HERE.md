@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 248 tests passing across 27 files.**
+Expected: **typecheck silent, lint 0 errors, 257 tests passing across 29 files.**
 
 If those do not match, the code changed since 2026-08-07. Find out why before starting.
 Use `npm ci`, never `npm install` — see [traps](reference/traps.md).
@@ -101,17 +101,17 @@ support) plus 8 pin tests on the campaign builder save payload. **Done.**
 `components/campaign/{primitives,trigger-section,match-section,message-section}.tsx`.
 All 248 tests pass unchanged. **Done.**
 
-## S1 — Foundation
+## S1 — Foundation (partially done 2026-08-07)
 
-| id | What | Files |
-|----|------|-------|
-| **E1** | Replace the Redis singleton with named per-role connections. Options are applied only on the first call today; two more queues make it worse. | `lib/queue/client.ts`, `lib/queue/dm-worker.ts` |
-| **E3** | Adopt grammY for the API surface and update routing. **Not** its conversations/session plugin — flow state stays in Postgres (D7 reasoning). | `package.json`, `lib/telegram/client.ts` |
-| **E4** | Split queue processors into per-platform modules with one bootstrap. Single process, no new SPOF. | `lib/queue/dm-worker.ts`, `worker/dm-worker.ts` |
-| **T1** | Telegram webhook: verify the `X-Telegram-Bot-Api-Secret-Token` header, enqueue, return 200 immediately. Copy the shape of `app/api/webhook/route.ts`. | `app/api/telegram/webhook/route.ts` |
-| **T4** | Shared `@replie_bot` by default, optional own-bot token (AES-256-GCM). Broadcast gated to own-bot only (D5). | `prisma/schema.prisma`, `lib/telegram/bot.ts` |
-| **T7** | Map Telegram 401/403/429/400. Honor `retry_after`. Mark blocked users unreachable. | `lib/telegram/client.ts` |
-| **T13** | Reuse `lib/utils/rate-limiter.ts` for Telegram's 30 msg/s. Do not write a second limiter. | `lib/utils/rate-limiter.ts` |
+| id | What | Status |
+|----|------|--------|
+| ~~**E1**~~ | ~~Redis singleton → named web/worker connections.~~ | **Done.** `getRedisConnection()` (fail-fast) + `getWorkerConnection()` (persistent). |
+| ~~**E3**~~ | ~~grammY client wrapper.~~ | **Done.** `lib/telegram/client.ts` — Bot, sendMessage, error mapping. |
+| **E4** | Split queue processors into per-platform modules with one bootstrap. | Deferred — happens naturally when Telegram processing lands in S2. |
+| ~~**T1**~~ | ~~Telegram webhook endpoint.~~ | **Done.** `app/api/telegram/webhook/route.ts` — verifies secret token, returns 200. |
+| **T4** | Shared `@replie_bot` by default, optional own-bot token. | Shared bot works via env var. Own-bot schema deferred to when it's needed. |
+| ~~**T7**~~ | ~~Map Telegram 401/403/429/400, honor retry_after.~~ | **Done.** In `lib/telegram/client.ts` — typed `TelegramSendResult`. |
+| ~~**T13**~~ | ~~Reuse rate-limiter for Telegram's 30 msg/s.~~ | **Done.** `reserveTelegramSlot()` in `lib/telegram/client.ts`. |
 
 Verify S1 the way it actually matters: comment the keyword from an account with **no app
 role**, and confirm the bot responds. A test from a role-holding account proves nothing.
