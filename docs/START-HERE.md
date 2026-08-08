@@ -41,6 +41,45 @@ decision — say that out loud rather than doing it quietly.
 
 ---
 
+## Checkpoint — 2026-08-08
+
+Where the work actually stands, updated as it moves. **Code is ahead of
+configuration**: everything below is written, tested and deployed to Vercel, but the
+Telegram half cannot run for a real customer until the operator steps in the last section
+are done.
+
+| Slice | State |
+|-------|-------|
+| Now / S0 / S0b / S1 | Done 2026-08-07 |
+| S2 — flow engine (T5, T6, E4, E9) | Done 2026-08-08 |
+| S3 — flow editor (D1–D8) | Done 2026-08-08 |
+| S4 — bridge (T10) | Done 2026-08-08 |
+| S5 — broadcast (T8, E8) | Done 2026-08-08, API **and** UI |
+| S6 — mini app (T12, E11, T14) | **Next** |
+| E10 — coverage of the new surface | Outstanding; four paths still want E2E |
+
+**Migrations added this session, all applied by the Vercel build:**
+`20260808180000_add_campaign_telegram_destination`, `20260808190000_add_telegram_link`,
+`20260808200000_add_telegram_broadcast`.
+
+**Blocked on the operator, not on code:**
+
+1. **The VM SSH key** — CI deploy has been failing since `0f85524`, so the worker VM still
+   runs a pre-S1 image. Nothing Telegram executes until this is fixed. See
+   [traps](reference/traps.md) — it is `google_guest_agent`, not the GitHub secret.
+2. **`TELEGRAM_BOT_TOKEN`** on Vercel *and* in `/etc/replie-worker.env`. Without it the
+   worker logs "Instagram only" and the bot silently does nothing.
+3. **`TELEGRAM_WEBHOOK_SECRET`** on Vercel, then a one-time `setWebhook` — the URL gets
+   pinned at Telegram, so do it after 1 and 2.
+4. **`TELEGRAM_BOT_USERNAME`** on Vercel. Deep links and the D4 account-link button need
+   it; both degrade gracefully without it rather than rendering a broken link.
+
+**Wanted from a human who is not an engineer:** the bot-facing Uzbek in
+`lib/telegram/copy.ts` and the three templates in `lib/telegram/flow-templates.ts` are
+engineer-written, and D3's Russian templates do not exist yet.
+
+---
+
 ## Confirm the baseline first
 
 ```bash
@@ -190,7 +229,7 @@ something can create a `TelegramFlow`, the engine has nothing to run.
 | id | What |
 |----|------|
 | **T10** | Optional Telegram destination type in the campaign builder, campaign id in the deep-link payload. Opt-in only (D4). |
-| ~~**T8**~~ | ~~Broadcast.~~ **Done 2026-08-08.** `lib/telegram/broadcast.ts`. Recipients written before sending and marked one at a time; typed confirmation word + audience echo + status check on the send call. **No UI yet — API only.** |
+| ~~**T8**~~ | ~~Broadcast.~~ **Done 2026-08-08.** `lib/telegram/broadcast.ts`. Recipients written before sending and marked one at a time; typed confirmation word + audience echo + status check on the send call. UI: compose → reach count → typed word, at `/broadcasts`. |
 | ~~**E8**~~ | ~~Cursor-paginate + cap.~~ **Done 2026-08-08.** Cap is a refusal, not a truncation. |
 | **T12** | Mini App wrapper over the existing report pages. |
 | **E11** | Add `/miniapp` to the `proxy.ts` matcher exclusions **and** to `__tests__/proxy-matcher.test.ts`. |

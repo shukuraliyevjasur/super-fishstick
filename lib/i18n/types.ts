@@ -24,6 +24,7 @@ export interface Dict {
     inbox: string
     campaigns: string
     flows: string
+    broadcasts: string
     logs: string
     settings: string
     diagnostics: string
@@ -253,6 +254,36 @@ export interface Dict {
     createFailed: string
     nameLabel: string
     namePlaceholder: string
+  }
+
+  broadcasts: {
+    title: string
+    subtitle: string
+    newBtn: string
+    messageLabel: string
+    messagePlaceholder: string
+    audienceLabel: string
+    audienceAll: string
+    previewBtn: string
+    reachLabel: string
+    confirmTitle: string
+    confirmBody: string
+    confirmTypeLabel: string
+    confirmWord: string
+    sendBtn: string
+    sending: string
+    cancelBtn: string
+    emptyTitle: string
+    emptyDesc: string
+    noAudience: string
+    tooLarge: string
+    audienceChanged: string
+    failed: string
+    statusDraft: string
+    statusSending: string
+    statusCompleted: string
+    progress: string
+    irreversible: string
   }
 
   flowEditor: {

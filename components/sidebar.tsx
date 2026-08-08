@@ -73,6 +73,15 @@ export default function Sidebar({
       ),
     },
     {
+      label: dict.sidebar.broadcasts,
+      path: "/broadcasts",
+      icon: (
+        <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 11l18-7-7 18-2.5-8.5L3 11z"/>
+        </svg>
+      ),
+    },
+    {
       label: dict.sidebar.logs,
       path: "/logs",
       icon: (
