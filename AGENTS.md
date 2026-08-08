@@ -45,6 +45,6 @@ same entity. Do not design around either without asking.
 dependency change, discard it — a lockfile regenerated on Windows installs fine locally
 and breaks `npm ci` on Linux.
 
-**Baseline** (verified against the code 2026-08-07): **240 tests passing across 26 files**,
+**Baseline** (verified against the code 2026-08-07): **248 tests passing across 27 files**,
 lint **0 errors**, typecheck silent after `npm ci`. If those stop matching, the code
 changed — find out why before starting.

@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 240 tests passing across 26 files.**
+Expected: **typecheck silent, lint 0 errors, 248 tests passing across 27 files.**
 
 If those do not match, the code changed since 2026-08-07. Find out why before starting.
 Use `npm ci`, never `npm install` — see [traps](reference/traps.md).
@@ -88,29 +88,18 @@ valid lockfiles that break `npm ci` when merged. **One dependency pass, one mach
 
 ---
 
-## S0 — Safety net · start here
+## ~~S0 — Safety net~~ Done 2026-08-07
 
-**E7** (P1, 1d / 2h) — Add `@testing-library/react` + `happy-dom`, make `vitest.config.ts`
-match `.tsx` under `__tests__/`, then write a test pinning the campaign builder's save
-payload and its conditional sections.
+~~**E7**~~ — Component test infra (`@testing-library/react`, `happy-dom`, vitest `.tsx`
+support) plus 8 pin tests on the campaign builder save payload. **Done.**
 
-Files: `vitest.config.ts`, `package.json`, `__tests__/campaign-builder.test.tsx`
+~~**E3**~~ — grammY installed in the same lockfile pass. **Done.**
 
-Why first: E5 decomposes an 859-line component with **zero** test coverage, and this repo
-currently has no way to test a React component at all (`environment: "node"`, `.ts` only,
-no testing-library). Mandatory under the regression rule.
+## ~~S0b — Refactor~~ Done 2026-08-07
 
-Bundle the grammY install (**E3**) into the same lockfile pass — see the ordering
-constraint above.
-
-Verify: `npm test` — the new test fails if the save payload changes shape.
-
-## S0b — Refactor
-
-**E5** (P2, 2d / 3h) — Decompose `components/campaign-builder.tsx` into section
-components. 859 lines, 24 commits in 30 days, worst churn in the repo.
-
-Blocked by E7. Verify: the pinned payload test still passes, unchanged.
+~~**E5**~~ — Decomposed `components/campaign-builder.tsx` (859 → 623 lines) into
+`components/campaign/{primitives,trigger-section,match-section,message-section}.tsx`.
+All 248 tests pass unchanged. **Done.**
 
 ## S1 — Foundation
 
