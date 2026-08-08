@@ -1,17 +1,12 @@
 "use client";
 
-/**
- * Campaign Builder
- *
- * Two-pane campaign editor: a control panel on the left and a live phone
- * preview on the right. Used for both creating and editing a campaign.
- */
-
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
-import PostPicker from "@/components/post-picker";
 import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview";
+import TriggerSection from "@/components/campaign/trigger-section";
+import MatchSection from "@/components/campaign/match-section";
+import MessageSection from "@/components/campaign/message-section";
 import { useDict } from "@/components/dictionary-provider";
 import { readCache, writeCache } from "@/lib/client-cache";
 import {
@@ -53,74 +48,6 @@ interface CampaignBuilderProps {
   campaignId?: string;
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </div>
-  );
-}
-
-function Radio({
-  checked,
-  onSelect,
-  children,
-}: {
-  checked: boolean;
-  onSelect: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
-        checked ? "border-accent bg-accent/5" : "border-border hover:border-border-hover"
-      }`}
-    >
-      <span
-        className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-          checked ? "border-accent" : "border-border"
-        }`}
-      >
-        {checked && <span className="h-2 w-2 rounded-full bg-accent" />}
-      </span>
-      <span className="flex-1 text-foreground">{children}</span>
-    </button>
-  );
-}
-
-function Toggle({
-  on,
-  onToggle,
-}: {
-  on: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        on ? "bg-accent" : "bg-border"
-      }`}
-    >
-      <span
-        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-          on ? "left-6" : "left-1"
-        }`}
-      />
-    </button>
-  );
-}
-
 export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderProps) {
   const router = useRouter();
   const params = useParams();
@@ -146,9 +73,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [postThumb, setPostThumb] = useState<string | null>(null);
   const [postCaption, setPostCaption] = useState("");
 
-  // Post IDs already tied to another automation on this account, so the picker
-  // can flag them and the user knows not to double-assign. Maps postId ->
-  // the campaign name using it (for the tooltip).
   const [usedPosts, setUsedPosts] = useState<Record<string, string>>({});
 
   const [matchMode, setMatchMode] = useState<MatchMode>("specific");
@@ -175,8 +99,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("dm");
 
-  // CSV import queue. When present, each save advances to the next row instead
-  // of returning to the campaigns list.
   const [importQueue, setImportQueue] = useState<ImportRow[] | null>(null);
   const [importTotal, setImportTotal] = useState(0);
 
@@ -189,14 +111,12 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     [keywordText]
   );
 
-  // Fetch the connected account's real avatar for the preview (cache-first so
-  // it shows instantly on a return visit instead of a blank circle).
+  // Fetch the connected account's real avatar for the preview.
   useEffect(() => {
     if (!selectedAccountId) return;
     let cancelled = false;
     const cacheKey = `ig-avatar:${selectedAccountId}`;
     const cached = readCache<string | null>(cacheKey, 30 * 60 * 1000);
-    // Hydrating state from cache is a legitimate effect use here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (cached.data !== null) setAvatarUrl(cached.data);
 
@@ -217,7 +137,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     };
   }, [selectedAccountId]);
 
-  // Load accounts (both modes need them for the preview username + selector).
   useEffect(() => {
     fetch("/api/dashboard/stats")
       .then((r) => r.json())
@@ -232,7 +151,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       .catch(() => setAccounts([]));
   }, []);
 
-  // Prefill when editing.
   useEffect(() => {
     if (mode !== "edit" || !campaignId) return;
     fetch("/api/automations", { cache: "no-store" })
@@ -282,9 +200,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, campaignId]);
 
-  // Track which posts on the selected account are already assigned to an
-  // automation, so the picker can highlight them. The campaign being edited is
-  // excluded — its own post should read as selected, not "taken".
   useEffect(() => {
     if (!selectedAccountId) return;
     let cancelled = false;
@@ -307,8 +222,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     };
   }, [selectedAccountId, mode, campaignId]);
 
-  // Prefill the editable fields from one queued import row. The reel is left
-  // unset so the user picks it per row.
   function prefillFromRow(row: ImportRow) {
     setName(row.name ?? "");
     setTriggerScope("specific");
@@ -333,7 +246,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     setError(null);
   }
 
-  // Pick up a staged CSV import (new mode only) and prefill the first row.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (mode !== "new") return;
@@ -426,15 +338,10 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             });
       const data = await res.json();
       if (data.success) {
-        // The post we just assigned is now in use. Reflect it immediately so
-        // the picker flags it on the next imported row — the fetch that builds
-        // this map doesn't re-run while the builder stays mounted through the
-        // import queue.
         if (triggerScope === "specific" && postId) {
           const assignedPostId = postId;
           setUsedPosts((prev) => ({ ...prev, [assignedPostId]: payload.name }));
         }
-        // Importing: advance to the next queued row instead of leaving.
         if (importQueue && importQueue.length > 1) {
           const remaining = importQueue.slice(1);
           try {
@@ -459,13 +366,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             // ignore
           }
         }
-        // refresh() busts the router cache so the list reflects the save
-        // instead of landing on a stale (empty) campaigns page.
         router.push(`/${lang}/campaigns`);
         router.refresh();
       } else {
-        // Surface the specific field that failed validation instead of a
-        // generic "Invalid input".
         const fieldErrors = data.details?.fieldErrors as
           | Record<string, string[]>
           | undefined;
@@ -485,8 +388,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     }
   }
 
-  // Skip the current imported row without saving a campaign for it, advancing
-  // to the next one (or finishing the import if it was the last).
   function skipRow() {
     if (!importQueue) return;
     setError(null);
@@ -502,7 +403,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       if (typeof window !== "undefined") window.scrollTo({ top: 0 });
       return;
     }
-    // Last row skipped — finish the import.
     try {
       window.localStorage.removeItem(IMPORT_QUEUE_KEY);
       window.localStorage.removeItem(IMPORT_ACCOUNT_KEY);
@@ -645,182 +545,46 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           )}
         </div>
 
-        <Section title={t.sectionWhen}>
-          <Radio
-            checked={triggerScope === "specific"}
-            onSelect={() => setTriggerScope("specific")}
-          >
-            {t.triggerSpecific}
-          </Radio>
-          {triggerScope === "specific" && (
-            <div className="rounded-lg border border-border p-2">
-              <PostPicker
-                selectedPostId={postId}
-                instagramAccountId={selectedAccountId}
-                usedPostIds={usedPosts}
-                onSelect={handlePostSelect}
-              />
-            </div>
-          )}
-          <Radio
-            checked={triggerScope === "any"}
-            onSelect={() => setTriggerScope("any")}
-          >
-            {t.triggerAny}
-          </Radio>
-          <Radio
-            checked={triggerScope === "next"}
-            onSelect={() => setTriggerScope("next")}
-          >
-            {t.triggerNext}
-          </Radio>
-        </Section>
+        <TriggerSection
+          triggerScope={triggerScope}
+          onTriggerScopeChange={setTriggerScope}
+          postId={postId}
+          selectedAccountId={selectedAccountId}
+          usedPosts={usedPosts}
+          onPostSelect={handlePostSelect}
+          t={t}
+        />
 
-        <Section title={t.sectionAnd}>
-          <Radio
-            checked={matchMode === "specific"}
-            onSelect={() => setMatchMode("specific")}
-          >
-            {t.matchSpecific}
-          </Radio>
-          {matchMode === "specific" && (
-            <div className="space-y-1">
-              <input
-                value={keywordText}
-                onChange={(e) => setKeywordText(e.target.value)}
-                placeholder={t.keywordPlaceholder}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-              />
-              <p className="text-xs text-muted">{t.keywordHint}</p>
-            </div>
-          )}
-          <Radio
-            checked={matchMode === "any"}
-            onSelect={() => setMatchMode("any")}
-          >
-            {t.matchAny}
-          </Radio>
-          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-            <span className="text-sm text-foreground">
-              {t.publicReplyLabel}
-            </span>
-            <Toggle
-              on={publicReplyEnabled}
-              onToggle={() => setPublicReplyEnabled(!publicReplyEnabled)}
-            />
-          </div>
-          {publicReplyEnabled && (
-            <div className="space-y-2">
-              {publicReplyMessages.map((msg, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    value={msg}
-                    onChange={(e) =>
-                      setPublicReplyMessages((prev) =>
-                        prev.map((m, idx) => (idx === i ? e.target.value : m))
-                      )
-                    }
-                    placeholder={t.publicReplyPlaceholder}
-                    maxLength={1000}
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                  />
-                  {publicReplyMessages.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPublicReplyMessages((prev) =>
-                          prev.filter((_, idx) => idx !== i)
-                        )
-                      }
-                      className="shrink-0 px-2 text-muted hover:text-error"
-                      aria-label="Remove reply"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-              {publicReplyMessages.length < 10 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPublicReplyMessages((prev) => [...prev, ""])
-                  }
-                  className="text-xs font-medium text-accent hover:underline"
-                >
-                  {t.addReply}
-                </button>
-              )}
-              <p className="text-xs text-muted">{t.replyRotateHint}</p>
-            </div>
-          )}
-        </Section>
+        <MatchSection
+          matchMode={matchMode}
+          onMatchModeChange={setMatchMode}
+          keywordText={keywordText}
+          onKeywordTextChange={setKeywordText}
+          publicReplyEnabled={publicReplyEnabled}
+          onPublicReplyToggle={() => setPublicReplyEnabled(!publicReplyEnabled)}
+          publicReplyMessages={publicReplyMessages}
+          onPublicReplyMessagesChange={setPublicReplyMessages}
+          t={t}
+        />
 
-        <Section title={t.sectionAndTheyReceive}>
-          <div className="rounded-lg border border-border p-3 space-y-2">
-            <span className="text-sm text-foreground">{t.dmWithLinkLabel}</span>
-            <textarea
-              value={dmMessage}
-              onChange={(e) => setDmMessage(e.target.value)}
-              placeholder={t.dmPlaceholder}
-              rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none resize-none"
-              maxLength={1000}
-            />
-            {linkOpen ? (
-              <div className="space-y-2">
-                <input
-                  value={trackedDestinationUrl}
-                  onChange={(e) => setTrackedDestinationUrl(e.target.value)}
-                  onBlur={ensureLinkToken}
-                  placeholder="https://yourlink.com/offer"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                />
-                <input
-                  value={linkButtonLabel}
-                  onChange={(e) => setLinkButtonLabel(e.target.value)}
-                  placeholder={t.linkButtonPlaceholder}
-                  maxLength={20}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                />
-                {secondLinkOpen ? (
-                  <div className="space-y-2 border-t border-border pt-2">
-                    <input
-                      value={secondaryDestinationUrl}
-                      onChange={(e) => setSecondaryDestinationUrl(e.target.value)}
-                      placeholder="https://yourlink.com/second"
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                    />
-                    <input
-                      value={secondaryButtonLabel}
-                      onChange={(e) => setSecondaryButtonLabel(e.target.value)}
-                      placeholder={t.secondButtonPlaceholder}
-                      maxLength={20}
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent/40 focus:outline-none"
-                    />
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSecondLinkOpen(true)}
-                    className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
-                  >
-                    {t.addSecondLink}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setLinkOpen(true)}
-                className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
-              >
-                {t.addLink}
-              </button>
-            )}
-            <p className="text-xs text-muted">{t.tokenHint}</p>
-          </div>
-        </Section>
+        <MessageSection
+          dmMessage={dmMessage}
+          onDmMessageChange={setDmMessage}
+          linkOpen={linkOpen}
+          onLinkOpen={() => setLinkOpen(true)}
+          trackedDestinationUrl={trackedDestinationUrl}
+          onTrackedUrlChange={setTrackedDestinationUrl}
+          onTrackedUrlBlur={ensureLinkToken}
+          linkButtonLabel={linkButtonLabel}
+          onLinkButtonLabelChange={setLinkButtonLabel}
+          secondLinkOpen={secondLinkOpen}
+          onSecondLinkOpen={() => setSecondLinkOpen(true)}
+          secondaryDestinationUrl={secondaryDestinationUrl}
+          onSecondaryUrlChange={setSecondaryDestinationUrl}
+          secondaryButtonLabel={secondaryButtonLabel}
+          onSecondaryButtonLabelChange={setSecondaryButtonLabel}
+          t={t}
+        />
       </div>
 
       {/* Right: preview */}
