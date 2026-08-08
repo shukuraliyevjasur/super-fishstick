@@ -7,6 +7,7 @@ const {
   mockSendAlert,
   mockJobCounts,
   mockPing,
+  mockSweepConversations,
 } = vi.hoisted(() => ({
   mockPrisma: {
     $queryRaw: vi.fn(),
@@ -20,6 +21,11 @@ const {
   mockSendAlert: vi.fn(),
   mockJobCounts: vi.fn(),
   mockPing: vi.fn(),
+  mockSweepConversations: vi.fn(),
+}));
+
+vi.mock("@/lib/telegram/conversation-sweep", () => ({
+  sweepStaleConversations: mockSweepConversations,
 }));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
@@ -62,6 +68,11 @@ function healthyState() {
   mockPrisma.operationalEvent.findMany.mockResolvedValue([]);
   mockPrisma.operationalEvent.create.mockResolvedValue({});
   mockSendAlert.mockResolvedValue({ sent: true });
+  mockSweepConversations.mockResolvedValue({
+    deleted: 0,
+    batches: 0,
+    hitCap: false,
+  });
 }
 
 beforeEach(() => {
@@ -78,6 +89,38 @@ describe("health-check cron", () => {
     await expect(response.json()).resolves.toMatchObject({ status: "ok" });
     expect(mockSendAlert).not.toHaveBeenCalled();
     expect(mockPrisma.operationalEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("runs the conversation TTL sweep and reports what it deleted (E9)", async () => {
+    mockSweepConversations.mockResolvedValue({
+      deleted: 42,
+      batches: 1,
+      hitCap: false,
+    });
+
+    const response = await GET(authorizedRequest());
+
+    expect(mockSweepConversations).toHaveBeenCalledTimes(1);
+    await expect(response.json()).resolves.toMatchObject({
+      conversationsDeleted: 42,
+      conversationSweepHitCap: false,
+    });
+  });
+
+  it("stays healthy when the conversation sweep fails", async () => {
+    // Housekeeping must never be able to fail the health check itself — a
+    // health check that 500s because a delete failed hides the thing it exists
+    // to report.
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockSweepConversations.mockRejectedValue(new Error("statement timeout"));
+
+    const response = await GET(authorizedRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      status: "ok",
+      conversationsDeleted: 0,
+    });
   });
 
   it("returns 503 and emails when the worker heartbeat is gone", async () => {

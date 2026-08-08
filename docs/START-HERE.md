@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 288 tests passing across 31 files.**
+Expected: **typecheck silent, lint 0 errors, 296 tests passing across 32 files.**
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
@@ -145,9 +145,10 @@ All 248 tests pass unchanged. **Done.**
 Verify S1 the way it actually matters: comment the keyword from an account with **no app
 role**, and confirm the bot responds. A test from a role-holding account proves nothing.
 
-## S2 — Flows (started 2026-08-07, incomplete)
+## ~~S2 — Flows~~ Done 2026-08-08
 
-**⚠️ RESUME HERE.** Session ended mid-S2 due to quota exhaustion.
+The engine is complete and covered. **S3 is next** — and note what S3 unblocks: until
+something can create a `TelegramFlow`, the engine has nothing to run.
 
 | id | What | Status |
 |----|------|--------|
@@ -156,7 +157,7 @@ role**, and confirm the bot responds. A test from a role-holding account proves 
 | ~~**T5**~~ | ~~`/start` payload handling.~~ | **Done 2026-08-08.** `lib/queue/telegram-worker.ts`. Valid campaign id → workspace's active flow → conversation at the entry step. Deleted campaign and garbage payload give the same answer on purpose (distinguishing them leaks whether an id existed). Bare `/start` resumes the last workspace. Step schema is **D9**. |
 | ~~**T6**~~ | ~~Never-silent fallback.~~ | **Done 2026-08-08.** Unrecognised reply → "did not understand" + the prompt re-sent with its keyboard, and the step does **not** advance. Also covers: typing at a bot you never started, and a flow edited out from under a live conversation. |
 | ~~**E4**~~ | ~~Split queue processors per platform.~~ | **Done 2026-08-08** — landed with T5 exactly as predicted. Separate `telegram-processing` queue, one worker process boots both (`worker/dm-worker.ts`). |
-| **E9** | TTL sweep: add a cron job (or fold into `app/api/cron/health-check/route.ts`) that deletes `TelegramConversation` rows with `lastActiveAt` older than 30 days in batches. The index exists — just needs the sweep code. | **Only S2 item left.** Independent. |
+| ~~**E9**~~ | ~~Conversation TTL sweep.~~ | **Done 2026-08-08.** `lib/telegram/conversation-sweep.ts`, folded into the health-check cron. 30-day cutoff on the `lastActiveAt` index, 500-row batches, ceiling of 10k rows per run so it cannot time out the request. `conversationSweepHitCap` in the cron's response is the signal that the backlog is not draining. |
 
 > **Not yet wired to anything.** The engine runs, but nothing creates a `TelegramFlow`
 > (that is S3) and no campaign emits a `t.me/…?start=<campaignId>` link (that is **T10**,

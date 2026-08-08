@@ -7,6 +7,7 @@ import {
 } from "@/lib/ops/health-report";
 import { sendOperationalAlert, type AlertResult } from "@/lib/ops/alert-email";
 import { downgradeExpiredWorkspaces } from "@/lib/billing/grant";
+import { sweepStaleConversations } from "@/lib/telegram/conversation-sweep";
 
 export const runtime = "nodejs";
 // Must reflect live state (worker heartbeat, queue depth), never a cached response.
@@ -40,6 +41,15 @@ export async function GET(request: NextRequest) {
   const expiry = await downgradeExpiredWorkspaces().catch((error) => {
     console.error("[health-check] plan expiry sweep failed", error);
     return { downgraded: 0 };
+  });
+
+  // E9: expire stale Telegram flow state. Folded in here for the same reason as
+  // the plan sweep — the free tier fires one cron a day, so a third entry buys
+  // nothing. Never allowed to fail the health check: a full disk is a problem,
+  // but a health check that 500s because housekeeping failed is a worse one.
+  const conversations = await sweepStaleConversations().catch((error) => {
+    console.error("[health-check] conversation sweep failed", error);
+    return { deleted: 0, batches: 0, hitCap: false };
   });
 
   const degraded = !report.healthy;
@@ -134,6 +144,10 @@ export async function GET(request: NextRequest) {
       checks: report.checks,
       tokenRefreshFailures: refreshErrors.length,
       plansDowngraded: expiry.downgraded,
+      conversationsDeleted: conversations.deleted,
+      // Surfaced so a backlog that never drains is visible in the cron's own
+      // output rather than only as a table that keeps growing.
+      conversationSweepHitCap: conversations.hitCap,
       alert,
     },
     { status: report.healthy ? 200 : 503 }
