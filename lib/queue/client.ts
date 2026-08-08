@@ -98,9 +98,15 @@ export interface ProcessTelegramUpdateJob {
   update: unknown;
 }
 
-export type TelegramQueueJob = ProcessTelegramUpdateJob;
+/** One pass over a broadcast's pending recipients (T8). */
+export interface ProcessBroadcastJob {
+  broadcastId: string;
+}
+
+export type TelegramQueueJob = ProcessTelegramUpdateJob | ProcessBroadcastJob;
 
 export const TELEGRAM_UPDATE_JOB_NAME = "process-telegram-update";
+export const BROADCAST_JOB_NAME = "process-broadcast";
 
 let telegramQueue: Queue<TelegramQueueJob> | null = null;
 

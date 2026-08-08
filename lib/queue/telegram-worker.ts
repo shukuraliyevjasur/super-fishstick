@@ -15,9 +15,14 @@ import { Worker } from "bullmq";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/db/client";
 import {
+  BROADCAST_JOB_NAME,
+  getTelegramQueue,
   getWorkerConnection,
+  type ProcessBroadcastJob,
+  type ProcessTelegramUpdateJob,
   type TelegramQueueJob,
 } from "@/lib/queue/client";
+import { sendBroadcastBatch } from "@/lib/telegram/broadcast";
 import { getSharedBot } from "@/lib/telegram/client";
 import {
   CALLBACK_PREFIX,
@@ -390,10 +395,35 @@ export async function processTelegramUpdate(update: unknown): Promise<void> {
   await handleReply(event);
 }
 
+/**
+ * One pass over a broadcast, re-enqueued until the audience is drained (T8).
+ *
+ * Re-enqueueing rather than looping in place means a long broadcast never holds
+ * a worker slot for minutes, so an Instagram DM behind it is not stuck waiting
+ * on someone's marketing blast.
+ */
+async function processBroadcast(broadcastId: string): Promise<void> {
+  const result = await sendBroadcastBatch(broadcastId);
+
+  if (result.remaining === 0) return;
+
+  await getTelegramQueue().add(
+    BROADCAST_JOB_NAME,
+    { broadcastId },
+    { delay: result.retryAfterMs ?? 1000 }
+  );
+}
+
 export function createTelegramWorker(): Worker<TelegramQueueJob> {
   const worker = new Worker<TelegramQueueJob>(
     "telegram-processing",
-    async (job) => processTelegramUpdate(job.data.update),
+    async (job) => {
+      if (job.name === BROADCAST_JOB_NAME) {
+        const { broadcastId } = job.data as ProcessBroadcastJob;
+        return processBroadcast(broadcastId);
+      }
+      return processTelegramUpdate((job.data as ProcessTelegramUpdateJob).update);
+    },
     {
       connection: getWorkerConnection(),
       concurrency: 5,

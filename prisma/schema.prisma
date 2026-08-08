@@ -106,6 +106,7 @@ model Workspace {
   operationalEvents      OperationalEvent[]
   telegramFlows          TelegramFlow[]
   telegramConversations  TelegramConversation[]
+  telegramBroadcasts     TelegramBroadcast[]
 
   @@index([ownerId])
   @@index([planExpiresAt])
@@ -379,6 +380,53 @@ model TelegramLinkCode {
   @@index([expiresAt])
 }
 
+/// T8: a paced broadcast to everyone who came through the bot.
+///
+/// Irreversible either way — sending cannot be unsent, and abandoning halfway
+/// leaves an audience half-messaged. Status and counters are on the row so a
+/// resumed run knows exactly where it stopped.
+model TelegramBroadcast {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  /// Audience filter: people who ran this flow. Null means everyone in the
+  /// workspace who has ever talked to the bot.
+  flowId          String?
+  message         String
+  /// DRAFT | SENDING | COMPLETED | FAILED
+  status          String    @default("DRAFT")
+  totalRecipients Int       @default(0)
+  sentCount       Int       @default(0)
+  failedCount     Int       @default(0)
+  createdById     String?
+  createdAt       DateTime  @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  workspace  Workspace                    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recipients TelegramBroadcastRecipient[]
+
+  @@index([workspaceId, status])
+}
+
+/// One row per person, written before any sending starts (T8's per-recipient
+/// checkpointing). A resumed run skips anything already SENT, so a crash
+/// mid-broadcast cannot double-message anyone.
+model TelegramBroadcastRecipient {
+  id             String    @id @default(cuid())
+  broadcastId    String
+  telegramUserId BigInt
+  chatId         BigInt
+  /// PENDING | SENT | FAILED | BLOCKED
+  status         String    @default("PENDING")
+  error          String?
+  sentAt         DateTime?
+
+  broadcast TelegramBroadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+
+  @@unique([broadcastId, telegramUserId])
+  @@index([broadcastId, status])
+}
+
 model TelegramFlow {
   id          String   @id @default(cuid())
   workspaceId String
@@ -400,6 +448,10 @@ model TelegramFlow {
 model TelegramConversation {
   id              String   @id @default(cuid())
   telegramUserId  BigInt
+  /// Where to send. In a private chat Telegram sets chat.id equal to the user
+  /// id, but that is a coincidence of private chats rather than a guarantee we
+  /// should encode — broadcast (T8) needs an address, so store the address.
+  chatId          BigInt
   workspaceId     String
   flowId          String
   currentStepId   String?

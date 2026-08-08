@@ -49,7 +49,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 346 tests passing across 37 files.**
+Expected: **typecheck silent, lint 0 errors, 358 tests passing across 38 files.**
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
@@ -190,8 +190,8 @@ something can create a `TelegramFlow`, the engine has nothing to run.
 | id | What |
 |----|------|
 | **T10** | Optional Telegram destination type in the campaign builder, campaign id in the deep-link payload. Opt-in only (D4). |
-| **T8** | Broadcast: per-recipient checkpointing, preview, typed confirmation. Irreversible either way. |
-| **E8** | Cursor-paginate broadcast recipients, per-workspace cap. |
+| ~~**T8**~~ | ~~Broadcast.~~ **Done 2026-08-08.** `lib/telegram/broadcast.ts`. Recipients written before sending and marked one at a time; typed confirmation word + audience echo + status check on the send call. **No UI yet — API only.** |
+| ~~**E8**~~ | ~~Cursor-paginate + cap.~~ **Done 2026-08-08.** Cap is a refusal, not a truncation. |
 | **T12** | Mini App wrapper over the existing report pages. |
 | **E11** | Add `/miniapp` to the `proxy.ts` matcher exclusions **and** to `__tests__/proxy-matcher.test.ts`. |
 | **T14** | Extend the data-deletion page to cover Telegram ids, names and captured flow answers. |

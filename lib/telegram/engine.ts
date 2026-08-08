@@ -98,12 +98,16 @@ export async function startConversation(opts: {
     },
     create: {
       telegramUserId: opts.telegramUserId,
+      chatId: BigInt(opts.chatId),
       workspaceId: opts.workspaceId,
       flowId: opts.flowId,
       currentStepId: opts.entryStep.id,
       answers: {},
     },
     update: {
+      // Refreshed on every start: a chat id can change if someone is migrated
+      // to a supergroup, and a broadcast sending to a stale one fails silently.
+      chatId: BigInt(opts.chatId),
       flowId: opts.flowId,
       currentStepId: opts.entryStep.id,
       answers: {},
