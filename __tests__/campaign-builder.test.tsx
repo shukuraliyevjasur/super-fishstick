@@ -199,6 +199,10 @@ describe("CampaignBuilder save payload", () => {
       followPromptMessage: "",
       followPromptButtonLabel: "",
       isActive: true,
+      // T10. Both must default off: a campaign that never touched the Telegram
+      // section has to save exactly as it did before the section existed.
+      telegramEnabled: false,
+      telegramFlowId: null,
     });
   });
 

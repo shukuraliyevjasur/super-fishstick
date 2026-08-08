@@ -210,7 +210,12 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
 
   const automation = await prisma.automation.findUnique({
     where: { id: payload },
-    select: { id: true, workspaceId: true },
+    select: {
+      id: true,
+      workspaceId: true,
+      telegramEnabled: true,
+      telegramFlow: { select: { id: true, steps: true, isActive: true } },
+    },
   });
 
   // A deleted campaign and a garbage payload are the same thing to the user: a
@@ -221,14 +226,24 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     return;
   }
 
-  // Until the campaign builder carries a flow picker (D2), a campaign resolves
-  // to its workspace's most recently updated active flow. One flow per
-  // workspace is the shape of every account that exists today.
-  const flow = await prisma.telegramFlow.findFirst({
-    where: { workspaceId: automation.workspaceId, isActive: true },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true, steps: true },
-  });
+  // T10: the campaign's own flow, chosen in the builder, is authoritative. This
+  // replaces the placeholder rule recorded in D9.
+  //
+  // The workspace fallback is kept for one case only: a campaign created before
+  // the picker existed, which has telegramEnabled false and no flow. Dropping it
+  // would silently break links already printed in someone's bio.
+  const picked =
+    automation.telegramFlow && automation.telegramFlow.isActive
+      ? automation.telegramFlow
+      : null;
+
+  const flow =
+    picked ??
+    (await prisma.telegramFlow.findFirst({
+      where: { workspaceId: automation.workspaceId, isActive: true },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true, steps: true },
+    }));
 
   if (!flow) {
     await send(event.chatId, BOT_COPY.noFlow);

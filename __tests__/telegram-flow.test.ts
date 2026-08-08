@@ -154,6 +154,49 @@ describe("Telegram flow engine (T5, T6)", () => {
       });
     });
 
+    // T10: the campaign's own flow wins. This is the rule that replaces the
+    // D9 placeholder, so the workspace lookup must not even run.
+    it("runs the flow the campaign points at", async () => {
+      mockPrisma.automation.findUnique.mockResolvedValue({
+        id: "camp1",
+        workspaceId: "ws1",
+        telegramEnabled: true,
+        telegramFlow: { id: "picked", steps: FLOW_STEPS, isActive: true },
+      });
+
+      await processTelegramUpdate(textUpdate("/start camp1"));
+
+      expect(mockPrisma.telegramFlow.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.telegramConversation.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ flowId: "picked" }),
+        })
+      );
+    });
+
+    // A paused flow is the owner saying "stop running this", so falling back to
+    // the workspace's active flow is the honest reading — not silence.
+    it("ignores the campaign's flow when it is paused", async () => {
+      mockPrisma.automation.findUnique.mockResolvedValue({
+        id: "camp1",
+        workspaceId: "ws1",
+        telegramEnabled: true,
+        telegramFlow: { id: "picked", steps: FLOW_STEPS, isActive: false },
+      });
+      mockPrisma.telegramFlow.findFirst.mockResolvedValue({
+        id: "fallback",
+        steps: FLOW_STEPS,
+      });
+
+      await processTelegramUpdate(textUpdate("/start camp1"));
+
+      expect(mockPrisma.telegramConversation.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ flowId: "fallback" }),
+        })
+      );
+    });
+
     it("answers gracefully when the campaign is gone", async () => {
       mockPrisma.automation.findUnique.mockResolvedValue(null);
 

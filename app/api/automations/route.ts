@@ -50,6 +50,9 @@ const createAutomationSchema = z
     secondaryButtonLabel: z.string().max(20).optional().nullable(),
     isActive: z.boolean().optional().default(true),
     wholeWordMatch: z.boolean().optional().default(true),
+    // T10: opt-in Telegram destination.
+    telegramEnabled: z.boolean().optional().default(false),
+    telegramFlowId: z.string().min(1).optional().nullable(),
   })
   // A campaign must target a specific post, any post, or the next reel.
   .refine(
@@ -93,6 +96,9 @@ const updateAutomationSchema = z.object({
   isActive: z.boolean().optional(),
   wholeWordMatch: z.boolean().optional(),
   reportShareEnabled: z.boolean().optional(),
+  telegramEnabled: z.boolean().optional(),
+  // Null clears the destination; a string sets it; undefined leaves it alone.
+  telegramFlowId: z.string().min(1).optional().nullable(),
   // Empty string clears the tracked link; a URL updates/creates it; undefined
   // leaves it unchanged.
   trackedDestinationUrl: httpUrlOrEmptySchema.optional().nullable(),
@@ -406,6 +412,23 @@ export async function POST(request: NextRequest) {
     .map((m) => m.trim())
     .filter(Boolean);
 
+  // T10: a flow id from another workspace must not become a campaign's
+  // destination — that would run someone else's funnel on your traffic.
+  let telegramFlowId: string | null = null;
+  if (parsed.data.telegramEnabled && parsed.data.telegramFlowId) {
+    const flow = await prisma.telegramFlow.findFirst({
+      where: { id: parsed.data.telegramFlowId, workspaceId },
+      select: { id: true },
+    });
+    if (!flow) {
+      return NextResponse.json(
+        { success: false, error: "Flow not found" },
+        { status: 400 }
+      );
+    }
+    telegramFlowId = flow.id;
+  }
+
   const automation = await prisma.automation.create({
     data: {
       name: parsed.data.name,
@@ -442,6 +465,12 @@ export async function POST(request: NextRequest) {
         : null,
       isActive: parsed.data.isActive,
       wholeWordMatch: parsed.data.wholeWordMatch,
+      // T10: only stored when the destination is actually on, so a stale flow
+      // id cannot sit on a campaign that does not use Telegram.
+      telegramEnabled: parsed.data.telegramEnabled,
+      telegramFlowId: parsed.data.telegramEnabled
+        ? telegramFlowId
+        : null,
       workspaceId,
       instagramAccountId: instagramAccount.id,
       reportShareSlug: generateReportShareSlug(),
@@ -511,6 +540,21 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
+  // T10: a flow id from another workspace must not become a campaign's
+  // destination — that would run someone else's funnel on your traffic.
+  if (parsed.data.telegramFlowId) {
+    const flow = await prisma.telegramFlow.findFirst({
+      where: { id: parsed.data.telegramFlowId, workspaceId },
+      select: { id: true },
+    });
+    if (!flow) {
+      return NextResponse.json(
+        { success: false, error: "Flow not found" },
+        { status: 400 }
+      );
+    }
+  }
+
   const {
     trackedDestinationUrl,
     secondaryDestinationUrl,
@@ -545,6 +589,11 @@ export async function PATCH(request: NextRequest) {
   if (automationData.publicReplyEnabled === false) {
     automationData.publicReplyMessages = [];
     automationData.publicReplyMessage = null;
+  }
+  // Turning Telegram off clears the flow, so a re-enabled campaign cannot
+  // silently resume pointing at a funnel the owner has since forgotten about.
+  if (automationData.telegramEnabled === false) {
+    automationData.telegramFlowId = null;
   }
 
   const updated = await prisma.automation.update({

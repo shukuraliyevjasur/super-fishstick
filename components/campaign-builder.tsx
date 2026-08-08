@@ -7,6 +7,9 @@ import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview"
 import TriggerSection from "@/components/campaign/trigger-section";
 import MatchSection from "@/components/campaign/match-section";
 import MessageSection from "@/components/campaign/message-section";
+import TelegramSection, {
+  type FlowOptionSummary,
+} from "@/components/campaign/telegram-section";
 import { useDict } from "@/components/dictionary-provider";
 import { readCache, writeCache } from "@/lib/client-cache";
 import {
@@ -40,6 +43,8 @@ interface LoadedCampaign {
   publicReplyMessages: string[];
   isActive: boolean;
   instagramAccountId: string;
+  telegramEnabled: boolean;
+  telegramFlowId: string | null;
   trackedLinks?: { destinationUrl: string; label?: string | null }[];
 }
 
@@ -80,6 +85,12 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
   const [publicReplyEnabled, setPublicReplyEnabled] = useState(false);
   const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>([""]);
+
+  // T10: opt-in Telegram destination.
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [telegramFlowId, setTelegramFlowId] = useState<string | null>(null);
+  const [flows, setFlows] = useState<FlowOptionSummary[]>([]);
+  const [botUsername, setBotUsername] = useState<string | null>(null);
 
   const [openingDmEnabled, setOpeningDmEnabled] = useState(false);
   const [openingDmMessage, setOpeningDmMessage] = useState("");
@@ -137,6 +148,36 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     };
   }, [selectedAccountId]);
 
+  // T10: the flow picker's options and the bot username the deep link is built
+  // from. Both are workspace-stable, so one fetch on mount is enough.
+  useEffect(() => {
+    let cancelled = false;
+
+    void Promise.all([
+      fetch("/api/flows").then((r) => r.json()),
+      fetch("/api/telegram/config").then((r) => r.json()),
+    ])
+      .then(([flowsPayload, configPayload]) => {
+        if (cancelled) return;
+        if (flowsPayload?.success) {
+          setFlows(
+            (flowsPayload.flows as FlowOptionSummary[]).map((flow) => ({
+              id: flow.id,
+              name: flow.name,
+              valid: flow.valid,
+            }))
+          );
+        }
+        if (configPayload?.success) setBotUsername(configPayload.botUsername);
+      })
+      // A campaign must stay editable when Telegram is not configured at all.
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     fetch("/api/dashboard/stats")
       .then((r) => r.json())
@@ -176,6 +217,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               ? [c.publicReplyMessage]
               : [""]
         );
+        setTelegramEnabled(c.telegramEnabled);
+        setTelegramFlowId(c.telegramFlowId);
         setOpeningDmEnabled(c.openingDmEnabled);
         setOpeningDmMessage(c.openingDmMessage ?? "");
         setOpeningDmButtonLabel(c.openingDmButtonLabel ?? "");
@@ -321,6 +364,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       followPromptMessage: "",
       followPromptButtonLabel: "",
       isActive: activeValue,
+      telegramEnabled,
+      telegramFlowId: telegramEnabled ? telegramFlowId : null,
     };
 
     try {
@@ -583,6 +628,20 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           onSecondaryUrlChange={setSecondaryDestinationUrl}
           secondaryButtonLabel={secondaryButtonLabel}
           onSecondaryButtonLabelChange={setSecondaryButtonLabel}
+          t={t}
+        />
+
+        <TelegramSection
+          enabled={telegramEnabled}
+          onToggle={() => setTelegramEnabled(!telegramEnabled)}
+          flows={flows}
+          selectedFlowId={telegramFlowId}
+          onFlowChange={setTelegramFlowId}
+          deepLink={
+            campaignId && botUsername
+              ? `https://t.me/${botUsername}?start=${campaignId}`
+              : null
+          }
           t={t}
         />
       </div>

@@ -366,6 +366,17 @@ export interface Dict {
     importProgress: string
     importHint: string
     defaultLinkBtn: string
+    telegramTitle: string
+    telegramToggleLabel: string
+    telegramToggleHint: string
+    telegramFlowLabel: string
+    telegramNoFlowSelected: string
+    telegramNoFlows: string
+    telegramFlowBroken: string
+    telegramLinkLabel: string
+    telegramLinkHint: string
+    telegramLinkPending: string
+    telegramCopy: string
     defaultFollowBtn: string
     defaultOpeningBtn: string
     defaultCampaignName: string
