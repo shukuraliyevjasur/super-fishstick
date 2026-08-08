@@ -1,7 +1,9 @@
 # Operations handbook
 
-**Last updated:** 2026-08-07. Moved here from `HANDOFF.md` in the docs reorganization;
-kept whole because its sections cross-link by anchor.
+**Last updated:** 2026-08-08 (Telegram env vars). Moved here from `HANDOFF.md` in the docs
+reorganization; kept whole because its sections cross-link by anchor. Several sections
+still say "HANDOFF.md" in prose where they mean this file — the links resolve, only the
+display text is old.
 
 The landmines this file used to carry are now consolidated in
 [../reference/traps.md](../reference/traps.md), which is the copy to keep current.
@@ -174,6 +176,21 @@ the repo.
 `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`.
 
 **Worker (GCP):** `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `APP_URL`, `NODE_ENV`, `SENTRY_DSN`.
+
+**Telegram (added 2026-08-08).** None of the Telegram features run without these, and
+each fails in its own quiet way rather than loudly:
+
+| Variable | Where | What breaks without it |
+|----------|-------|------------------------|
+| `TELEGRAM_BOT_TOKEN` | Vercel **and** worker | The worker boots and logs `Instagram only`. The bot answers nothing. The deploy looks successful. |
+| `TELEGRAM_WEBHOOK_SECRET` | Vercel | `/api/telegram/webhook` throws on every request, so Telegram retries forever. |
+| `TELEGRAM_BOT_USERNAME` | Vercel | Campaign deep links and the D4 account-link button render as absent. Degrades cleanly — no broken `t.me/undefined` link — but the bridge from a campaign to the bot is invisible. |
+
+`TELEGRAM_BOT_TOKEN` must match on both sides for the same reason `ENCRYPTION_KEY` must:
+the web app enqueues and the worker sends.
+
+Once the token is set, `setWebhook` is a **one-time** call and **the URL is pinned at
+Telegram** — do it after the canonical host is settled, not before.
 
 Optional: `DATABASE_POOL_MAX` overrides the per-instance connection cap
 (default 1 — see [Database connections](#database-connections)).
@@ -918,6 +935,24 @@ reaches `/uz` through the locale middleware. Key decisions:
    code. Until then, plans are granted manually through
    [`POST /api/admin/plan`](#granting-a-paid-plan). See P2 in
    [FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md) for what will be needed once access arrives.
+9. **Telegram is built but not configured** — added 2026-08-08. The flow engine, editor,
+   campaign bridge and broadcast are all written, tested and deployed to Vercel. None of
+   it runs for a customer yet, and each missing piece fails quietly rather than loudly:
+   1. **Fix the VM SSH key.** CI deploy has been failing since `0f85524`, so the worker
+      still runs a pre-S1 image and no Telegram code is on it at all. It is
+      `google_guest_agent`, not the GitHub secret — see
+      [traps](../reference/traps.md).
+   2. Set `TELEGRAM_BOT_TOKEN` on Vercel **and** in `/etc/replie-worker.env`.
+   3. Set `TELEGRAM_WEBHOOK_SECRET`, then call `setWebhook` **once** — the URL is pinned
+      at Telegram afterwards.
+   4. Set `TELEGRAM_BOT_USERNAME` so campaign deep links render.
+
+   Verify the way S1 says to: comment the keyword from an account with **no app role**.
+   A test from a role-holding account proves nothing.
+10. **Bot-facing copy is engineer-written** — `lib/telegram/copy.ts` and the three
+    templates in `lib/telegram/flow-templates.ts` are the first thing a customer's
+    customer reads, and they were written by an engineer, not by someone who sells to
+    them. D3's Russian templates do not exist at all.
 
 ~~**Worker auto-deploy not wired**~~ — fixed and live 2026-08-05 (C4): CI SSHs
 into the VM and restarts the container after each build. `GCP_DEPLOY=true`,

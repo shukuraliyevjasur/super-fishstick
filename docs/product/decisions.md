@@ -39,8 +39,11 @@ Buttons carry their option's **index** in `callback_data`, not the label: Telegr
 `callback_data` at 64 bytes, and a readable Uzbek label is UTF-8, so labels silently break
 the cap and Telegram rejects the whole message.
 
-**Until D8's flow-picker exists**, a `/start` campaign id resolves to its workspace's most
-recently updated active flow.
+~~**Until D8's flow-picker exists**, a `/start` campaign id resolves to its workspace's
+most recently updated active flow.~~ **Superseded 2026-08-08 by T10.** The campaign's own
+`telegramFlowId` is authoritative. The workspace lookup survives only as a fallback for
+campaigns created before the picker existed, whose links may already be printed in
+someone's bio, and for a campaign whose chosen flow has been paused.
 
 ### Why
 
@@ -51,9 +54,15 @@ with no terminal state is a cycle with no `null`. A shape that needed a second t
 model for validation would have made D5 expensive enough to be at risk, and D5 is the
 condition on which D7's drill-in editing model was accepted.
 
-The campaign→flow resolution is explicitly a **placeholder for D8**, not a competing
-design. Every workspace that exists today has at most one flow, so the ambiguity is
-theoretical; when the flow-picker lands, this rule is deleted rather than adjusted.
+The campaign→flow resolution was explicitly a **placeholder for D8**, not a competing
+design. It was retired on 2026-08-08 with T10, as planned — mostly. It was *narrowed*
+rather than deleted, because deleting it outright would break links already printed in
+someone's bio by a campaign that predates the picker. A paused flow also falls back rather
+than going silent: pausing is the owner saying "stop running this", not "say nothing".
+
+The step schema itself is unchanged and load-bearing: `lib/telegram/flow-chain.ts`,
+`flow-validation.ts` and the runtime engine all walk it with the same rule, which is what
+keeps the editor from disagreeing with the bot.
 
 ---
 

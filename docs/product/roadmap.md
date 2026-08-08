@@ -6,6 +6,11 @@ status: ACTIVE
 **Design doc.** Produced by a CEO-mode plan review on 2026-08-07, promoted from
 `~/.gstack/projects/`. Mode: SCOPE EXPANSION. Branch: `main`.
 
+> **This file records *what was decided and why*, not what is built.** It is deliberately
+> not updated as work lands — a design doc rewritten after the fact stops being evidence of
+> the reasoning. **For current status go to [START-HERE.md](../START-HERE.md)**, whose
+> Checkpoint section is kept live. As of 2026-08-08, S2 through S5 are done and S6 is next.
+
 Read alongside [DECISIONS.md](decisions.md) (settled architecture calls),
 [HANDOFF.md](../operations/handbook.md) (deployment traps and Meta status), and
 [ROADMAP.md](../archive/2026-08-07-roadmap-superseded.md) (the sequencing this revises).

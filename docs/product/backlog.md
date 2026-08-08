@@ -80,7 +80,17 @@ Review → Verification must be completed *before* drafting App Review justifica
 
 ---
 
-## T-3 — Document the Telegram preview panel as a design-system exception
+## ~~T-3 — Document the Telegram preview panel as a design-system exception~~ Done 2026-08-08
+
+**Done with D8.** The exception is stated at the top of
+`components/flows/flow-preview.tsx` itself, in the same shape
+`components/campaign-preview.tsx` uses, including the "do not fix this" instruction and
+the reason. Put in the file rather than only in a doc, because the file is what a future
+agent opens when it decides the raw hex values look like a mistake. The exception stops at
+the edge of the chat window — the panel border and heading stay on tokens.
+
+Still worth doing the handbook half below if the design-system section is ever the
+first thing someone reads.
 
 **Priority:** P2 · **Effort:** S → S · **Blocked by:** nothing · **Needed by:** S3 (flow editor)
 
