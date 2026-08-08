@@ -92,6 +92,10 @@ REDIS_URL=...
 ENCRYPTION_KEY=...
 APP_URL=https://replie.uz
 SENTRY_DSN=...
+# Without this the process starts and logs "Instagram only" — the Telegram
+# processor simply does not boot, and a deploy looks successful while the bot
+# stays dead. Same token as Vercel's.
+TELEGRAM_BOT_TOKEN=...
 EOF
 sudo chmod 600 /etc/replie-worker.env
 ```
@@ -100,9 +104,30 @@ sudo chmod 600 /etc/replie-worker.env
 
 ```bash
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy -N ""
-cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
 cat ~/.ssh/github_deploy  # copy this — it goes into GitHub as a secret
+cat ~/.ssh/github_deploy.pub  # this goes into instance metadata, see below
 ```
+
+> **Do not append the public key to `~/.ssh/authorized_keys`.** That was the original
+> instruction here and it is why deploys broke. `google_guest_agent` owns that file on GCE
+> and rewrites it from instance metadata, so a hand-appended key survives until the next
+> sync and then silently disappears. Symptom in Actions:
+> `ssh: unable to authenticate, attempted methods [none publickey]` — note that the key
+> *parsed*, so re-pasting the GitHub secret changes nothing.
+>
+> Add it to metadata instead, as `USERNAME:<public key>` where `USERNAME` matches
+> `GCP_VM_USER` exactly:
+>
+> ```bash
+> gcloud compute instances add-metadata INSTANCE --zone ZONE \
+>   --metadata-from-file ssh-keys=keys.txt
+> ```
+>
+> `add-metadata ssh-keys` **replaces** the whole list — read the existing value first and
+> include those lines, or you lock out every other key.
+>
+> If `enable-oslogin=TRUE` is in the instance metadata, none of the above applies: OS Login
+> ignores `authorized_keys` and metadata keys both, and CI must use an OS Login-managed key.
 
 **In GitHub** (repo → Settings → Secrets and variables → Actions):
 

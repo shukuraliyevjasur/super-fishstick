@@ -88,6 +88,33 @@ Rule of thumb: 6543 for queries, 5432 for anything that migrates.
 
 ---
 
+## `google_guest_agent` deletes SSH keys you append by hand
+
+CI deploys to the VM fail with:
+
+```
+ssh: unable to authenticate, attempted methods [none publickey]
+```
+
+The tell is that the key **parsed** — a malformed `GCP_SSH_KEY` fails differently ("no key
+found", "failed to parse"). The client offered a key and the server refused it, so
+re-pasting the GitHub secret cannot help, and re-pasting it twice is the usual way people
+lose an afternoon here.
+
+On GCE, `google_guest_agent` owns `~/.ssh/authorized_keys` and rewrites it from instance
+metadata. A key appended by hand works until the next sync, then vanishes. Put it in
+instance metadata as `USERNAME:<public key>` instead — see the CI deploy section of the
+[handbook](../operations/handbook.md).
+
+Two things that look like this but are not: `GCP_VM_USER` naming a different user than the
+one whose keys were installed (keys are per-user), and OS Login being enabled, which
+ignores `authorized_keys` entirely.
+
+**While this is broken the VM keeps running its old image.** Build-and-push still passes,
+so the workflow looks half-green and the worker silently runs whatever it last received.
+
+---
+
 ## The middleware matcher is load-bearing
 
 `proxy.ts` prefixes every unprefixed path with a locale. Anything with no page under
