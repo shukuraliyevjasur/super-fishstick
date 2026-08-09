@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { isCurrentUserPlatformAdmin } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/client";
@@ -57,12 +58,12 @@ export default async function ControlPage() {
           <h1 className="text-xl font-bold text-foreground">replie</h1>
           <p className="text-xs text-muted mt-0.5">{session.user.email}</p>
         </div>
-        <a
+        <Link
           href="/uz/dashboard"
           className="text-xs text-muted hover:text-foreground transition-colors"
         >
           ← App
-        </a>
+        </Link>
       </div>
 
       <p className="text-sm text-muted">
