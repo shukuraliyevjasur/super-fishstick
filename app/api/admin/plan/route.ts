@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 
 const grantSchema = z.object({
   workspaceId: z.string().min(1),
-  plan: z.enum(["FREE", "STANDART", "PRO"]),
+  plan: z.enum(["FREE", "STANDART", "PRO", "AGENCY"]),
   /** ISO 8601. Omitted or null means the plan does not expire. */
   expiresAt: z.string().datetime().optional().nullable(),
   reason: z.string().max(500).optional(),
