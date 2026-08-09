@@ -83,9 +83,9 @@ export const config = {
      *   recipient.
      * - /reports/* public client-report share links, handed to third parties.
      * - /miniapp/* Telegram Mini App report pages (T12).
-     * - /admin/* operator admin panel (no locale needed, not customer-facing).
+     * - /workspace-control-9f7b3c2e1a/* operator panel (no locale, not customer-facing).
      * - robots.txt and sitemap.xml, which crawlers fetch at the domain root.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/|r/|reports/|miniapp/|admin/|robots\\.txt|sitemap\\.xml).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/|r/|reports/|miniapp/|workspace-control-9f7b3c2e1a/|robots\\.txt|sitemap\\.xml).*)",
   ],
 };

@@ -20,7 +20,7 @@ const PLAN_COLORS: Record<string, string> = {
   AGENCY: "bg-purple-100 text-purple-700 border border-purple-200",
 };
 
-export default async function AdminPage() {
+export default async function ControlPage() {
   const [session, isAdmin] = await Promise.all([
     auth(),
     isCurrentUserPlatformAdmin(),
@@ -52,10 +52,9 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen p-6 max-w-5xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">replie admin</h1>
+          <h1 className="text-xl font-bold text-foreground">replie</h1>
           <p className="text-xs text-muted mt-0.5">{session.user.email}</p>
         </div>
         <a
@@ -66,17 +65,14 @@ export default async function AdminPage() {
         </a>
       </div>
 
-      {/* Workspace count */}
       <p className="text-sm text-muted">
         {workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}
       </p>
 
-      {/* Table */}
       <div className="space-y-3">
         {workspaces.map((ws) => {
           const ownerEmail = ws.members[0]?.user?.email ?? "—";
-          const expired =
-            ws.planExpiresAt !== null && ws.planExpiresAt <= now;
+          const expired = ws.planExpiresAt !== null && ws.planExpiresAt <= now;
           const expiresLabel = ws.planExpiresAt
             ? expired
               ? `Expired ${ws.planExpiresAt.toLocaleDateString()}`
@@ -85,7 +81,6 @@ export default async function AdminPage() {
 
           return (
             <div key={ws.id} className="panel rounded-lg p-5 space-y-4">
-              {/* Top row: workspace info */}
               <div className="flex flex-wrap items-start gap-3 justify-between">
                 <div className="min-w-0 space-y-0.5">
                   <p className="text-sm font-semibold text-foreground truncate">
@@ -105,16 +100,13 @@ export default async function AdminPage() {
                     {PLAN_LABELS[ws.plan] ?? ws.plan}
                   </span>
                   {expiresLabel && (
-                    <span
-                      className={`text-xs ${expired ? "text-error" : "text-muted"}`}
-                    >
+                    <span className={`text-xs ${expired ? "text-error" : "text-muted"}`}>
                       {expiresLabel}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Grant form */}
               <GrantForm workspaceId={ws.id} currentPlan={ws.plan} />
             </div>
           );
