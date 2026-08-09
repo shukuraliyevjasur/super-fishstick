@@ -74,6 +74,11 @@ manually via **Actions → Build & Push Worker Image → Run workflow**.
 
 The GHCR package must stay **public** for the VM to pull without auth.
 
+The VM disk is small. The deploy job prunes unused Docker data before pulling and
+again after the new worker starts; do not remove those cleanup lines unless the
+disk is expanded. A failed pull with `no space left on device` usually means the
+VM has leftover image layers or partial pulls, not that the registry build failed.
+
 #### One-time setup to enable auto-deploy
 
 **On the VM** (GCP Console → Compute Engine → `replie` → SSH):
@@ -152,11 +157,13 @@ to build-and-push only, without touching the VM.
 
 ```bash
 # On the VM:
+docker system prune -af
 docker pull ghcr.io/shukuraliyevjasur/replie-worker:latest
 docker stop replie-worker && docker rm replie-worker
 docker run -d --name replie-worker --restart always \
   --env-file /etc/replie-worker.env \
   ghcr.io/shukuraliyevjasur/replie-worker:latest
+docker system prune -af
 docker logs --tail 20 replie-worker
 ```
 

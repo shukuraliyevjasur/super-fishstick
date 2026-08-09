@@ -7,9 +7,9 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci && npm cache clean --force && rm -rf /root/.npm
 
 COPY . .
-RUN npx prisma generate
+RUN npx prisma generate && rm -rf /root/.cache/prisma /root/.npm
 
 CMD ["npm", "run", "worker"]

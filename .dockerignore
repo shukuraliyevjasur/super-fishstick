@@ -3,3 +3,11 @@ node_modules
 .env
 .env.local
 .git
+.github
+.turbo
+coverage
+docs
+__tests__
+*.log
+public
+README.md

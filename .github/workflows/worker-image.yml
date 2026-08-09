@@ -50,6 +50,11 @@ jobs:
           key: ${{ secrets.GCP_SSH_KEY }}
           script: |
             set -e
+            echo "Disk before cleanup:"
+            df -h /
+            docker system prune -af
+            echo "Disk after cleanup:"
+            df -h /
             docker pull ghcr.io/shukuraliyevjasur/replie-worker:latest
             docker stop replie-worker 2>/dev/null || true
             docker rm replie-worker 2>/dev/null || true
@@ -58,6 +63,7 @@ jobs:
               --restart always \
               --env-file /etc/replie-worker.env \
               ghcr.io/shukuraliyevjasur/replie-worker:latest
+            docker system prune -af
             echo "Worker restarted. Logs:"
             sleep 5
             docker logs --tail 20 replie-worker
