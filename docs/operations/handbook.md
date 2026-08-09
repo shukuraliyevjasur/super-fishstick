@@ -937,22 +937,15 @@ reaches `/uz` through the locale middleware. Key decisions:
    [FIX_BRIEF.md](../archive/2026-08-04-fix-brief.md) for what will be needed once access arrives.
 9. **Telegram is built but not configured** — added 2026-08-08. The flow engine, editor,
    campaign bridge and broadcast are all written, tested and deployed to Vercel. None of
-   it runs for a customer yet, and each missing piece fails quietly rather than loudly:
-   1. **Fix the VM SSH key.** CI deploy has been failing since `0f85524`, so the worker
-      still runs a pre-S1 image and no Telegram code is on it at all. It is
-      `google_guest_agent`, not the GitHub secret — see
-      [traps](../reference/traps.md).
-   2. Set `TELEGRAM_BOT_TOKEN` on Vercel **and** in `/etc/replie-worker.env`.
-   3. Set `TELEGRAM_WEBHOOK_SECRET`, then call `setWebhook` **once** — the URL is pinned
-      at Telegram afterwards.
-   4. Set `TELEGRAM_BOT_USERNAME` so campaign deep links render.
+   ~~it runs for a customer yet, and each missing piece fails quietly rather than loudly:~~
+   ~~1. **Fix the VM SSH key.**~~ Done 2026-08-09.
+   ~~2. Set `TELEGRAM_BOT_TOKEN` on Vercel **and** in `/etc/replie-worker.env`.~~ Done 2026-08-09.
+   ~~3. Set `TELEGRAM_WEBHOOK_SECRET`, then call `setWebhook` **once**.~~ Done 2026-08-09. Webhook pinned to `https://replie.uz/api/telegram/webhook`.
+   ~~4. Set `TELEGRAM_BOT_USERNAME` so campaign deep links render.~~ Done 2026-08-09 (`replieuz_bot`).
 
-   Verify the way S1 says to: comment the keyword from an account with **no app role**.
-   A test from a role-holding account proves nothing.
-10. **Bot-facing copy is engineer-written** — `lib/telegram/copy.ts` and the three
-    templates in `lib/telegram/flow-templates.ts` are the first thing a customer's
-    customer reads, and they were written by an engineer, not by someone who sells to
-    them. D3's Russian templates do not exist at all.
+   **Bot is live at `@replieuz_bot` as of 2026-08-09.**
+10. ~~**Bot-facing copy is engineer-written**~~ — reviewed and approved by the owner 2026-08-09.
+    Russian flow templates added (`FLOW_TEMPLATES_RU` in `lib/telegram/flow-templates.ts`).
 
 ~~**Worker auto-deploy not wired**~~ — fixed and live 2026-08-05 (C4): CI SSHs
 into the VM and restarts the container after each build. `GCP_DEPLOY=true`,

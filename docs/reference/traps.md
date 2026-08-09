@@ -110,6 +110,13 @@ Two things that look like this but are not: `GCP_VM_USER` naming a different use
 one whose keys were installed (keys are per-user), and OS Login being enabled, which
 ignores `authorized_keys` entirely.
 
+**A subtler variant:** if the key is in instance metadata but `authorized_keys` still shows
+`replie_uz:ssh-ed25519 …` (the full metadata format including the `username:` prefix), SSH
+rejects it — that prefix is not valid in `authorized_keys`. This can happen when
+`google_guest_agent` copies the value verbatim instead of stripping the prefix. Fix:
+`sed -i 's/^replie_uz:ssh-ed25519/ssh-ed25519/' ~/.ssh/authorized_keys` and re-run
+`setWebhook` if anything downstream changed.
+
 **While this is broken the VM keeps running its old image.** Build-and-push still passes,
 so the workflow looks half-green and the worker silently runs whatever it last received.
 
