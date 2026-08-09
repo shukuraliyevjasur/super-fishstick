@@ -16,7 +16,8 @@
  */
 
 import { prisma } from "@/lib/db/client";
-import { sendText } from "@/lib/telegram/engine";
+import { sendText, type BotContext } from "@/lib/telegram/engine";
+import { getWorkspaceBot } from "@/lib/telegram/own-bot";
 
 /** Per-workspace ceiling (E8). Beyond this, a broadcast is refused outright. */
 export const MAX_BROADCAST_RECIPIENTS = 10_000;
@@ -113,10 +114,16 @@ export async function sendBroadcastBatch(
 ): Promise<BroadcastBatchResult> {
   const broadcast = await prisma.telegramBroadcast.findUnique({
     where: { id: broadcastId },
-    select: { message: true },
+    select: { message: true, workspaceId: true },
   });
 
   if (!broadcast) return { sent: 0, failed: 0, remaining: 0 };
+
+  const workspaceBot = await getWorkspaceBot(broadcast.workspaceId);
+  const ctx: BotContext = {
+    bot: workspaceBot.bot,
+    rateLimitKey: workspaceBot.rateLimitKey,
+  };
 
   const pending = await prisma.telegramBroadcastRecipient.findMany({
     where: { broadcastId, status: "PENDING" },
@@ -132,7 +139,7 @@ export async function sendBroadcastBatch(
   for (const recipient of pending) {
     let result;
     try {
-      result = await sendText(recipient.chatId, broadcast.message);
+      result = await sendText(recipient.chatId, broadcast.message, undefined, ctx);
     } catch {
       // Our own rate limiter refused a slot. Leave the row PENDING and stop —
       // burning through the rest of the batch would only deepen the backlog.

@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
 import { getCurrentWorkspaceId } from "@/lib/auth";
+import { getOwnBotStatus } from "@/lib/telegram/own-bot";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Deployment-wide Telegram settings the campaign builder needs (T10).
  *
- * Only the bot's public @username, which is what a deep link is built from and
- * is visible to anyone who opens the bot. The token stays server-side and is
- * never part of this response.
- *
- * A separate route rather than a field bolted onto /api/flows: the edit page is
- * a client component and cannot read env directly, and the two answer different
- * questions.
+ * Returns the workspace's effective @username: own bot if configured, shared
+ * bot otherwise. This is what the campaign deep link is built from.
+ * The token itself never leaves the server.
  */
 export async function GET() {
   const workspaceId = await getCurrentWorkspaceId();
@@ -23,7 +20,11 @@ export async function GET() {
     );
   }
 
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "") ?? null;
+  const ownBot = await getOwnBotStatus(workspaceId);
 
-  return NextResponse.json({ success: true, botUsername });
+  const botUsername = ownBot.configured
+    ? (ownBot.botUsername ?? null)
+    : (process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "") ?? null);
+
+  return NextResponse.json({ success: true, botUsername, isOwnBot: ownBot.configured });
 }

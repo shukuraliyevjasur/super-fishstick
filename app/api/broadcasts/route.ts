@@ -7,6 +7,7 @@ import {
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
 import { countAudience, MAX_BROADCAST_RECIPIENTS } from "@/lib/telegram/broadcast";
+import { hasOwnBot } from "@/lib/telegram/own-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,6 +72,16 @@ export async function POST(request: NextRequest) {
   if (!canManageWorkspace(context.role)) {
     return NextResponse.json(
       { success: false, error: "Only owners and admins can broadcast" },
+      { status: 403 }
+    );
+  }
+
+  // D5: broadcast requires an own bot. One workspace sending spam on the shared
+  // bot can get @replie_bot banned and kill every customer's flows at once.
+  const ownBot = await hasOwnBot(context.workspaceId);
+  if (!ownBot) {
+    return NextResponse.json(
+      { success: false, error: "no_own_bot" },
       { status: 403 }
     );
   }

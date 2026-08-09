@@ -11,6 +11,7 @@ interface Props {
   initialBroadcasts: BroadcastSummary[];
   flows: { id: string; name: string }[];
   dict: Dict["broadcasts"];
+  botReady: boolean;
 }
 
 function statusLabel(status: string, b: Dict["broadcasts"]) {
@@ -19,13 +20,76 @@ function statusLabel(status: string, b: Dict["broadcasts"]) {
   return b.statusDraft;
 }
 
+function BotConnectForm({ b, onConnected }: { b: Dict["broadcasts"]; onConnected: () => void }) {
+  const [token, setToken] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await fetch("/api/telegram/own-bot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    const payload = await res.json();
+    setSaving(false);
+    if (payload.success) {
+      onConnected();
+    } else {
+      setError(b.noBotInvalid);
+    }
+  }
+
+  return (
+    <div className="panel rounded-lg p-8 space-y-5">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground">{b.noBotTitle}</p>
+        <p className="text-sm text-muted">{b.noBotDesc}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-muted mb-1.5">
+            {b.noBotTokenLabel}
+          </label>
+          <input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder={b.noBotTokenPlaceholder}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground font-mono outline-none focus:border-accent transition-colors"
+            required
+          />
+        </div>
+
+        {error && <p className="text-sm text-error">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={saving || !token.trim()}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+        >
+          {saving ? b.noBotSaving : b.noBotSave}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function BroadcastList({
   initialBroadcasts,
   flows,
   dict: b,
+  botReady: initialBotReady,
 }: Props) {
   const router = useRouter();
   const [composing, setComposing] = useState(false);
+  const [botReady, setBotReady] = useState(initialBotReady);
 
   // A sent broadcast keeps moving after the request returns — the worker is
   // still draining batches — so refresh rather than optimistically inserting a
@@ -36,6 +100,18 @@ export default function BroadcastList({
   }
 
   const broadcasts = initialBroadcasts;
+
+  if (!botReady) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-extrabold text-foreground">{b.title}</h1>
+          <p className="mt-1 text-sm text-muted">{b.subtitle}</p>
+        </div>
+        <BotConnectForm b={b} onConnected={() => setBotReady(true)} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

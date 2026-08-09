@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockPrisma, mockGetContext, mockAuth, mockCountAudience, mockEnroll, mockQueueAdd } =
+const { mockPrisma, mockGetContext, mockAuth, mockCountAudience, mockEnroll, mockQueueAdd, mockHasOwnBot } =
   vi.hoisted(() => ({
     mockPrisma: {
       telegramBroadcast: {
@@ -17,6 +17,7 @@ const { mockPrisma, mockGetContext, mockAuth, mockCountAudience, mockEnroll, moc
     mockCountAudience: vi.fn(),
     mockEnroll: vi.fn(),
     mockQueueAdd: vi.fn(),
+    mockHasOwnBot: vi.fn(),
   }));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
@@ -34,6 +35,7 @@ vi.mock("@/lib/queue/client", () => ({
   getTelegramQueue: () => ({ add: mockQueueAdd }),
   BROADCAST_JOB_NAME: "process-broadcast",
 }));
+vi.mock("@/lib/telegram/own-bot", () => ({ hasOwnBot: mockHasOwnBot }));
 
 const { GET, POST: CREATE } = await import("@/app/api/broadcasts/route");
 const { POST: SEND, CONFIRMATION_WORD } = await import(
@@ -78,6 +80,7 @@ describe("POST /api/broadcasts (compose)", () => {
     vi.clearAllMocks();
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetContext.mockResolvedValue({ workspaceId: "ws1", role: "OWNER" });
+    mockHasOwnBot.mockResolvedValue(true);
     mockCountAudience.mockResolvedValue(50);
     mockPrisma.telegramBroadcast.create.mockResolvedValue({
       id: "b1",

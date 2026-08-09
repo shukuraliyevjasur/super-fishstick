@@ -316,6 +316,13 @@ export const ru: Dict = {
     statusCompleted: "Отправлено",
     progress: "Отправлено {{sent}} из {{total}}",
     irreversible: "Это действие нельзя отменить.",
+    noBotTitle: "Telegram-бот не подключён",
+    noBotDesc: "Для рассылок нужен свой бот. Получите токен в BotFather и вставьте ниже.",
+    noBotTokenLabel: "Токен бота",
+    noBotTokenPlaceholder: "1234567890:ABCDefgh...",
+    noBotSave: "Подключить бота",
+    noBotSaving: "Подключение...",
+    noBotInvalid: "Неверный токен — проверьте в BotFather",
   },
 
   flowEditor: {

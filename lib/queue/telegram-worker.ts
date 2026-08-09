@@ -29,7 +29,9 @@ import {
   sendStepTo,
   sendText,
   startConversation,
+  type BotContext,
 } from "@/lib/telegram/engine";
+import { getWorkspaceBot } from "@/lib/telegram/own-bot";
 import { isLinkPayload, redeemLinkCode } from "@/lib/telegram/link";
 import { BOT_COPY } from "@/lib/telegram/copy";
 import {
@@ -144,22 +146,23 @@ export function isStartCommand(text: string): boolean {
 // ─── Sending ────────────────────────────────────────────────────────────────────
 
 /** Sending lives in lib/telegram/engine.ts so the test send (D4) shares it. */
-async function send(chatId: number, text: string, step?: FlowStep) {
-  return sendText(chatId, text, step);
+async function send(chatId: number, text: string, step?: FlowStep, ctx?: BotContext) {
+  return sendText(chatId, text, step, ctx);
 }
 
-async function sendStep(event: IncomingEvent, step: FlowStep) {
-  return sendStepTo(event.chatId, step, event.firstName);
+async function sendStep(event: IncomingEvent, step: FlowStep, ctx?: BotContext) {
+  return sendStepTo(event.chatId, step, event.firstName, ctx);
 }
 
 /**
  * Clear the tap's loading spinner. Best-effort: the answer is cosmetic, and a
  * failure here must not cost the user their actual reply.
  */
-async function acknowledgeTap(event: IncomingEvent) {
+async function acknowledgeTap(event: IncomingEvent, ctx?: BotContext) {
   if (!event.callbackQueryId) return;
+  const bot = ctx?.bot ?? getSharedBot();
   try {
-    await getSharedBot().api.answerCallbackQuery(event.callbackQueryId);
+    await bot.api.answerCallbackQuery(event.callbackQueryId);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.log("[Telegram Worker] answerCallbackQuery failed:", message);
@@ -178,10 +181,8 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
       event.telegramUserId,
       BigInt(event.chatId)
     );
-    await send(
-      event.chatId,
-      userId ? BOT_COPY.linked : BOT_COPY.linkFailed
-    );
+    // No workspace known yet — use the shared bot for this meta-reply.
+    await send(event.chatId, userId ? BOT_COPY.linked : BOT_COPY.linkFailed);
     return;
   }
 
@@ -211,6 +212,10 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     return;
   }
 
+  // Now we know the workspace — use its configured bot for all remaining sends.
+  const workspaceBot = await getWorkspaceBot(automation.workspaceId);
+  const ctx: BotContext = { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey };
+
   // T10: the campaign's own flow, chosen in the builder, is authoritative. This
   // replaces the placeholder rule recorded in D9.
   //
@@ -231,14 +236,14 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     }));
 
   if (!flow) {
-    await send(event.chatId, BOT_COPY.noFlow);
+    await send(event.chatId, BOT_COPY.noFlow, undefined, ctx);
     return;
   }
 
   const steps = parseFlowSteps(flow.steps);
   const entry = getEntryStep(steps);
   if (!entry) {
-    await send(event.chatId, BOT_COPY.emptyFlow);
+    await send(event.chatId, BOT_COPY.emptyFlow, undefined, ctx);
     return;
   }
 
@@ -251,6 +256,7 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     telegramUserId: event.telegramUserId,
     chatId: event.chatId,
     recipientName: event.firstName,
+    ctx,
   });
 }
 
@@ -261,6 +267,7 @@ async function loadLatestConversation(telegramUserId: bigint) {
     orderBy: { lastActiveAt: "desc" },
     select: {
       id: true,
+      workspaceId: true,
       currentStepId: true,
       answers: true,
       flow: { select: { steps: true } },
@@ -278,7 +285,9 @@ async function resumeConversation(event: IncomingEvent): Promise<boolean> {
   );
   if (!step) return false;
 
-  await sendStep(event, step);
+  const workspaceBot = await getWorkspaceBot(conversation.workspaceId);
+  const ctx: BotContext = { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey };
+  await sendStep(event, step, ctx);
   return true;
 }
 
@@ -317,13 +326,17 @@ async function handleReply(event: IncomingEvent) {
     return;
   }
 
+  // Now we know the workspace — use its bot for all remaining sends.
+  const workspaceBot = await getWorkspaceBot(conversation.workspaceId);
+  const ctx: BotContext = { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey };
+
   const steps = parseFlowSteps(conversation.flow.steps);
   const step = findStep(steps, conversation.currentStepId);
 
   // The conversation already ran to the end, or the flow was edited out from
   // under it. Either way there is nothing to advance.
   if (!step) {
-    await send(event.chatId, BOT_COPY.finished);
+    await send(event.chatId, BOT_COPY.finished, undefined, ctx);
     return;
   }
 
@@ -339,8 +352,8 @@ async function handleReply(event: IncomingEvent) {
       // T6: the bot must not go silent. Say we did not understand, then re-send
       // the prompt with its keyboard so the options are back in reach. The
       // conversation deliberately does not advance.
-      await send(event.chatId, BOT_COPY.noMatch);
-      await sendStep(event, step);
+      await send(event.chatId, BOT_COPY.noMatch, undefined, ctx);
+      await sendStep(event, step, ctx);
       await touch(conversation.id);
       return;
     }
@@ -365,11 +378,11 @@ async function handleReply(event: IncomingEvent) {
   });
 
   if (!nextStep) {
-    await send(event.chatId, BOT_COPY.finished);
+    await send(event.chatId, BOT_COPY.finished, undefined, ctx);
     return;
   }
 
-  await sendStep(event, nextStep);
+  await sendStep(event, nextStep, ctx);
 }
 
 async function touch(conversationId: string) {
@@ -385,6 +398,9 @@ export async function processTelegramUpdate(update: unknown): Promise<void> {
   const event = parseIncomingEvent(update);
   if (!event) return;
 
+  // acknowledgeTap runs before we know the workspace. If the conversation is
+  // already in the DB we could look it up, but answerCallbackQuery is cosmetic
+  // and the extra query is not worth it — the shared bot handles it for now.
   await acknowledgeTap(event);
 
   if (event.text !== null && isStartCommand(event.text)) {

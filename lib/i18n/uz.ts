@@ -317,6 +317,13 @@ export const uz: Dict = {
     statusCompleted: "Yuborildi",
     progress: "{{sent}} / {{total}} yuborildi",
     irreversible: "Bu amalni ortga qaytarib bo'lmaydi.",
+    noBotTitle: "Telegram bot ulanmagan",
+    noBotDesc: "Ommaviy xabar yuborish uchun o'z botingiz kerak. BotFather dan token olib pastga yozing.",
+    noBotTokenLabel: "Bot token",
+    noBotTokenPlaceholder: "1234567890:ABCDefgh...",
+    noBotSave: "Botni ulash",
+    noBotSaving: "Ulanmoqda...",
+    noBotInvalid: "Token noto'g'ri — BotFather da tekshiring",
   },
 
   flowEditor: {

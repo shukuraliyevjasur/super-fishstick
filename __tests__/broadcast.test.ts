@@ -16,6 +16,9 @@ const { mockPrisma, mockSendText } = vi.hoisted(() => ({
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
 vi.mock("@/lib/telegram/engine", () => ({ sendText: mockSendText }));
+vi.mock("@/lib/telegram/own-bot", () => ({
+  getWorkspaceBot: vi.fn().mockResolvedValue({ bot: {}, rateLimitKey: "shared" }),
+}));
 
 const {
   enrollRecipients,

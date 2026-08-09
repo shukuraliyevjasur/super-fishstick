@@ -30,6 +30,10 @@ vi.mock("@/lib/telegram/client", () => ({
   sendMessage: mockSendMessage,
 }));
 
+vi.mock("@/lib/telegram/own-bot", () => ({
+  getWorkspaceBot: vi.fn().mockResolvedValue({ bot: {}, rateLimitKey: "shared" }),
+}));
+
 vi.mock("@/lib/telegram/link", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/telegram/link")>()),
   redeemLinkCode: mockRedeemLinkCode,

@@ -95,6 +95,14 @@ model Workspace {
   // plan stops working the moment it expires rather than when a cron notices.
   planExpiresAt     DateTime?
 
+  // Own Telegram bot (D5). Encrypted with the same AES-256-GCM key as
+  // Instagram tokens. Null means the workspace uses the shared @replie_bot.
+  // Both fields are written together and cleared together — never one without
+  // the other. telegramBotUsername is plaintext (it is public; visible to
+  // anyone who opens the bot) and is what the campaign deep link is built from.
+  telegramBotToken    String?
+  telegramBotUsername String?
+
   members                WorkspaceMember[]
   invitations            WorkspaceInvitation[]
   instagramAccounts      InstagramAccount[]

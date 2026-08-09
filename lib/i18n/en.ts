@@ -316,6 +316,13 @@ export const en: Dict = {
     statusCompleted: "Sent",
     progress: "{{sent}} of {{total}} sent",
     irreversible: "This cannot be undone.",
+    noBotTitle: "Telegram bot not connected",
+    noBotDesc: "Broadcasting requires your own bot. Get a token from BotFather and paste it below.",
+    noBotTokenLabel: "Bot token",
+    noBotTokenPlaceholder: "1234567890:ABCDefgh...",
+    noBotSave: "Connect bot",
+    noBotSaving: "Connecting...",
+    noBotInvalid: "Invalid token — check it in BotFather",
   },
 
   flowEditor: {

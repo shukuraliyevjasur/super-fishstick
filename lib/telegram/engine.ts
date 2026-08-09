@@ -10,6 +10,7 @@
  * queue runtime into a serverless function.
  */
 
+import type { Bot } from "grammy";
 import {
   getSharedBot,
   reserveTelegramSlot,
@@ -20,7 +21,6 @@ import type { FlowStep } from "@/lib/telegram/flow-types";
 import { renderMessageWithoutLink } from "@/lib/tracking/message";
 import { prisma } from "@/lib/db/client";
 
-const SHARED_BOT_ID = "shared";
 export const CALLBACK_PREFIX = "opt:";
 
 /**
@@ -37,12 +37,24 @@ export function buildKeyboard(step: FlowStep) {
   };
 }
 
+export interface BotContext {
+  bot: Bot;
+  /** Key for the per-bot rate-limiter bucket. "shared" for @replie_bot. */
+  rateLimitKey: string;
+}
+
+function sharedBotContext(): BotContext {
+  return { bot: getSharedBot(), rateLimitKey: "shared" };
+}
+
 export async function sendText(
   chatId: number | bigint,
   text: string,
-  step?: FlowStep
+  step?: FlowStep,
+  ctx?: BotContext
 ): Promise<TelegramSendResult> {
-  const allowed = await reserveTelegramSlot(SHARED_BOT_ID);
+  const { bot, rateLimitKey } = ctx ?? sharedBotContext();
+  const allowed = await reserveTelegramSlot(rateLimitKey);
   if (!allowed) {
     // Out of budget for this second. Throwing hands it back to the caller —
     // BullMQ can wait without holding a worker slot open; a test send surfaces
@@ -50,7 +62,6 @@ export async function sendText(
     throw new Error("Telegram rate limit reached");
   }
 
-  const bot = getSharedBot();
   const replyMarkup = step ? buildKeyboard(step) : undefined;
 
   return sendMessage(
@@ -64,14 +75,15 @@ export async function sendText(
 export async function sendStepTo(
   chatId: number | bigint,
   step: FlowStep,
-  recipientName: string | null
+  recipientName: string | null,
+  ctx?: BotContext
 ): Promise<TelegramSendResult> {
   const text = renderMessageWithoutLink({
     message: step.message,
     recipientName,
     platform: "telegram",
   });
-  return sendText(chatId, text, step);
+  return sendText(chatId, text, step, ctx);
 }
 
 /**
@@ -88,6 +100,7 @@ export async function startConversation(opts: {
   telegramUserId: bigint;
   chatId: number | bigint;
   recipientName: string | null;
+  ctx?: BotContext;
 }): Promise<TelegramSendResult> {
   await prisma.telegramConversation.upsert({
     where: {
@@ -115,5 +128,5 @@ export async function startConversation(opts: {
     },
   });
 
-  return sendStepTo(opts.chatId, opts.entryStep, opts.recipientName);
+  return sendStepTo(opts.chatId, opts.entryStep, opts.recipientName, opts.ctx);
 }

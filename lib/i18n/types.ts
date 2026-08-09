@@ -284,6 +284,14 @@ export interface Dict {
     statusCompleted: string
     progress: string
     irreversible: string
+    // own-bot gate (D5) — inline connect form shown directly on the broadcasts page
+    noBotTitle: string
+    noBotDesc: string
+    noBotTokenLabel: string
+    noBotTokenPlaceholder: string
+    noBotSave: string
+    noBotSaving: string
+    noBotInvalid: string
   }
 
   flowEditor: {
