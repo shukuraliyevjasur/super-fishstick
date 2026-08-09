@@ -321,6 +321,8 @@ export const uz: Dict = {
     noBotDesc: "Ommaviy xabar yuborish uchun o'z botingiz kerak. BotFather dan token olib pastga yozing.",
     noBotTokenLabel: "Bot token",
     noBotTokenPlaceholder: "1234567890:ABCDefgh...",
+    noBotTutorialLabel: "Bot tokenni qanday olish bo‘yicha video qo‘llanma",
+    noBotTutorialFallback: "Brauzeringiz videoni qo‘llab-quvvatlamaydi.",
     noBotSave: "Botni ulash",
     noBotSaving: "Ulanmoqda...",
     noBotInvalid: "Token noto'g'ri — BotFather da tekshiring",

@@ -50,6 +50,20 @@ function BotConnectForm({ b, onConnected }: { b: Dict["broadcasts"]; onConnected
         <p className="text-sm text-muted">{b.noBotDesc}</p>
       </div>
 
+      <div className="overflow-hidden rounded-lg border border-border bg-background">
+        <video
+          controls
+          playsInline
+          preload="metadata"
+          className="block aspect-video w-full bg-foreground"
+          aria-label={b.noBotTutorialLabel}
+        >
+          <source src="/broadcastttutorial.mp4" type="video/mp4" />
+          {b.noBotTutorialFallback}
+        </video>
+        <p className="px-3 py-2 text-xs text-muted">{b.noBotTutorialLabel}</p>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label className="block text-xs font-medium text-muted mb-1.5">

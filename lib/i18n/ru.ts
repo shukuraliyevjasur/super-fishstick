@@ -320,6 +320,8 @@ export const ru: Dict = {
     noBotDesc: "Для рассылок нужен свой бот. Получите токен в BotFather и вставьте ниже.",
     noBotTokenLabel: "Токен бота",
     noBotTokenPlaceholder: "1234567890:ABCDefgh...",
+    noBotTutorialLabel: "Видеоинструкция: как получить токен бота",
+    noBotTutorialFallback: "Ваш браузер не поддерживает видео.",
     noBotSave: "Подключить бота",
     noBotSaving: "Подключение...",
     noBotInvalid: "Неверный токен — проверьте в BotFather",

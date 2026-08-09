@@ -320,6 +320,8 @@ export const en: Dict = {
     noBotDesc: "Broadcasting requires your own bot. Get a token from BotFather and paste it below.",
     noBotTokenLabel: "Bot token",
     noBotTokenPlaceholder: "1234567890:ABCDefgh...",
+    noBotTutorialLabel: "Video guide: how to get your bot token",
+    noBotTutorialFallback: "Your browser does not support video playback.",
     noBotSave: "Connect bot",
     noBotSaving: "Connecting...",
     noBotInvalid: "Invalid token — check it in BotFather",

@@ -289,6 +289,8 @@ export interface Dict {
     noBotDesc: string
     noBotTokenLabel: string
     noBotTokenPlaceholder: string
+    noBotTutorialLabel: string
+    noBotTutorialFallback: string
     noBotSave: string
     noBotSaving: string
     noBotInvalid: string
