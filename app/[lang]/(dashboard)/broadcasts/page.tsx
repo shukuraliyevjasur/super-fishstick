@@ -3,7 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/auth";
 import { getBroadcasts } from "@/lib/data/broadcasts";
 import { getFlows } from "@/lib/data/flows";
 import { getDictionary, hasLocale } from "@/lib/i18n";
-import { hasOwnBot } from "@/lib/telegram/own-bot";
+import { getOwnBotStatus } from "@/lib/telegram/own-bot";
 import BroadcastList from "@/components/broadcasts/broadcast-list";
 
 type Props = { params: Promise<{ lang: string }> };
@@ -17,10 +17,10 @@ export default async function BroadcastsPage({ params }: Props) {
   const workspaceId = await getCurrentWorkspaceId();
   if (!workspaceId) redirect(`/${locale}/login`);
 
-  const [broadcasts, flows, botReady] = await Promise.all([
+  const [broadcasts, flows, botStatus] = await Promise.all([
     getBroadcasts(workspaceId),
     getFlows(workspaceId),
-    hasOwnBot(workspaceId),
+    getOwnBotStatus(workspaceId),
   ]);
 
   return (
@@ -28,7 +28,8 @@ export default async function BroadcastsPage({ params }: Props) {
       initialBroadcasts={broadcasts}
       flows={flows.map((flow) => ({ id: flow.id, name: flow.name }))}
       dict={dict.broadcasts}
-      botReady={botReady}
+      botReady={botStatus.configured}
+      botUsername={botStatus.botUsername}
     />
   );
 }

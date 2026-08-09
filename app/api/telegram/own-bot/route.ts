@@ -6,6 +6,7 @@ import {
   clearWorkspaceBotToken,
   getOwnBotStatus,
 } from "@/lib/telegram/own-bot";
+import { prisma } from "@/lib/db/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,7 +63,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Remove the workspace's own bot token, reverting to the shared bot. */
+/**
+ * Remove the workspace's own bot token.
+ *
+ * Never remove it mid-broadcast: a running job needs this token to finish and
+ * must not fall back to the shared bot if a user disconnects it in another tab.
+ */
 export async function DELETE() {
   const context = await getCurrentWorkspaceContext();
   if (!context) {
@@ -73,6 +79,16 @@ export async function DELETE() {
     return NextResponse.json(
       { success: false, error: "Only owners and admins can configure the bot" },
       { status: 403 }
+    );
+  }
+
+  const sending = await prisma.telegramBroadcast.count({
+    where: { workspaceId: context.workspaceId, status: "SENDING" },
+  });
+  if (sending > 0) {
+    return NextResponse.json(
+      { success: false, error: "broadcast_in_progress" },
+      { status: 409 }
     );
   }
 

@@ -129,6 +129,7 @@ describe("POST /api/broadcasts/:id/send (confirm)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetContext.mockResolvedValue({ workspaceId: "ws1", role: "OWNER" });
+    mockHasOwnBot.mockResolvedValue(true);
     mockPrisma.telegramBroadcast.findFirst.mockResolvedValue({
       id: "b1",
       status: "DRAFT",
@@ -161,6 +162,20 @@ describe("POST /api/broadcasts/:id/send (confirm)", () => {
     );
     expect(res.status).toBe(400);
     expect(mockQueueAdd).not.toHaveBeenCalled();
+  });
+
+  it("refuses a saved draft after its own bot was disconnected", async () => {
+    mockHasOwnBot.mockResolvedValue(false);
+
+    const res = await SEND(
+      jsonRequest({ confirm: CONFIRMATION_WORD }),
+      sendParams("b1")
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body.error).toBe("no_own_bot");
+    expect(mockEnroll).not.toHaveBeenCalled();
   });
 
   it("is a no-op when the broadcast is already sending", async () => {

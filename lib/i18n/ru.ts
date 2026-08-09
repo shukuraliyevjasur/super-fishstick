@@ -325,6 +325,17 @@ export const ru: Dict = {
     noBotSave: "Подключить бота",
     noBotSaving: "Подключение...",
     noBotInvalid: "Неверный токен — проверьте в BotFather",
+    botConnected: "Подключённый бот: @{{username}}",
+    disconnectBot: "Отключить бота",
+    disconnectTitle: "Отключить бота?",
+    disconnectDesc: "Вы не сможете отправлять новые рассылки через этого бота. Позже его можно подключить снова с помощью токена.",
+    disconnectTypeLabel: "Введите {{word}} для подтверждения",
+    disconnectWord: "OTKLYUCHIT",
+    disconnectConfirm: "Отключить бота",
+    disconnectCancel: "Отмена",
+    disconnecting: "Отключение...",
+    disconnectFailed: "Не удалось отключить бота. Попробуйте ещё раз.",
+    disconnectBlocked: "Рассылка уже отправляется. Отключите бота после её завершения.",
   },
 
   flowEditor: {

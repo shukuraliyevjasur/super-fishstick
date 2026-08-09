@@ -12,6 +12,7 @@ interface Props {
   flows: { id: string; name: string }[];
   dict: Dict["broadcasts"];
   botReady: boolean;
+  botUsername: string | null;
 }
 
 function statusLabel(status: string, b: Dict["broadcasts"]) {
@@ -95,11 +96,119 @@ function BotConnectForm({ b, onConnected }: { b: Dict["broadcasts"]; onConnected
   );
 }
 
+function DisconnectBotControl({
+  b,
+  botUsername,
+  onDisconnected,
+}: {
+  b: Dict["broadcasts"];
+  botUsername: string | null;
+  onDisconnected: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canDisconnect = typed.trim() === b.disconnectWord;
+
+  async function disconnect() {
+    if (!canDisconnect) return;
+    setDisconnecting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/telegram/own-bot", { method: "DELETE" });
+      const payload = await response.json();
+
+      if (payload.success) {
+        onDisconnected();
+        return;
+      }
+      setError(
+        response.status === 409 ? b.disconnectBlocked : b.disconnectFailed
+      );
+    } catch {
+      setError(b.disconnectFailed);
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (!confirming) {
+    return (
+      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
+        <span className="text-muted">
+          {t(b.botConnected, { username: botUsername ?? "Telegram" })}
+        </span>
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="font-medium text-error transition-colors hover:text-error/80 active:translate-y-px"
+        >
+          {b.disconnectBot}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="disconnect-bot-title"
+      className="w-full max-w-md rounded-lg border border-error/30 bg-error/5 p-4"
+    >
+      <h2 id="disconnect-bot-title" className="text-sm font-semibold text-foreground">
+        {b.disconnectTitle}
+      </h2>
+      <p className="mt-1 text-sm text-muted">{b.disconnectDesc}</p>
+
+      <label className="mt-4 block text-xs font-medium text-muted">
+        {t(b.disconnectTypeLabel, { word: b.disconnectWord })}
+        <input
+          autoFocus
+          value={typed}
+          onChange={(event) => setTyped(event.target.value)}
+          className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-error"
+        />
+      </label>
+
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-error">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => void disconnect()}
+          disabled={!canDisconnect || disconnecting}
+          className="rounded-md bg-error px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-error/90 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {disconnecting ? b.disconnecting : b.disconnectConfirm}
+        </button>
+        <button
+          type="button"
+          disabled={disconnecting}
+          onClick={() => {
+            setConfirming(false);
+            setTyped("");
+            setError(null);
+          }}
+          className="rounded-md border border-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground active:translate-y-px disabled:opacity-50"
+        >
+          {b.disconnectCancel}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export default function BroadcastList({
   initialBroadcasts,
   flows,
   dict: b,
   botReady: initialBotReady,
+  botUsername,
 }: Props) {
   const router = useRouter();
   const [composing, setComposing] = useState(false);
@@ -138,11 +247,23 @@ export default function BroadcastList({
         {!composing && (
           <button
             onClick={() => setComposing(true)}
-            className="shrink-0 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            className="shrink-0 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover active:translate-y-px"
           >
             {b.newBtn}
           </button>
         )}
+      </div>
+
+      <div className="flex justify-end">
+          <DisconnectBotControl
+            b={b}
+            botUsername={botUsername}
+            onDisconnected={() => {
+              setComposing(false);
+              setBotReady(false);
+              router.refresh();
+            }}
+          />
       </div>
 
       {composing && (

@@ -10,6 +10,7 @@ import {
   getTelegramQueue,
 } from "@/lib/queue/client";
 import { enrollRecipients, MAX_BROADCAST_RECIPIENTS } from "@/lib/telegram/broadcast";
+import { hasOwnBot } from "@/lib/telegram/own-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,15 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
     return NextResponse.json(
       { success: false, error: "Confirmation word does not match" },
       { status: 400 }
+    );
+  }
+
+  // A draft can outlive its bot configuration. Refuse rather than let a queued
+  // broadcast use the shared bot after the workspace disconnected its own one.
+  if (!(await hasOwnBot(context.workspaceId))) {
+    return NextResponse.json(
+      { success: false, error: "no_own_bot" },
+      { status: 403 }
     );
   }
 

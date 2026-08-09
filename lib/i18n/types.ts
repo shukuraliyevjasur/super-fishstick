@@ -294,6 +294,17 @@ export interface Dict {
     noBotSave: string
     noBotSaving: string
     noBotInvalid: string
+    botConnected: string
+    disconnectBot: string
+    disconnectTitle: string
+    disconnectDesc: string
+    disconnectTypeLabel: string
+    disconnectWord: string
+    disconnectConfirm: string
+    disconnectCancel: string
+    disconnecting: string
+    disconnectFailed: string
+    disconnectBlocked: string
   }
 
   flowEditor: {

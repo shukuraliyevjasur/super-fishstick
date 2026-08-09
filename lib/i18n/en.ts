@@ -325,6 +325,17 @@ export const en: Dict = {
     noBotSave: "Connect bot",
     noBotSaving: "Connecting...",
     noBotInvalid: "Invalid token — check it in BotFather",
+    botConnected: "Connected bot: @{{username}}",
+    disconnectBot: "Disconnect bot",
+    disconnectTitle: "Disconnect this bot?",
+    disconnectDesc: "You will not be able to send new broadcasts through this bot. You can connect it again later with its token.",
+    disconnectTypeLabel: "Type {{word}} to confirm",
+    disconnectWord: "DISCONNECT",
+    disconnectConfirm: "Disconnect bot",
+    disconnectCancel: "Cancel",
+    disconnecting: "Disconnecting...",
+    disconnectFailed: "Could not disconnect the bot. Try again.",
+    disconnectBlocked: "A broadcast is currently sending. Disconnect the bot after it finishes.",
   },
 
   flowEditor: {

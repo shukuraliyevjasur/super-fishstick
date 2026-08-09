@@ -326,6 +326,17 @@ export const uz: Dict = {
     noBotSave: "Botni ulash",
     noBotSaving: "Ulanmoqda...",
     noBotInvalid: "Token noto'g'ri — BotFather da tekshiring",
+    botConnected: "Ulangan bot: @{{username}}",
+    disconnectBot: "Botni uzish",
+    disconnectTitle: "Bot uzilsinmi?",
+    disconnectDesc: "Bu bot orqali yangi ommaviy xabar yubora olmaysiz. Keyin uni token bilan qayta ulashingiz mumkin.",
+    disconnectTypeLabel: "Tasdiqlash uchun {{word}} deb yozing",
+    disconnectWord: "UZISH",
+    disconnectConfirm: "Botni uzish",
+    disconnectCancel: "Bekor qilish",
+    disconnecting: "Uzilmoqda...",
+    disconnectFailed: "Botni uzib bo'lmadi. Qayta urinib ko'ring.",
+    disconnectBlocked: "Ommaviy xabar yuborilmoqda. Botni u tugagach uzishingiz mumkin.",
   },
 
   flowEditor: {
