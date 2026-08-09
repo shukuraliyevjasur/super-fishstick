@@ -167,6 +167,151 @@ export const FLOW_TEMPLATES: FlowTemplate[] = [
   },
 ];
 
+export const FLOW_TEMPLATES_RU: FlowTemplate[] = [
+  {
+    id: "price-enquiry-ru",
+    name: "Запрос цены",
+    description: "Выясняет, что нужно клиенту, и берёт номер телефона.",
+    steps: [
+      {
+        id: "start",
+        message: "Привет {username}! 👋 Какой товар вас интересует?",
+        saveAnswerAs: "товар",
+        options: [
+          { label: "Одежда", nextStepId: "budget" },
+          { label: "Аксессуары", nextStepId: "budget" },
+          { label: "Другое", nextStepId: "other" },
+        ],
+      },
+      {
+        id: "other",
+        message: "Напишите, что именно вас интересует 👇",
+        saveAnswerAs: "другой_товар",
+        nextStepId: "budget",
+      },
+      {
+        id: "budget",
+        message: "Понятно. Какой у вас примерный бюджет?",
+        saveAnswerAs: "бюджет",
+        options: [
+          { label: "До 500 тыс. сум", nextStepId: "phone" },
+          { label: "500 тыс. — 1 млн", nextStepId: "phone" },
+          { label: "Больше 1 млн", nextStepId: "phone" },
+        ],
+      },
+      {
+        id: "phone",
+        message:
+          "Отлично! Оставьте номер телефона — менеджер свяжется с вами 📞",
+        saveAnswerAs: "телефон",
+        nextStepId: "done",
+      },
+      {
+        id: "done",
+        message: "Спасибо! 🙏 Скоро выйдем на связь.",
+        nextStepId: null,
+      },
+    ],
+  },
+  {
+    id: "booking-ru",
+    name: "Запись на приём",
+    description: "Выбирает услугу и время, принимает заявку.",
+    steps: [
+      {
+        id: "start",
+        message: "Привет {username}! На какую услугу хотите записаться?",
+        saveAnswerAs: "услуга",
+        options: [
+          { label: "Стрижка", nextStepId: "day" },
+          { label: "Борода", nextStepId: "day" },
+          { label: "Оба", nextStepId: "day" },
+        ],
+      },
+      {
+        id: "day",
+        message: "На какой день удобно?",
+        saveAnswerAs: "день",
+        options: [
+          { label: "Сегодня", nextStepId: "time" },
+          { label: "Завтра", nextStepId: "time" },
+          { label: "Другой день", nextStepId: "custom_day" },
+        ],
+      },
+      {
+        id: "custom_day",
+        message: "Напишите дату 👇",
+        saveAnswerAs: "другой_день",
+        nextStepId: "time",
+      },
+      {
+        id: "time",
+        message: "В какое время удобно?",
+        saveAnswerAs: "время",
+        options: [
+          { label: "Утром", nextStepId: "phone" },
+          { label: "Днём", nextStepId: "phone" },
+          { label: "Вечером", nextStepId: "phone" },
+        ],
+      },
+      {
+        id: "phone",
+        message: "Оставьте номер — пришлём подтверждение 📞",
+        saveAnswerAs: "телефон",
+        nextStepId: "done",
+      },
+      {
+        id: "done",
+        message: "Записали ✅ Скоро подтвердим.",
+        nextStepId: null,
+      },
+    ],
+  },
+  {
+    id: "catalogue-ru",
+    name: "Отправка каталога",
+    description: "Уточняет цель и отправляет подходящий каталог.",
+    steps: [
+      {
+        id: "start",
+        message:
+          "Привет {username}! Отправлю каталог 📚 Для кого ищете?",
+        saveAnswerAs: "для_кого",
+        options: [
+          { label: "Для себя", nextStepId: "size" },
+          { label: "В подарок", nextStepId: "gift" },
+        ],
+      },
+      {
+        id: "gift",
+        message: "Кому подарок? Напишите пару слов 🎁",
+        saveAnswerAs: "подарок_кому",
+        nextStepId: "send",
+      },
+      {
+        id: "size",
+        message: "Какой размер нужен?",
+        saveAnswerAs: "размер",
+        options: [
+          { label: "S / M", nextStepId: "send" },
+          { label: "L / XL", nextStepId: "send" },
+          { label: "Не знаю", nextStepId: "send" },
+        ],
+      },
+      {
+        id: "send",
+        message:
+          "Вот наш каталог 👉 {link}\n\nЕсли есть вопросы — пишите здесь.",
+        nextStepId: null,
+      },
+    ],
+  },
+];
+
 export function getFlowTemplate(id: string): FlowTemplate | null {
-  return FLOW_TEMPLATES.find((template) => template.id === id) ?? null;
+  return (
+    FLOW_TEMPLATES.find((t) => t.id === id) ??
+    FLOW_TEMPLATES_RU.find((t) => t.id === id) ??
+    null
+  );
 }

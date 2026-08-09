@@ -41,7 +41,7 @@ decision — say that out loud rather than doing it quietly.
 
 ---
 
-## Checkpoint — 2026-08-08
+## Checkpoint — 2026-08-09
 
 Where the work actually stands, updated as it moves. **Code is ahead of
 configuration**: everything below is written, tested and deployed to Vercel, but the
@@ -55,8 +55,8 @@ are done.
 | S3 — flow editor (D1–D8) | Done 2026-08-08 |
 | S4 — bridge (T10) | Done 2026-08-08 |
 | S5 — broadcast (T8, E8) | Done 2026-08-08, API **and** UI |
-| S6 — mini app (T12, E11, T14) | **Next** |
-| E10 — coverage of the new surface | Outstanding; four paths still want E2E |
+| S6 — mini app (T12, E11, T14) | Done 2026-08-09 |
+| E10 — coverage of the new surface | Done 2026-08-09 (unit); four E2E paths still outstanding |
 
 **Migrations added this session, all applied by the Vercel build:**
 `20260808180000_add_campaign_telegram_destination`, `20260808190000_add_telegram_link`,
@@ -88,7 +88,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:genera
 npm run typecheck && npm run lint && npm test
 ```
 
-Expected: **typecheck silent, lint 0 errors, 358 tests passing across 38 files.**
+Expected: **typecheck silent, lint 0 errors, 411 tests passing across 45 files.**
 
 > **Note (2026-08-07):** The CI deploy step is currently failing with `ssh: handshake failed: unable to authenticate`. The GCP VM SSH key stored in GitHub Actions secrets is no longer accepted. The build-push step passes. Fix: re-add the correct public key to `~/.ssh/authorized_keys` on the VM, or regenerate the secret in GitHub Actions settings. Code CI (typecheck, lint, test) is unaffected — only the deploy step fails.
 
@@ -231,9 +231,9 @@ something can create a `TelegramFlow`, the engine has nothing to run.
 | **T10** | Optional Telegram destination type in the campaign builder, campaign id in the deep-link payload. Opt-in only (D4). |
 | ~~**T8**~~ | ~~Broadcast.~~ **Done 2026-08-08.** `lib/telegram/broadcast.ts`. Recipients written before sending and marked one at a time; typed confirmation word + audience echo + status check on the send call. UI: compose → reach count → typed word, at `/broadcasts`. |
 | ~~**E8**~~ | ~~Cursor-paginate + cap.~~ **Done 2026-08-08.** Cap is a refusal, not a truncation. |
-| **T12** | Mini App wrapper over the existing report pages. |
-| **E11** | Add `/miniapp` to the `proxy.ts` matcher exclusions **and** to `__tests__/proxy-matcher.test.ts`. |
-| **T14** | Extend the data-deletion page to cover Telegram ids, names and captured flow answers. |
+| ~~**T12**~~ | ~~Mini App wrapper over the existing report pages.~~ **Done 2026-08-09.** `app/miniapp/` — own root layout with Telegram WebApp SDK, compact report page at `/miniapp/[shareSlug]`, reuses `getCampaignReportBySlug`. |
+| ~~**E11**~~ | ~~Add `/miniapp` to the `proxy.ts` matcher exclusions **and** to `__tests__/proxy-matcher.test.ts`.~~ **Done 2026-08-09.** |
+| ~~**T14**~~ | ~~Extend the data-deletion page to cover Telegram ids, names and captured flow answers.~~ **Done 2026-08-09.** New section 2 covers Telegram user IDs, chat IDs, conversation history and saved answers. |
 
 ## Testing, throughout
 

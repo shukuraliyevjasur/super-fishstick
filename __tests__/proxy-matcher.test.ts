@@ -26,6 +26,10 @@ describe("proxy matcher", () => {
     expect(matcher.test("/sitemap.xml")).toBe(false);
   });
 
+  it("skips Telegram Mini App pages, which have no locale prefix", () => {
+    expect(matcher.test("/miniapp/some-share-slug")).toBe(false);
+  });
+
   it("skips API routes and Next internals", () => {
     expect(matcher.test("/api/webhook")).toBe(false);
     expect(matcher.test("/_next/static/chunk.js")).toBe(false);

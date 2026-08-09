@@ -11,7 +11,7 @@ export async function generateMetadata({
   return {
     title: "Ma'lumotlarni o'chirish / Data Deletion — replie",
     description:
-      "How to disconnect Instagram and request deletion of your replie account and campaign data.",
+      "How to disconnect Instagram, remove Telegram data, and request deletion of your replie account and campaign data.",
     alternates: localeAlternates("/data-deletion", lang),
   };
 }
@@ -20,8 +20,8 @@ export default function DataDeletionPage() {
   return (
     <LegalShell
       title="Ma'lumotlarni o'chirish / Data Deletion"
-      description="Instagram ulanishingizni uzish va replie akkaunt va kampaniya ma'lumotlaringizni o'chirish bo'yicha ko'rsatmalar. Bu sahifa Meta App Review uchun ham ishlatiladi. / Instructions for disconnecting Instagram and requesting deletion of your replie account and campaign data. This page also serves Meta App Review requirements."
-      updatedAt="July 31, 2026"
+      description="Instagram ulanishingizni uzish, Telegram ma'lumotlarini o'chirish va replie akkaunt va kampaniya ma'lumotlaringizni o'chirish bo'yicha ko'rsatmalar. Bu sahifa Meta App Review uchun ham ishlatiladi. / Instructions for disconnecting Instagram, removing Telegram data, and requesting deletion of your replie account and campaign data. This page also serves Meta App Review requirements."
+      updatedAt="August 9, 2026"
     >
       <section className="space-y-3">
         <h2 className="text-base font-bold text-foreground">
@@ -37,7 +37,33 @@ export default function DataDeletionPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-bold text-foreground">
-          2. Ish maydoni ma&apos;lumotlarini o&apos;chirish / Delete Workspace Data
+          2. Telegram ma&apos;lumotlarini o&apos;chirish / Delete Telegram Data
+        </h2>
+        <p className="text-foreground">
+          Agar siz Telegram bot orqali muloqot qilgan bo&apos;lsangiz, biz quyidagi ma&apos;lumotlarni saqlaymiz: Telegram foydalanuvchi identifikatoringiz, chat identifikatoringiz va suhbat davomida siz bergan javoblar. Bu ma&apos;lumotlar ish maydoni egasi tomonidan kampaniya hisobotlarida ko&apos;rinadi.
+        </p>
+        <p className="text-muted">
+          If you interacted with a Telegram bot powered by replie, we store your Telegram user ID, chat ID, and the answers you provided during the conversation flow. This data is visible to the workspace owner in campaign reports.
+        </p>
+        <p className="text-foreground">
+          Telegram ma&apos;lumotlaringizni o&apos;chirish uchun{" "}
+          <a href="mailto:info@replie.uz" className="text-accent hover:underline">
+            info@replie.uz
+          </a>{" "}
+          manziliga xat yuboring va Telegram foydalanuvchi nomingiz yoki identifikatoringizni ko&apos;rsating. Biz Telegram foydalanuvchi identifikatoringiz, chat identifikatoringiz, suhbat tarixi va saqlangan javoblaringizni o&apos;chiramiz.
+        </p>
+        <p className="text-muted">
+          To delete your Telegram data, email{" "}
+          <a href="mailto:info@replie.uz" className="text-accent hover:underline">
+            info@replie.uz
+          </a>{" "}
+          with your Telegram username or user ID. We will remove your Telegram user ID, chat ID, conversation history, and any saved answers from our systems.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-bold text-foreground">
+          3. Ish maydoni ma&apos;lumotlarini o&apos;chirish / Delete Workspace Data
         </h2>
         <p className="text-foreground">
           Ish maydoni, kampaniya, jurnal, webhook va operatsion diagnostika ma&apos;lumotlarini o&apos;chirish uchun tizimga kirish uchun foydalanilgan elektron pochta manzilingizdan{" "}
@@ -57,7 +83,7 @@ export default function DataDeletionPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-bold text-foreground">
-          3. Tasdiqlash / Verification
+          4. Tasdiqlash / Verification
         </h2>
         <p className="text-foreground">
           Ma&apos;lumotlarni o&apos;chirishdan oldin biz elektron pochta manzilingiz yoki ulangan biznes akkauntingiz ustidan nazoratni tasdiqlashingizni so&apos;rashimiz mumkin. O&apos;chirish so&apos;rovlari huquqiy, firibgarlikdan himoya qilish yoki xavfsizlik sabablari bo&apos;yicha saqlash talab etilmasa, imkon qadar tezroq — odatda 30 kun ichida — ko&apos;rib chiqiladi.
@@ -69,7 +95,7 @@ export default function DataDeletionPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-bold text-foreground">
-          4. Aloqa / Contact
+          5. Aloqa / Contact
         </h2>
         <p className="text-foreground">
           Savollar yoki tezkor yordam uchun{" "}

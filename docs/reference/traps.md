@@ -120,7 +120,7 @@ so the workflow looks half-green and the worker silently runs whatever it last r
 `proxy.ts` prefixes every unprefixed path with a locale. Anything with no page under
 `app/[lang]/` **must** stay excluded from `config.matcher` or it redirects into a 404.
 
-Currently excluded: `/api/*`, `/r/*`, `/reports/*`, `robots.txt`, `sitemap.xml`.
+Currently excluded: `/api/*`, `/r/*`, `/reports/*`, `/miniapp/*`, `robots.txt`, `sitemap.xml`.
 
 `/r/*` matters most — `lib/tracking/message.ts` bakes `${APP_URL}/r/<slug>` into every DM
 already sent, so those URLs cannot change retroactively. This regressed once and every
