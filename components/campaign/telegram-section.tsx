@@ -26,6 +26,7 @@ interface Props {
   onFlowChange: (flowId: string | null) => void;
   /** Null until the campaign is saved, or when no bot username is configured. */
   deepLink: string | null;
+  botConfigured: boolean;
   t: Dict["campaignBuilder"];
 }
 
@@ -36,6 +37,7 @@ export default function TelegramSection({
   selectedFlowId,
   onFlowChange,
   deepLink,
+  botConfigured,
   t,
 }: Props) {
   return (
@@ -45,10 +47,14 @@ export default function TelegramSection({
           <p className="text-sm text-foreground">{t.telegramToggleLabel}</p>
           <p className="mt-0.5 text-xs text-muted">{t.telegramToggleHint}</p>
         </div>
-        <Toggle on={enabled} onToggle={onToggle} />
+        <Toggle on={enabled} onToggle={onToggle} disabled={!botConfigured} />
       </div>
 
-      {enabled && (
+      {!botConfigured ? (
+        <p className="rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
+          {t.telegramBotRequired}
+        </p>
+      ) : enabled && (
         <div className="space-y-3">
           {flows.length === 0 ? (
             <p className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">

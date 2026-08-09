@@ -17,7 +17,12 @@ const { mockPrisma, mockSendText } = vi.hoisted(() => ({
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
 vi.mock("@/lib/telegram/engine", () => ({ sendText: mockSendText }));
 vi.mock("@/lib/telegram/own-bot", () => ({
-  getWorkspaceBot: vi.fn().mockResolvedValue({ bot: {}, rateLimitKey: "shared" }),
+  getWorkspaceBot: vi.fn().mockResolvedValue({
+    bot: {},
+    rateLimitKey: "ws:ws1",
+    isOwn: true,
+    botId: "bot1",
+  }),
 }));
 
 const {
@@ -60,14 +65,14 @@ describe("broadcast enrollment (E8)", () => {
   it("counts the audience, filtered by flow when one is given", async () => {
     mockPrisma.telegramConversation.count.mockResolvedValue(7);
 
-    expect(await countAudience("ws1", "flow1")).toBe(7);
+    expect(await countAudience("ws1", "bot1", "flow1")).toBe(7);
     expect(mockPrisma.telegramConversation.count).toHaveBeenCalledWith({
-      where: { workspaceId: "ws1", flowId: "flow1" },
+      where: { workspaceId: "ws1", botId: "bot1", flowId: "flow1" },
     });
 
-    await countAudience("ws1", null);
+    await countAudience("ws1", "bot1", null);
     expect(mockPrisma.telegramConversation.count).toHaveBeenLastCalledWith({
-      where: { workspaceId: "ws1" },
+      where: { workspaceId: "ws1", botId: "bot1" },
     });
   });
 
@@ -76,7 +81,7 @@ describe("broadcast enrollment (E8)", () => {
       .mockResolvedValueOnce(conversations(500))
       .mockResolvedValueOnce(conversations(10, 500));
 
-    const enrolled = await enrollRecipients("b1", "ws1", null);
+    const enrolled = await enrollRecipients("b1", "ws1", "bot1", null);
 
     expect(enrolled).toBe(510);
     // Second page continues after the last id of the first, not by offset.
@@ -88,7 +93,7 @@ describe("broadcast enrollment (E8)", () => {
   it("skips duplicates so a re-run cannot enroll anyone twice", async () => {
     mockPrisma.telegramConversation.findMany.mockResolvedValueOnce(conversations(3));
 
-    await enrollRecipients("b1", "ws1", null);
+    await enrollRecipients("b1", "ws1", "bot1", null);
 
     expect(mockPrisma.telegramBroadcastRecipient.createMany).toHaveBeenCalledWith(
       expect.objectContaining({ skipDuplicates: true })
@@ -99,7 +104,7 @@ describe("broadcast enrollment (E8)", () => {
     // Always a full page: an audience larger than the ceiling.
     mockPrisma.telegramConversation.findMany.mockResolvedValue(conversations(500));
 
-    const enrolled = await enrollRecipients("b1", "ws1", null);
+    const enrolled = await enrollRecipients("b1", "ws1", "bot1", null);
 
     expect(enrolled).toBe(MAX_BROADCAST_RECIPIENTS);
   });
@@ -107,7 +112,7 @@ describe("broadcast enrollment (E8)", () => {
   it("enrolls nothing for an empty audience", async () => {
     mockPrisma.telegramConversation.findMany.mockResolvedValue([]);
 
-    expect(await enrollRecipients("b1", "ws1", null)).toBe(0);
+    expect(await enrollRecipients("b1", "ws1", "bot1", null)).toBe(0);
     expect(mockPrisma.telegramBroadcastRecipient.createMany).not.toHaveBeenCalled();
   });
 });
@@ -115,7 +120,11 @@ describe("broadcast enrollment (E8)", () => {
 describe("broadcast sending (T8)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrisma.telegramBroadcast.findUnique.mockResolvedValue({ message: "Salom!" });
+    mockPrisma.telegramBroadcast.findUnique.mockResolvedValue({
+      message: "Salom!",
+      workspaceId: "ws1",
+      botId: "bot1",
+    });
     mockPrisma.telegramBroadcast.update.mockResolvedValue({});
     mockPrisma.telegramBroadcastRecipient.update.mockResolvedValue({});
   });

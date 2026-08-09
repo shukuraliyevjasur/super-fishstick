@@ -1,63 +1,39 @@
 # replie docs
 
-Reorganized 2026-08-07. Everything below is current; anything superseded lives in
-[archive/](archive/) with its original date.
+These are the current, pilot-first docs. Historical review plans live in
+[`archive/`](archive/) and are not required reading for normal work.
 
-**Picking up the work?** → **[START-HERE.md](START-HERE.md)** — the ordered execution
-plan, with every task resolved to files and verify steps, and the ordering constraints
-that are not negotiable.
+Read in this order:
 
-## Read in this order
+1. [`START-HERE.md`](START-HERE.md) — the product goal, Telegram journey, and verification commands.
+2. [`product/decisions.md`](product/decisions.md) — settled calls; do not silently reverse one.
+3. [`reference/traps.md`](reference/traps.md) — Windows, Prisma, routing, and Telegram landmines.
+4. [`operations/handbook.md`](operations/handbook.md) — deployment and operator runbooks.
+5. [`product/backlog.md`](product/backlog.md) — only genuinely deferred work.
 
-| # | Doc | What it is |
-|---|-----|------------|
-| 1 | [product/decisions.md](product/decisions.md) | **Settled calls with their reasoning.** Do not quietly do something different. If you think one should be reversed, say so explicitly. |
-| 2 | [reference/traps.md](reference/traps.md) | **The landmines.** Every one cost real debugging time already. Read before touching the area it names. |
-| 3 | [reference/do-not-fix.md](reference/do-not-fix.md) | Things proven to be fine. Re-reporting one is a regression. |
-| 4 | [product/roadmap.md](product/roadmap.md) | **What we are building and in what order.** Canonical. Carries the CEO, engineering and design decisions from the 2026-08-07 review pass. |
-| 5 | [operations/handbook.md](operations/handbook.md) | How it is deployed, env vars, runbooks, the "before real users" list. Your main operational map. |
-| 6 | [product/backlog.md](product/backlog.md) | Deferred work, each with a trigger for when to revisit. |
+## Current pilot model
 
-## Reference
+Instagram accounts are onboarded as Meta test users while verification is pending. Plans are
+granted manually; payment rails and App Review are external blockers, not current engineering
+work.
 
-- [reference/architecture-notes](operations/handbook.md) — auth, i18n and routing live in the handbook
-- [reference/design-system.md](reference/design-system.md) — design audit and the token rules
-- [reference/meta-app-review.md](reference/meta-app-review.md) — App Review submission material
-- [reference/setup.md](reference/setup.md) — local setup
-- [reference/stack.md](reference/stack.md) — stack overview
+Telegram is customer-owned:
 
-## Current state (verified 2026-08-08 against the code, not the docs)
+`Instagram campaign → workspace bot → /start flow → bot-specific broadcast audience`
 
-```
-tests      411 passing across 45 files   (npm test)
-lint       0 errors                      (npm run lint)
-typecheck  silent                        (npm run typecheck)
-```
+Each workspace connects its own BotFather token from **Broadcasts** (the in-product tutorial is
+shown there). That bot runs the campaign flows and can broadcast only to people who started that
+same bot. `@replieuz_bot` is not a customer campaign or broadcast channel.
 
-All three verified green on 2026-08-08 after `npm ci`. If typecheck reports
-`TS2307: Cannot find module '@sentry/nextjs'`, your `node_modules` is behind the
-lockfile — run `npm ci`, never `npm install` (see [traps](reference/traps.md)).
+## Verification
 
-Verify before writing code:
-
-```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/x" npm run db:generate
-npm run typecheck && npm run lint && npm test
+```powershell
+$env:DATABASE_URL='postgresql://postgres:postgres@localhost:5432/x'; npm.cmd run db:generate
+npm.cmd run typecheck
+npm.cmd test
 ```
 
-If those numbers stop matching, the code changed. Find out why before starting.
+Run `npm.cmd run lint` separately. It has zero project errors; checked-in agent skill folders
+currently produce warnings.
 
-## What is blocked, and on what
-
-Neither is a code problem. Do not build around them without asking.
-
-- **Meta Advanced Access** — needs Business Verification, which needs a legal entity
-  (YaTT). Not available yet. Caps the app at 50 Instagram accounts and makes every inbound
-  DM feature structurally impossible. See [traps](reference/traps.md).
-- **Payment rails** — Click/Payme need a merchant account, blocked on the same legal
-  entity. Plans are granted manually through `POST /api/admin/plan` meanwhile.
-
-## Conventions
-
-`AGENTS.md` and `CLAUDE.md` stay at the repo root because the agent harness loads them
-automatically. Everything else lives here.
+Never run `npm install` on Windows. See [`reference/traps.md`](reference/traps.md).

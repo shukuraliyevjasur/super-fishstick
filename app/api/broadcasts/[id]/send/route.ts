@@ -10,7 +10,7 @@ import {
   getTelegramQueue,
 } from "@/lib/queue/client";
 import { enrollRecipients, MAX_BROADCAST_RECIPIENTS } from "@/lib/telegram/broadcast";
-import { hasOwnBot } from "@/lib/telegram/own-bot";
+import { getOwnBotStatus } from "@/lib/telegram/own-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,7 +74,8 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
 
   // A draft can outlive its bot configuration. Refuse rather than let a queued
   // broadcast use the shared bot after the workspace disconnected its own one.
-  if (!(await hasOwnBot(context.workspaceId))) {
+  const ownBot = await getOwnBotStatus(context.workspaceId);
+  if (!ownBot.configured || !ownBot.botId) {
     return NextResponse.json(
       { success: false, error: "no_own_bot" },
       { status: 403 }
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
 
   const broadcast = await prisma.telegramBroadcast.findFirst({
     where: { id, workspaceId: context.workspaceId },
-    select: { id: true, status: true, flowId: true },
+    select: { id: true, status: true, flowId: true, botId: true },
   });
 
   if (!broadcast) {
@@ -102,9 +103,20 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
     );
   }
 
+  // A draft belongs to the bot that collected its preview audience. Replacing
+  // a bot requires composing again; the new bot has no right to message the
+  // previous bot's contacts.
+  if (broadcast.botId !== ownBot.botId) {
+    return NextResponse.json(
+      { success: false, error: "bot_changed" },
+      { status: 409 }
+    );
+  }
+
   const enrolled = await enrollRecipients(
     broadcast.id,
     context.workspaceId,
+    broadcast.botId,
     broadcast.flowId
   );
 

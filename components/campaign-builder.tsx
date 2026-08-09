@@ -91,6 +91,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [telegramFlowId, setTelegramFlowId] = useState<string | null>(null);
   const [flows, setFlows] = useState<FlowOptionSummary[]>([]);
   const [botUsername, setBotUsername] = useState<string | null>(null);
+  const [ownBotConfigured, setOwnBotConfigured] = useState(false);
 
   const [openingDmEnabled, setOpeningDmEnabled] = useState(false);
   const [openingDmMessage, setOpeningDmMessage] = useState("");
@@ -168,7 +169,10 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             }))
           );
         }
-        if (configPayload?.success) setBotUsername(configPayload.botUsername);
+        if (configPayload?.success) {
+          setBotUsername(configPayload.botUsername);
+          setOwnBotConfigured(Boolean(configPayload.isOwnBot));
+        }
       })
       // A campaign must stay editable when Telegram is not configured at all.
       .catch(() => {});
@@ -634,6 +638,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         <TelegramSection
           enabled={telegramEnabled}
           onToggle={() => setTelegramEnabled(!telegramEnabled)}
+          botConfigured={ownBotConfigured}
           flows={flows}
           selectedFlowId={telegramFlowId}
           onFlowChange={setTelegramFlowId}

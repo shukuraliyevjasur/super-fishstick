@@ -1,6 +1,6 @@
 # Operations handbook
 
-**Last updated:** 2026-08-08 (Telegram env vars). Moved here from `HANDOFF.md` in the docs
+**Last updated:** 2026-08-10 (workspace-owned Telegram bots). Moved here from `HANDOFF.md` in the docs
 reorganization; kept whole because its sections cross-link by anchor. Several sections
 still say "HANDOFF.md" in prose where they mean this file — the links resolve, only the
 display text is old.
@@ -177,20 +177,22 @@ the repo.
 
 **Worker (GCP):** `DATABASE_URL`, `REDIS_URL`, `ENCRYPTION_KEY`, `APP_URL`, `NODE_ENV`, `SENTRY_DSN`.
 
-**Telegram (added 2026-08-08).** None of the Telegram features run without these, and
-each fails in its own quiet way rather than loudly:
+**Telegram.** The shared bot variables are needed only for legacy/internal support. Customer
+campaigns, test sends and broadcasts use the encrypted per-workspace token connected in the
+Broadcasts UI; do not add those tokens to Vercel or the VM manually.
 
 | Variable | Where | What breaks without it |
 |----------|-------|------------------------|
 | `TELEGRAM_BOT_TOKEN` | Vercel **and** worker | The worker boots and logs `Instagram only`. The bot answers nothing. The deploy looks successful. |
 | `TELEGRAM_WEBHOOK_SECRET` | Vercel | `/api/telegram/webhook` throws on every request, so Telegram retries forever. |
-| `TELEGRAM_BOT_USERNAME` | Vercel | Campaign deep links and the D4 account-link button render as absent. Degrades cleanly — no broken `t.me/undefined` link — but the bridge from a campaign to the bot is invisible. |
+| `TELEGRAM_BOT_USERNAME` | Vercel | Legacy/internal shared-bot links only. Customer campaign links use the workspace bot username stored in the database. |
 
 `TELEGRAM_BOT_TOKEN` must match on both sides for the same reason `ENCRYPTION_KEY` must:
 the web app enqueues and the worker sends.
 
-Once the token is set, `setWebhook` is a **one-time** call and **the URL is pinned at
-Telegram** — do it after the canonical host is settled, not before.
+When a workspace connects a token, replie calls `setWebhook` itself using `APP_URL` and a unique
+secret route. Do not manually overwrite that webhook in BotFather or with the Bot API. Changing it
+breaks flows and prevents that bot from building a broadcast audience.
 
 Optional: `DATABASE_POOL_MAX` overrides the per-instance connection cap
 (default 1 — see [Database connections](#database-connections)).

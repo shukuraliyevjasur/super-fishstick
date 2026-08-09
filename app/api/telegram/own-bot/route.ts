@@ -51,6 +51,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "token is required" }, { status: 400 });
   }
 
+  // A SENDING broadcast is bound to its bot id. Replacing the token mid-run
+  // would make the remaining recipients belong to the wrong bot.
+  const sending = await prisma.telegramBroadcast.count({
+    where: { workspaceId: context.workspaceId, status: "SENDING" },
+  });
+  if (sending > 0) {
+    return NextResponse.json(
+      { success: false, error: "broadcast_in_progress" },
+      { status: 409 }
+    );
+  }
+
   try {
     const botUsername = await setWorkspaceBotToken(context.workspaceId, parsed.data.token);
     return NextResponse.json({ success: true, botUsername });

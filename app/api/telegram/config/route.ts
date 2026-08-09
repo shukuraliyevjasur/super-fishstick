@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 /**
  * Deployment-wide Telegram settings the campaign builder needs (T10).
  *
- * Returns the workspace's effective @username: own bot if configured, shared
- * bot otherwise. This is what the campaign deep link is built from.
+ * Telegram campaigns always use the workspace's own bot. A shared fallback
+ * would collect contacts that the workspace can never safely broadcast to.
  * The token itself never leaves the server.
  */
 export async function GET() {
@@ -22,9 +22,9 @@ export async function GET() {
 
   const ownBot = await getOwnBotStatus(workspaceId);
 
-  const botUsername = ownBot.configured
-    ? (ownBot.botUsername ?? null)
-    : (process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "") ?? null);
-
-  return NextResponse.json({ success: true, botUsername, isOwnBot: ownBot.configured });
+  return NextResponse.json({
+    success: true,
+    botUsername: ownBot.botUsername,
+    isOwnBot: ownBot.configured,
+  });
 }

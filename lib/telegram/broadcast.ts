@@ -30,17 +30,18 @@ const SEND_BATCH_SIZE = 25;
 
 export type BroadcastStatus = "DRAFT" | "SENDING" | "COMPLETED" | "FAILED";
 
-function audienceWhere(workspaceId: string, flowId: string | null) {
-  return flowId ? { workspaceId, flowId } : { workspaceId };
+function audienceWhere(workspaceId: string, botId: string, flowId: string | null) {
+  return flowId ? { workspaceId, botId, flowId } : { workspaceId, botId };
 }
 
 /** How many people a broadcast would reach. Shown in the preview before send. */
 export async function countAudience(
   workspaceId: string,
+  botId: string,
   flowId: string | null
 ): Promise<number> {
   return prisma.telegramConversation.count({
-    where: audienceWhere(workspaceId, flowId),
+    where: audienceWhere(workspaceId, botId, flowId),
   });
 }
 
@@ -55,6 +56,7 @@ export async function countAudience(
 export async function enrollRecipients(
   broadcastId: string,
   workspaceId: string,
+  botId: string,
   flowId: string | null
 ): Promise<number> {
   let cursor: string | undefined;
@@ -62,7 +64,7 @@ export async function enrollRecipients(
 
   while (enrolled < MAX_BROADCAST_RECIPIENTS) {
     const page = await prisma.telegramConversation.findMany({
-      where: audienceWhere(workspaceId, flowId),
+      where: audienceWhere(workspaceId, botId, flowId),
       select: { id: true, telegramUserId: true, chatId: true },
       orderBy: { id: "asc" },
       take: ENROLL_PAGE_SIZE,
@@ -114,12 +116,19 @@ export async function sendBroadcastBatch(
 ): Promise<BroadcastBatchResult> {
   const broadcast = await prisma.telegramBroadcast.findUnique({
     where: { id: broadcastId },
-    select: { message: true, workspaceId: true },
+    select: { message: true, workspaceId: true, botId: true },
   });
 
   if (!broadcast) return { sent: 0, failed: 0, remaining: 0 };
 
   const workspaceBot = await getWorkspaceBot(broadcast.workspaceId);
+  if (!workspaceBot.isOwn || workspaceBot.botId !== broadcast.botId) {
+    await prisma.telegramBroadcast.update({
+      where: { id: broadcastId },
+      data: { status: "FAILED", completedAt: new Date() },
+    });
+    return { sent: 0, failed: 0, remaining: 0 };
+  }
   const ctx: BotContext = {
     bot: workspaceBot.bot,
     rateLimitKey: workspaceBot.rateLimitKey,

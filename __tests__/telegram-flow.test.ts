@@ -31,7 +31,12 @@ vi.mock("@/lib/telegram/client", () => ({
 }));
 
 vi.mock("@/lib/telegram/own-bot", () => ({
-  getWorkspaceBot: vi.fn().mockResolvedValue({ bot: {}, rateLimitKey: "shared" }),
+  getWorkspaceBot: vi.fn().mockResolvedValue({
+    bot: {},
+    rateLimitKey: "ws:ws1",
+    isOwn: true,
+    botId: "bot1",
+  }),
 }));
 
 vi.mock("@/lib/telegram/link", async (importOriginal) => ({
@@ -146,7 +151,7 @@ describe("Telegram flow engine (T5, T6)", () => {
         steps: FLOW_STEPS,
       });
 
-      await processTelegramUpdate(textUpdate("/start camp1"));
+      await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
       expect(mockPrisma.telegramConversation.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -179,7 +184,7 @@ describe("Telegram flow engine (T5, T6)", () => {
         telegramFlow: { id: "picked", steps: FLOW_STEPS, isActive: true },
       });
 
-      await processTelegramUpdate(textUpdate("/start camp1"));
+      await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
       expect(mockPrisma.telegramFlow.findFirst).not.toHaveBeenCalled();
       expect(mockPrisma.telegramConversation.upsert).toHaveBeenCalledWith(
@@ -203,7 +208,7 @@ describe("Telegram flow engine (T5, T6)", () => {
         steps: FLOW_STEPS,
       });
 
-      await processTelegramUpdate(textUpdate("/start camp1"));
+      await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
       expect(mockPrisma.telegramConversation.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -218,7 +223,7 @@ describe("Telegram flow engine (T5, T6)", () => {
     it("binds the builder's Telegram on a link payload", async () => {
       mockRedeemLinkCode.mockResolvedValue("user1");
 
-      await processTelegramUpdate(textUpdate("/start lnk_abc123"));
+      await processTelegramUpdate(textUpdate("/start lnk_abc123"), "ws1", "bot1");
 
       expect(mockRedeemLinkCode).toHaveBeenCalledWith("lnk_abc123", BigInt(555), BigInt(999));
       expect(mockPrisma.automation.findUnique).not.toHaveBeenCalled();
@@ -228,7 +233,7 @@ describe("Telegram flow engine (T5, T6)", () => {
     it("explains an expired link code instead of failing silently", async () => {
       mockRedeemLinkCode.mockResolvedValue(null);
 
-      await processTelegramUpdate(textUpdate("/start lnk_stale"));
+      await processTelegramUpdate(textUpdate("/start lnk_stale"), "ws1", "bot1");
 
       expect(sentTexts()).toEqual([BOT_COPY.linkFailed]);
     });
@@ -242,6 +247,18 @@ describe("Telegram flow engine (T5, T6)", () => {
       expect(mockPrisma.telegramConversation.upsert).not.toHaveBeenCalled();
     });
 
+    it("does not start a customer campaign through the shared bot", async () => {
+      mockPrisma.automation.findUnique.mockResolvedValue({
+        id: "camp1",
+        workspaceId: "ws1",
+      });
+
+      await processTelegramUpdate(textUpdate("/start camp1"));
+
+      expect(sentTexts()).toEqual([BOT_COPY.unknownCampaign]);
+      expect(mockPrisma.telegramConversation.upsert).not.toHaveBeenCalled();
+    });
+
     it("answers when the workspace has no flow yet", async () => {
       mockPrisma.automation.findUnique.mockResolvedValue({
         id: "camp1",
@@ -249,7 +266,7 @@ describe("Telegram flow engine (T5, T6)", () => {
       });
       mockPrisma.telegramFlow.findFirst.mockResolvedValue(null);
 
-      await processTelegramUpdate(textUpdate("/start camp1"));
+      await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
       expect(sentTexts()).toEqual([BOT_COPY.noFlow]);
     });
@@ -264,7 +281,7 @@ describe("Telegram flow engine (T5, T6)", () => {
         steps: [{ nonsense: true }],
       });
 
-      await processTelegramUpdate(textUpdate("/start camp1"));
+      await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
       expect(sentTexts()).toEqual([BOT_COPY.emptyFlow]);
     });

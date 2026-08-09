@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createLinkCode, getLinkForUser, LINK_CODE_PREFIX } from "@/lib/telegram/link";
 import { buildTelegramDeepLink } from "@/lib/telegram/deep-link";
+import { getCurrentWorkspaceContext } from "@/lib/workspace-access";
+import { getOwnBotStatus } from "@/lib/telegram/own-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,16 +35,24 @@ export async function GET() {
  * looking at.
  */
 export async function POST() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const [session, context] = await Promise.all([auth(), getCurrentWorkspaceContext()]);
+  if (!session?.user?.id || !context) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
   }
 
+  const ownBot = await getOwnBotStatus(context.workspaceId);
+  if (!ownBot.configured || !ownBot.botUsername) {
+    return NextResponse.json(
+      { success: false, error: "Own Telegram bot is not configured" },
+      { status: 409 }
+    );
+  }
+
   const code = await createLinkCode(session.user.id);
-  const url = buildTelegramDeepLink(`${LINK_CODE_PREFIX}${code}`);
+  const url = buildTelegramDeepLink(`${LINK_CODE_PREFIX}${code}`, ownBot.botUsername);
 
   if (!url) {
     return NextResponse.json(

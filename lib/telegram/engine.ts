@@ -95,6 +95,8 @@ export async function sendStepTo(
  */
 export async function startConversation(opts: {
   workspaceId: string;
+  /** Exact bot that the recipient started. Defaults to the shared bot. */
+  botId?: string;
   flowId: string;
   entryStep: FlowStep;
   telegramUserId: bigint;
@@ -104,15 +106,17 @@ export async function startConversation(opts: {
 }): Promise<TelegramSendResult> {
   await prisma.telegramConversation.upsert({
     where: {
-      telegramUserId_workspaceId: {
+      telegramUserId_workspaceId_botId: {
         telegramUserId: opts.telegramUserId,
         workspaceId: opts.workspaceId,
+        botId: opts.botId ?? "shared",
       },
     },
     create: {
       telegramUserId: opts.telegramUserId,
       chatId: BigInt(opts.chatId),
       workspaceId: opts.workspaceId,
+      botId: opts.botId ?? "shared",
       flowId: opts.flowId,
       currentStepId: opts.entryStep.id,
       answers: {},

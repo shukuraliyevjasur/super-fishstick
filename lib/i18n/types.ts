@@ -342,6 +342,7 @@ export interface Dict {
     testSent: string
     testFailed: string
     testNeedsLink: string
+    testNeedsOwnBot: string
     testLinkBtn: string
     testLinkHint: string
   }
@@ -428,6 +429,7 @@ export interface Dict {
     telegramTitle: string
     telegramToggleLabel: string
     telegramToggleHint: string
+    telegramBotRequired: string
     telegramFlowLabel: string
     telegramNoFlowSelected: string
     telegramNoFlows: string

@@ -61,6 +61,36 @@ export interface IncomingEvent {
   callbackQueryId: string | null;
 }
 
+/** The bot that authenticated this update, never inferred from a campaign. */
+interface UpdateSource {
+  workspaceId: string | null;
+  botId: string;
+  ctx: BotContext;
+}
+
+async function getUpdateSource(
+  workspaceId?: string,
+  sourceBotId?: string
+): Promise<UpdateSource | null> {
+  if (!workspaceId) {
+    return {
+      workspaceId: null,
+      botId: "shared",
+      ctx: { bot: getSharedBot(), rateLimitKey: "shared" },
+    };
+  }
+
+  const workspaceBot = await getWorkspaceBot(workspaceId);
+  // A job can remain in Redis briefly after a disconnect. Never downgrade an
+  // own-bot update to the shared bot in that race.
+  if (!workspaceBot.isOwn || workspaceBot.botId !== sourceBotId) return null;
+  return {
+    workspaceId,
+    botId: workspaceBot.botId,
+    ctx: { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey },
+  };
+}
+
 /**
  * Normalize the two update shapes the flow engine acts on — a text message and
  * an inline-keyboard tap — into one event.
@@ -171,26 +201,30 @@ async function acknowledgeTap(event: IncomingEvent, ctx?: BotContext) {
 
 // ─── /start (T5) ────────────────────────────────────────────────────────────────
 
-async function handleStart(event: IncomingEvent, payload: string | null) {
+async function handleStart(event: IncomingEvent, payload: string | null, source: UpdateSource) {
   // D4: the builder linking their own Telegram so a test send has somewhere to
   // go. Checked before the campaign lookup, since a link code is not a
   // campaign id and must never be reported as a dead link.
   if (payload && isLinkPayload(payload)) {
+    if (!source.workspaceId) {
+      await send(event.chatId, BOT_COPY.linkFailed, undefined, source.ctx);
+      return;
+    }
     const userId = await redeemLinkCode(
       payload,
       event.telegramUserId,
       BigInt(event.chatId)
     );
     // No workspace known yet — use the shared bot for this meta-reply.
-    await send(event.chatId, userId ? BOT_COPY.linked : BOT_COPY.linkFailed);
+    await send(event.chatId, userId ? BOT_COPY.linked : BOT_COPY.linkFailed, undefined, source.ctx);
     return;
   }
 
   if (!payload) {
     // No campaign id. Someone opened the bot directly, or tapped /start again
     // mid-conversation — resume where they were rather than dead-ending them.
-    const resumed = await resumeConversation(event);
-    if (!resumed) await send(event.chatId, BOT_COPY.noPayload);
+    const resumed = await resumeConversation(event, source);
+    if (!resumed) await send(event.chatId, BOT_COPY.noPayload, undefined, source.ctx);
     return;
   }
 
@@ -208,13 +242,16 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
   // link that no longer works. Distinguishing them would leak whether an id
   // ever existed.
   if (!automation) {
-    await send(event.chatId, BOT_COPY.unknownCampaign);
+    await send(event.chatId, BOT_COPY.unknownCampaign, undefined, source.ctx);
     return;
   }
 
-  // Now we know the workspace — use its configured bot for all remaining sends.
-  const workspaceBot = await getWorkspaceBot(automation.workspaceId);
-  const ctx: BotContext = { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey };
+  // Customer-facing flows run only through that workspace's own bot. The
+  // shared bot can finish legacy conversations but cannot start new campaigns.
+  if (source.workspaceId !== automation.workspaceId) {
+    await send(event.chatId, BOT_COPY.unknownCampaign, undefined, source.ctx);
+    return;
+  }
 
   // T10: the campaign's own flow, chosen in the builder, is authoritative. This
   // replaces the placeholder rule recorded in D9.
@@ -236,14 +273,14 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     }));
 
   if (!flow) {
-    await send(event.chatId, BOT_COPY.noFlow, undefined, ctx);
+    await send(event.chatId, BOT_COPY.noFlow, undefined, source.ctx);
     return;
   }
 
   const steps = parseFlowSteps(flow.steps);
   const entry = getEntryStep(steps);
   if (!entry) {
-    await send(event.chatId, BOT_COPY.emptyFlow, undefined, ctx);
+    await send(event.chatId, BOT_COPY.emptyFlow, undefined, source.ctx);
     return;
   }
 
@@ -256,14 +293,15 @@ async function handleStart(event: IncomingEvent, payload: string | null) {
     telegramUserId: event.telegramUserId,
     chatId: event.chatId,
     recipientName: event.firstName,
-    ctx,
+    botId: source.botId,
+    ctx: source.ctx,
   });
 }
 
 /** The most recent workspace this user talked to, if any. */
-async function loadLatestConversation(telegramUserId: bigint) {
+async function loadLatestConversation(telegramUserId: bigint, botId: string) {
   return prisma.telegramConversation.findFirst({
-    where: { telegramUserId },
+    where: { telegramUserId, botId },
     orderBy: { lastActiveAt: "desc" },
     select: {
       id: true,
@@ -275,8 +313,8 @@ async function loadLatestConversation(telegramUserId: bigint) {
   });
 }
 
-async function resumeConversation(event: IncomingEvent): Promise<boolean> {
-  const conversation = await loadLatestConversation(event.telegramUserId);
+async function resumeConversation(event: IncomingEvent, source: UpdateSource): Promise<boolean> {
+  const conversation = await loadLatestConversation(event.telegramUserId, source.botId);
   if (!conversation?.currentStepId) return false;
 
   const step = findStep(
@@ -285,9 +323,7 @@ async function resumeConversation(event: IncomingEvent): Promise<boolean> {
   );
   if (!step) return false;
 
-  const workspaceBot = await getWorkspaceBot(conversation.workspaceId);
-  const ctx: BotContext = { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey };
-  await sendStep(event, step, ctx);
+  await sendStep(event, step, source.ctx);
   return true;
 }
 
@@ -316,27 +352,24 @@ function resolveOption(step: FlowStep, event: IncomingEvent): FlowOption | null 
   return event.text !== null ? matchOption(step, event.text) : null;
 }
 
-async function handleReply(event: IncomingEvent) {
-  const conversation = await loadLatestConversation(event.telegramUserId);
+async function handleReply(event: IncomingEvent, source: UpdateSource) {
+  const conversation = await loadLatestConversation(event.telegramUserId, source.botId);
 
   // No conversation at all — this person is typing at a bot they never
   // started. Tell them how to get in rather than saying nothing.
   if (!conversation) {
-    await send(event.chatId, BOT_COPY.noPayload);
+    await send(event.chatId, BOT_COPY.noPayload, undefined, source.ctx);
     return;
   }
 
   // Now we know the workspace — use its bot for all remaining sends.
-  const workspaceBot = await getWorkspaceBot(conversation.workspaceId);
-  const ctx: BotContext = { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey };
-
   const steps = parseFlowSteps(conversation.flow.steps);
   const step = findStep(steps, conversation.currentStepId);
 
   // The conversation already ran to the end, or the flow was edited out from
   // under it. Either way there is nothing to advance.
   if (!step) {
-    await send(event.chatId, BOT_COPY.finished, undefined, ctx);
+    await send(event.chatId, BOT_COPY.finished, undefined, source.ctx);
     return;
   }
 
@@ -352,8 +385,8 @@ async function handleReply(event: IncomingEvent) {
       // T6: the bot must not go silent. Say we did not understand, then re-send
       // the prompt with its keyboard so the options are back in reach. The
       // conversation deliberately does not advance.
-      await send(event.chatId, BOT_COPY.noMatch, undefined, ctx);
-      await sendStep(event, step, ctx);
+      await send(event.chatId, BOT_COPY.noMatch, undefined, source.ctx);
+      await sendStep(event, step, source.ctx);
       await touch(conversation.id);
       return;
     }
@@ -378,11 +411,11 @@ async function handleReply(event: IncomingEvent) {
   });
 
   if (!nextStep) {
-    await send(event.chatId, BOT_COPY.finished, undefined, ctx);
+    await send(event.chatId, BOT_COPY.finished, undefined, source.ctx);
     return;
   }
 
-  await sendStep(event, nextStep, ctx);
+  await sendStep(event, nextStep, source.ctx);
 }
 
 async function touch(conversationId: string) {
@@ -394,21 +427,28 @@ async function touch(conversationId: string) {
 
 // ─── Entry point ────────────────────────────────────────────────────────────────
 
-export async function processTelegramUpdate(update: unknown): Promise<void> {
+export async function processTelegramUpdate(
+  update: unknown,
+  workspaceId?: string,
+  sourceBotId?: string
+): Promise<void> {
   const event = parseIncomingEvent(update);
   if (!event) return;
+
+  const source = await getUpdateSource(workspaceId, sourceBotId);
+  if (!source) return;
 
   // acknowledgeTap runs before we know the workspace. If the conversation is
   // already in the DB we could look it up, but answerCallbackQuery is cosmetic
   // and the extra query is not worth it — the shared bot handles it for now.
-  await acknowledgeTap(event);
+  await acknowledgeTap(event, source.ctx);
 
   if (event.text !== null && isStartCommand(event.text)) {
-    await handleStart(event, parseStartPayload(event.text));
+    await handleStart(event, parseStartPayload(event.text), source);
     return;
   }
 
-  await handleReply(event);
+  await handleReply(event, source);
 }
 
 /**
@@ -438,7 +478,8 @@ export function createTelegramWorker(): Worker<TelegramQueueJob> {
         const { broadcastId } = job.data as ProcessBroadcastJob;
         return processBroadcast(broadcastId);
       }
-      return processTelegramUpdate((job.data as ProcessTelegramUpdateJob).update);
+      const { update, workspaceId, botId } = job.data as ProcessTelegramUpdateJob;
+      return processTelegramUpdate(update, workspaceId, botId);
     },
     {
       connection: getWorkerConnection(),

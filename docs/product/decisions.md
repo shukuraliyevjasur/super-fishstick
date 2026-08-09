@@ -17,6 +17,27 @@ product direction.
 
 ---
 
+## D10 — Customer-facing Telegram requires the workspace's own bot
+
+**Date:** 2026-08-10
+**Status:** active; supersedes D5
+**Applies to:** Telegram campaign links, flows, test sends, broadcasts
+
+Every Telegram-enabled campaign links to the workspace's own BotFather bot. That bot owns the
+webhook, runs the flow, and owns its broadcast audience. A user becomes broadcastable only after
+starting that exact bot.
+
+This is required by Telegram's delivery rules: a bot cannot message a person who only interacted
+with another bot. A broadcast-only bot would have no audience, while a shared customer bot would
+pool reputation and let one sender risk service for every workspace.
+
+Tokens are AES-256-GCM encrypted. Connecting a bot validates `getMe`, installs a unique webhook,
+and stores only a hash of its route/header secret. Conversations and broadcast drafts carry the
+Bot API id, so a bot replacement cannot inherit another bot's audience. `@replieuz_bot` is legacy
+and internal support only; it does not start customer campaigns or send broadcasts.
+
+---
+
 ## D9 — The flow step schema, and how a campaign finds its flow
 
 **Date:** 2026-08-08
@@ -151,7 +172,7 @@ once while the constraint holds, and again after it lifts.
 ## D5 — One shared Telegram bot by default; a customer's own bot is an upsell
 
 **Date:** 2026-08-07
-**Status:** active
+**Status:** superseded by D10 on 2026-08-10
 **Applies to:** Telegram onboarding, broadcast
 
 ### The decision

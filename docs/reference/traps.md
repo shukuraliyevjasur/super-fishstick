@@ -127,7 +127,9 @@ so the workflow looks half-green and the worker silently runs whatever it last r
 `proxy.ts` prefixes every unprefixed path with a locale. Anything with no page under
 `app/[lang]/` **must** stay excluded from `config.matcher` or it redirects into a 404.
 
-Currently excluded: `/api/*`, `/r/*`, `/reports/*`, `/miniapp/*`, `robots.txt`, `sitemap.xml`.
+Currently excluded: `/api/*`, `/r/*`, `/reports/*`, `/miniapp/*`, the opaque workspace control
+route, and **all paths with a file extension**. The latter is what lets public assets such as
+`/broadcastttutorial.mp4` reach the browser instead of being locale-redirected to a 404.
 
 `/r/*` matters most — `lib/tracking/message.ts` bakes `${APP_URL}/r/<slug>` into every DM
 already sent, so those URLs cannot change retroactively. This regressed once and every
@@ -135,6 +137,18 @@ tracked-link click 404'd with no clicks recorded.
 
 `__tests__/proxy-matcher.test.ts` guards it. **Do not weaken that test.** Any new
 locale-less route (e.g. a Telegram Mini App) must be added to both.
+
+---
+
+## Telegram audiences are bot-specific
+
+Telegram will not let a bot message a chat until that exact bot has been started. Do not treat a
+chat id collected through `@replieuz_bot` as a recipient for a workspace bot.
+
+Own bot updates must enter through their workspace-specific webhook and retain that bot id through
+conversation writes and broadcast enrollment. The route secret and
+`X-Telegram-Bot-Api-Secret-Token` header are both verified; never replace this with a workspace id
+passed from the client or inferred from a campaign payload.
 
 ---
 

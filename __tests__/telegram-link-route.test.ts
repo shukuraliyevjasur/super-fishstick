@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockAuth, mockGetLink, mockCreateCode } = vi.hoisted(() => ({
+const { mockAuth, mockGetLink, mockCreateCode, mockGetContext, mockGetOwnBotStatus } = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockGetLink: vi.fn(),
   mockCreateCode: vi.fn(),
+  mockGetContext: vi.fn(),
+  mockGetOwnBotStatus: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ auth: mockAuth }));
@@ -12,6 +14,8 @@ vi.mock("@/lib/telegram/link", () => ({
   createLinkCode: mockCreateCode,
   LINK_CODE_PREFIX: "lnk_",
 }));
+vi.mock("@/lib/workspace-access", () => ({ getCurrentWorkspaceContext: mockGetContext }));
+vi.mock("@/lib/telegram/own-bot", () => ({ getOwnBotStatus: mockGetOwnBotStatus }));
 
 const { GET, POST } = await import("@/app/api/telegram/link/route");
 
@@ -19,6 +23,8 @@ describe("GET /api/telegram/link", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+    mockGetContext.mockResolvedValue({ workspaceId: "ws1" });
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "agency_bot", botId: "bot1" });
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -60,6 +66,8 @@ describe("POST /api/telegram/link", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+    mockGetContext.mockResolvedValue({ workspaceId: "ws1" });
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "agency_bot", botId: "bot1" });
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -72,28 +80,26 @@ describe("POST /api/telegram/link", () => {
     expect(body.success).toBe(false);
   });
 
-  it("returns 503 when no bot is configured", async () => {
+  it("requires an own bot", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
-    mockCreateCode.mockResolvedValue("abc123");
-    vi.stubEnv("TELEGRAM_BOT_USERNAME", "");
+    mockGetOwnBotStatus.mockResolvedValue({ configured: false, botUsername: null, botId: null });
 
     const res = await POST();
     const body = await res.json();
 
-    expect(res.status).toBe(503);
-    expect(body.error).toBe("Telegram bot is not configured");
+    expect(res.status).toBe(409);
+    expect(body.error).toBe("Own Telegram bot is not configured");
   });
 
   it("returns the deep link URL on success", async () => {
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockCreateCode.mockResolvedValue("abc123");
-    vi.stubEnv("TELEGRAM_BOT_USERNAME", "replie_bot");
 
     const res = await POST();
     const body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
-    expect(body.url).toBe("https://t.me/replie_bot?start=lnk_abc123");
+    expect(body.url).toBe("https://t.me/agency_bot?start=lnk_abc123");
   });
 });

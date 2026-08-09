@@ -34,7 +34,12 @@ vi.mock("@/lib/telegram/client", () => ({
   sendMessage: mockSendMessage,
 }));
 vi.mock("@/lib/telegram/own-bot", () => ({
-  getWorkspaceBot: vi.fn().mockResolvedValue({ bot: {}, rateLimitKey: "shared" }),
+  getWorkspaceBot: vi.fn().mockResolvedValue({
+    bot: {},
+    rateLimitKey: "ws:ws1",
+    isOwn: true,
+    botId: "bot1",
+  }),
 }));
 vi.mock("@/lib/telegram/link", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/telegram/link")>()),
@@ -126,7 +131,7 @@ describe("complete flow conversation (E10 path 2)", () => {
     });
     mockPrisma.telegramConversation.findFirst.mockResolvedValue(null);
 
-    await processTelegramUpdate(textUpdate("/start camp1"));
+    await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
     expect(sentTexts()).toEqual(["Salom Nodira! Nima xizmat?"]);
     expect(mockPrisma.telegramConversation.upsert).toHaveBeenCalledWith(
@@ -215,7 +220,7 @@ describe("complete flow conversation (E10 path 2)", () => {
     });
     mockPrisma.telegramConversation.findFirst.mockResolvedValue(null);
 
-    await processTelegramUpdate(textUpdate("/start camp1"));
+    await processTelegramUpdate(textUpdate("/start camp1"), "ws1", "bot1");
 
     // Turn 2: tap "Manzil" (index 1) → lands on address step
     mockSendMessage.mockClear();

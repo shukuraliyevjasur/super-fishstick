@@ -38,7 +38,7 @@ export default function FlowEditor({
   const [crumbs, setCrumbs] = useState<Crumb[]>([]);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [testStatus, setTestStatus] = useState<
-    "idle" | "sending" | "sent" | "failed" | "needs-link"
+    "idle" | "sending" | "sent" | "failed" | "needs-link" | "needs-own-bot"
   >("idle");
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
   // D6: below the tablet breakpoint Edit and Preview are tabs, not columns —
@@ -191,6 +191,11 @@ export default function FlowEditor({
         return;
       }
 
+      if (response.status === 409 && data.needsOwnBot) {
+        setTestStatus("needs-own-bot");
+        return;
+      }
+
       setTestStatus(response.ok && data.success ? "sent" : "failed");
     } catch {
       setTestStatus("failed");
@@ -297,6 +302,12 @@ export default function FlowEditor({
               <p className="mt-1 text-xs text-subtle">{e.testLinkHint}</p>
             </>
           )}
+        </div>
+      )}
+
+      {testStatus === "needs-own-bot" && (
+        <div className="rounded-md border border-border bg-surface px-3 py-2">
+          <p className="text-xs text-foreground">{e.testNeedsOwnBot}</p>
         </div>
       )}
 

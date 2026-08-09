@@ -102,6 +102,12 @@ model Workspace {
   // anyone who opens the bot) and is what the campaign deep link is built from.
   telegramBotToken    String?
   telegramBotUsername String?
+  // Bot API id and a one-way hash of the custom webhook credential. They bind
+  // incoming updates and stored conversations to this exact bot, so a contact
+  // who started @replieuz_bot cannot accidentally be broadcast from an agency's
+  // separate bot.
+  telegramBotId                String?
+  telegramBotWebhookSecretHash String?
 
   members                WorkspaceMember[]
   invitations            WorkspaceInvitation[]
@@ -399,6 +405,9 @@ model TelegramBroadcast {
   /// Audience filter: people who ran this flow. Null means everyone in the
   /// workspace who has ever talked to the bot.
   flowId          String?
+  /// The exact own bot this draft was created for. A token swap invalidates
+  /// the draft instead of sending to an audience that never started the new bot.
+  botId           String
   message         String
   /// DRAFT | SENDING | COMPLETED | FAILED
   status          String    @default("DRAFT")
@@ -414,6 +423,7 @@ model TelegramBroadcast {
   recipients TelegramBroadcastRecipient[]
 
   @@index([workspaceId, status])
+  @@index([workspaceId, botId])
 }
 
 /// One row per person, written before any sending starts (T8's per-recipient
@@ -461,6 +471,9 @@ model TelegramConversation {
   /// should encode — broadcast (T8) needs an address, so store the address.
   chatId          BigInt
   workspaceId     String
+  /// "shared" for @replieuz_bot, otherwise the Telegram Bot API id. Telegram
+  /// requires a person to start the exact bot that later messages them.
+  botId           String    @default("shared")
   flowId          String
   currentStepId   String?
   answers         Json     @default("{}")
@@ -470,8 +483,10 @@ model TelegramConversation {
   workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   flow      TelegramFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
 
-  @@unique([telegramUserId, workspaceId])
+  @@unique([telegramUserId, workspaceId, botId])
   @@index([workspaceId])
+  @@index([workspaceId, botId])
+  @@index([workspaceId, botId, flowId])
   @@index([flowId])
   @@index([lastActiveAt])
 }

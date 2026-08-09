@@ -6,6 +6,7 @@ import { startConversation } from "@/lib/telegram/engine";
 import { getLinkForUser } from "@/lib/telegram/link";
 import { getEntryStep, parseFlowSteps } from "@/lib/telegram/flow-types";
 import { validateFlow } from "@/lib/telegram/flow-validation";
+import { getWorkspaceBot } from "@/lib/telegram/own-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +62,14 @@ export async function POST(_request: NextRequest, { params }: RouteProps) {
     );
   }
 
+  const workspaceBot = await getWorkspaceBot(context.workspaceId);
+  if (!workspaceBot.isOwn) {
+    return NextResponse.json(
+      { success: false, error: "Own Telegram bot not connected", needsOwnBot: true },
+      { status: 409 }
+    );
+  }
+
   const steps = parseFlowSteps(flow.steps);
   const validation = validateFlow(steps);
   const entry = getEntryStep(steps);
@@ -82,6 +91,8 @@ export async function POST(_request: NextRequest, { params }: RouteProps) {
       telegramUserId: link.telegramUserId,
       chatId: link.chatId,
       recipientName: session.user.name ?? null,
+      botId: workspaceBot.botId,
+      ctx: { bot: workspaceBot.bot, rateLimitKey: workspaceBot.rateLimitKey },
     });
 
     if (!result.ok) {

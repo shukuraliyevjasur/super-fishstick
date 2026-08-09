@@ -7,7 +7,7 @@ import {
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
 import { countAudience, MAX_BROADCAST_RECIPIENTS } from "@/lib/telegram/broadcast";
-import { hasOwnBot } from "@/lib/telegram/own-bot";
+import { getOwnBotStatus } from "@/lib/telegram/own-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
 
   // D5: broadcast requires an own bot. One workspace sending spam on the shared
   // bot can get @replie_bot banned and kill every customer's flows at once.
-  const ownBot = await hasOwnBot(context.workspaceId);
-  if (!ownBot) {
+  const ownBot = await getOwnBotStatus(context.workspaceId);
+  if (!ownBot.configured || !ownBot.botId) {
     return NextResponse.json(
       { success: false, error: "no_own_bot" },
       { status: 403 }
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const audience = await countAudience(context.workspaceId, flowId);
+  const audience = await countAudience(context.workspaceId, ownBot.botId, flowId);
 
   // E8: refuse rather than silently truncate. Someone who thinks they reached
   // 40,000 people and reached 10,000 has been misled by their own tool.
@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
   const broadcast = await prisma.telegramBroadcast.create({
     data: {
       workspaceId: context.workspaceId,
+      botId: ownBot.botId,
       flowId,
       message: parsed.data.message,
       status: "DRAFT",

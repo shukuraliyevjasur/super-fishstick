@@ -96,6 +96,10 @@ export function getDMQueue(): Queue<DmQueueJob> {
 /** A raw Telegram update, handed off from the webhook untouched. */
 export interface ProcessTelegramUpdateJob {
   update: unknown;
+  /** Set only by an authenticated per-workspace bot webhook. */
+  workspaceId?: string;
+  /** Bot API id authenticated by that webhook; prevents token-swap races. */
+  botId?: string;
 }
 
 /** One pass over a broadcast's pending recipients (T8). */

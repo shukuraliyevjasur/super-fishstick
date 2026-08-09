@@ -1,82 +1,173 @@
 /**
- * Per-workspace Telegram bot management (D5).
+ * Per-workspace Telegram bot management.
  *
- * A workspace can connect its own bot token, which is then used for
- * conversations and broadcasts instead of the shared @replie_bot.
- * Without an own bot, broadcast is blocked — one shared-bot spammer can
- * get @replie_bot banned and kill every customer's flows at once.
- *
- * The token is stored encrypted with the same AES-256-GCM key used for
- * Instagram access tokens (lib/meta/oauth.ts). The bot's @username is
- * stored plaintext because it is already public — it is visible in every
- * t.me deep link the campaign builder generates.
+ * An own bot is not only a sending credential. Telegram allows a bot to send
+ * only to people who started that exact bot, so the webhook, conversation and
+ * broadcast audience must all be bound to the same Bot API id.
  */
 
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { Bot } from "grammy";
 import { encryptToken, decryptToken } from "@/lib/meta/oauth";
 import { prisma } from "@/lib/db/client";
 import { getSharedBot, createCustomBot } from "@/lib/telegram/client";
+import { getSiteUrl } from "@/lib/site";
 
 export interface WorkspaceBot {
   bot: Bot;
-  /** Stable key for the rate-limiter bucket (botId, not botUsername). */
+  /** Stable key for the rate-limiter bucket (bot id, not username). */
   rateLimitKey: string;
   isOwn: boolean;
   username: string | null;
+  /** Telegram Bot API id, or "shared" for @replieuz_bot. */
+  botId: string;
+}
+
+type OwnBotFields = {
+  telegramBotToken: string | null;
+  telegramBotUsername: string | null;
+  telegramBotId: string | null;
+  telegramBotWebhookSecretHash: string | null;
+};
+
+function isReadyOwnBot(workspace: OwnBotFields | null | undefined): workspace is Required<OwnBotFields> {
+  return Boolean(
+    workspace?.telegramBotToken &&
+      workspace.telegramBotUsername &&
+      workspace.telegramBotId &&
+      workspace.telegramBotWebhookSecretHash
+  );
+}
+
+function hashWebhookSecret(secret: string): string {
+  return createHash("sha256").update(secret).digest("hex");
+}
+
+function matchesSecret(expectedHash: string, candidate: string): boolean {
+  const expected = Buffer.from(expectedHash, "hex");
+  const actual = Buffer.from(hashWebhookSecret(candidate), "hex");
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function webhookUrl(workspaceId: string, secret: string): string {
+  return `${getSiteUrl()}/api/telegram/webhook/own/${workspaceId}/${secret}`;
 }
 
 /**
- * Validate a raw bot token by calling getMe, then save it encrypted.
- * Returns the bot's @username on success.
- * Throws if the token is invalid or Telegram is unreachable.
+ * Validate a raw bot token, configure an authenticated webhook, then persist
+ * the credentials. The route credential is stored only as a SHA-256 hash.
  */
 export async function setWorkspaceBotToken(
   workspaceId: string,
   plainToken: string
 ): Promise<string> {
   const probe = new Bot(plainToken);
-  // getMe validates the token and returns the bot's identity.
   const me = await probe.api.getMe();
-  const botUsername = me.username ?? me.first_name;
+  if (!me.username) throw new Error("Telegram bot must have a username");
 
-  const encrypted = encryptToken(plainToken);
+  const botUsername = me.username;
+  const botId = String(me.id);
+  const webhookSecret = randomBytes(32).toString("base64url");
+  const existing = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: {
+      telegramBotToken: true,
+      telegramBotUsername: true,
+      telegramBotId: true,
+      telegramBotWebhookSecretHash: true,
+    },
+  });
 
+  // Persist first so the endpoint can authenticate the moment Telegram accepts
+  // it. On API failure we restore the prior complete configuration.
   await prisma.workspace.update({
     where: { id: workspaceId },
     data: {
-      telegramBotToken: encrypted,
+      telegramBotToken: encryptToken(plainToken),
       telegramBotUsername: botUsername,
+      telegramBotId: botId,
+      telegramBotWebhookSecretHash: hashWebhookSecret(webhookSecret),
     },
   });
+
+  try {
+    await probe.api.setWebhook(webhookUrl(workspaceId, webhookSecret), {
+      secret_token: webhookSecret,
+      allowed_updates: ["message", "callback_query"],
+    });
+  } catch (error) {
+    await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: {
+        telegramBotToken: existing?.telegramBotToken ?? null,
+        telegramBotUsername: existing?.telegramBotUsername ?? null,
+        telegramBotId: existing?.telegramBotId ?? null,
+        telegramBotWebhookSecretHash: existing?.telegramBotWebhookSecretHash ?? null,
+      },
+    });
+    throw error;
+  }
+
+  // If a different bot was replaced, stop it hitting a route that is no longer
+  // valid. Cleanup cannot make the new, confirmed connection fail.
+  if (existing?.telegramBotToken && existing.telegramBotId !== botId) {
+    try {
+      await createCustomBot(decryptToken(existing.telegramBotToken)).api.deleteWebhook();
+    } catch (error) {
+      console.error("[Telegram Own Bot] Failed to remove previous webhook:", error);
+    }
+  }
 
   return botUsername;
 }
 
+/** Disconnect and invalidate the route even when Telegram has revoked the token. */
 export async function clearWorkspaceBotToken(workspaceId: string): Promise<void> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { telegramBotToken: true },
+  });
+
+  try {
+    if (workspace?.telegramBotToken) {
+      await createCustomBot(decryptToken(workspace.telegramBotToken)).api.deleteWebhook({
+        drop_pending_updates: true,
+      });
+    }
+  } catch (error) {
+    console.error("[Telegram Own Bot] Failed to remove webhook:", error);
+  }
+
   await prisma.workspace.update({
     where: { id: workspaceId },
-    data: { telegramBotToken: null, telegramBotUsername: null },
+    data: {
+      telegramBotToken: null,
+      telegramBotUsername: null,
+      telegramBotId: null,
+      telegramBotWebhookSecretHash: null,
+    },
   });
 }
 
-/**
- * Return the workspace's own bot if configured, or the shared bot as a
- * fallback. The `rateLimitKey` is what `reserveTelegramSlot` uses — each
- * own bot gets its own 30 msg/s bucket, isolated from other workspaces.
- */
+/** Return the configured own bot, or the shared bot when none is ready. */
 export async function getWorkspaceBot(workspaceId: string): Promise<WorkspaceBot> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { telegramBotToken: true, telegramBotUsername: true },
+    select: {
+      telegramBotToken: true,
+      telegramBotUsername: true,
+      telegramBotId: true,
+      telegramBotWebhookSecretHash: true,
+    },
   });
 
-  if (workspace?.telegramBotToken) {
-    const plainToken = decryptToken(workspace.telegramBotToken);
+  if (isReadyOwnBot(workspace)) {
     return {
-      bot: createCustomBot(plainToken),
+      bot: createCustomBot(decryptToken(workspace.telegramBotToken!)),
       rateLimitKey: `ws:${workspaceId}`,
       isOwn: true,
-      username: workspace.telegramBotUsername ?? null,
+      username: workspace.telegramBotUsername!,
+      botId: workspace.telegramBotId!,
     };
   }
 
@@ -85,28 +176,63 @@ export async function getWorkspaceBot(workspaceId: string): Promise<WorkspaceBot
     rateLimitKey: "shared",
     isOwn: false,
     username: process.env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "") ?? null,
+    botId: "shared",
   };
 }
 
-/** True only when a workspace has its own bot token saved. */
+/** True only after an own bot is authenticated and its webhook is configured. */
 export async function hasOwnBot(workspaceId: string): Promise<boolean> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { telegramBotToken: true },
+    select: {
+      telegramBotToken: true,
+      telegramBotUsername: true,
+      telegramBotId: true,
+      telegramBotWebhookSecretHash: true,
+    },
   });
-  return Boolean(workspace?.telegramBotToken);
+  return isReadyOwnBot(workspace);
 }
 
-/** Status shown in the settings UI — safe to send to the client. */
+/** Status shown in the dashboard. No token or webhook credential is exposed. */
 export async function getOwnBotStatus(
   workspaceId: string
-): Promise<{ configured: boolean; botUsername: string | null }> {
+): Promise<{ configured: boolean; botUsername: string | null; botId: string | null }> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { telegramBotToken: true, telegramBotUsername: true },
+    select: {
+      telegramBotToken: true,
+      telegramBotUsername: true,
+      telegramBotId: true,
+      telegramBotWebhookSecretHash: true,
+    },
   });
+  const configured = isReadyOwnBot(workspace);
   return {
-    configured: Boolean(workspace?.telegramBotToken),
-    botUsername: workspace?.telegramBotUsername ?? null,
+    configured,
+    botUsername: configured ? workspace.telegramBotUsername : null,
+    botId: configured ? workspace.telegramBotId : null,
   };
+}
+
+/** Authenticate both the secret URL segment and Telegram's secret header. */
+export async function getOwnBotWebhookBotId(
+  workspaceId: string,
+  pathSecret: string,
+  headerSecret: string | null
+): Promise<string | null> {
+  if (!headerSecret) return null;
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { telegramBotWebhookSecretHash: true, telegramBotId: true },
+  });
+  const expectedHash = workspace?.telegramBotWebhookSecretHash;
+  return (
+    expectedHash &&
+    workspace?.telegramBotId &&
+    matchesSecret(expectedHash, pathSecret) &&
+    matchesSecret(expectedHash, headerSecret)
+      ? workspace.telegramBotId
+      : null
+  );
 }

@@ -14,8 +14,7 @@ describe("GET /api/telegram/config", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    // Default: no own bot configured, so the shared env var is used.
-    mockGetOwnBotStatus.mockResolvedValue({ configured: false, botUsername: null });
+    mockGetOwnBotStatus.mockResolvedValue({ configured: false, botUsername: null, botId: null });
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -28,25 +27,25 @@ describe("GET /api/telegram/config", () => {
     expect(body.success).toBe(false);
   });
 
-  it("returns the bot username from the env var", async () => {
+  it("returns the workspace bot username when configured", async () => {
     mockGetWorkspaceId.mockResolvedValue("ws1");
-    vi.stubEnv("TELEGRAM_BOT_USERNAME", "@replie_bot");
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "agency_bot", botId: "bot1" });
 
     const res = await GET();
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(body).toEqual({ success: true, botUsername: "replie_bot", isOwnBot: false });
+    expect(body).toEqual({ success: true, botUsername: "agency_bot", isOwnBot: true });
   });
 
-  it("strips the leading @ from the username", async () => {
+  it("does not fall back to the shared bot", async () => {
     mockGetWorkspaceId.mockResolvedValue("ws1");
     vi.stubEnv("TELEGRAM_BOT_USERNAME", "@mybot");
 
     const res = await GET();
     const body = await res.json();
 
-    expect(body.botUsername).toBe("mybot");
+    expect(body).toEqual({ success: true, botUsername: null, isOwnBot: false });
   });
 
   it("returns null when the env var is unset", async () => {

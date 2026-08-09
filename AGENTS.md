@@ -10,9 +10,9 @@ Docs live in **[docs/](docs/)**. Start with **[docs/README.md](docs/README.md)**
 the map and it names the reading order.
 
 **If you are here to build something**, go straight to
-**[docs/START-HERE.md](docs/START-HERE.md)** — the ordered execution plan from the
-2026-08-07 review pass, with every task resolved to concrete files, verify steps, and the
-ordering constraints that will bite if ignored.
+**[docs/START-HERE.md](docs/START-HERE.md)** — the current pilot goal, Telegram journey,
+key implementation files, and verification commands. Historical review plans are not the
+source of truth for new work.
 
 The four that matter most:
 
@@ -25,8 +25,8 @@ The four that matter most:
   work under Standard Access. Each of these was paid for once already.
 - **[docs/reference/do-not-fix.md](docs/reference/do-not-fix.md)** — things proven **not**
   to be a problem, so they do not get re-reported. Re-reporting one is a regression.
-- **[docs/product/roadmap.md](docs/product/roadmap.md)** — what is being built and in what
-  order, carrying the CEO, engineering and design decisions from the 2026-08-07 review.
+- **[docs/product/backlog.md](docs/product/backlog.md)** — genuinely deferred work and the
+  trigger for reopening it. Historical roadmap material is reference-only.
 
 Operational detail — deployment, env vars, runbooks, the "before real users" list — is in
 **[docs/operations/handbook.md](docs/operations/handbook.md)**.
@@ -45,6 +45,6 @@ same entity. Do not design around either without asking.
 dependency change, discard it — a lockfile regenerated on Windows installs fine locally
 and breaks `npm ci` on Linux.
 
-**Baseline** (verified against the code 2026-08-07): **257 tests passing across 29 files** (does not include Prisma client — run `npm run db:generate` first),
-lint **0 errors**, typecheck silent after `npm ci`. If those stop matching, the code
-changed — find out why before starting.
+**Baseline:** run `npm.cmd run db:generate`, `npm.cmd run typecheck`, and `npm.cmd test` before
+shipping. Lint has **0 project errors**; warnings from checked-in agent skill folders are known.
+If results change, find out why before pushing.

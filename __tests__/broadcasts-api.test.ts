@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockPrisma, mockGetContext, mockAuth, mockCountAudience, mockEnroll, mockQueueAdd, mockHasOwnBot } =
+const { mockPrisma, mockGetContext, mockAuth, mockCountAudience, mockEnroll, mockQueueAdd, mockGetOwnBotStatus } =
   vi.hoisted(() => ({
     mockPrisma: {
       telegramBroadcast: {
@@ -17,7 +17,7 @@ const { mockPrisma, mockGetContext, mockAuth, mockCountAudience, mockEnroll, moc
     mockCountAudience: vi.fn(),
     mockEnroll: vi.fn(),
     mockQueueAdd: vi.fn(),
-    mockHasOwnBot: vi.fn(),
+    mockGetOwnBotStatus: vi.fn(),
   }));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
@@ -35,7 +35,7 @@ vi.mock("@/lib/queue/client", () => ({
   getTelegramQueue: () => ({ add: mockQueueAdd }),
   BROADCAST_JOB_NAME: "process-broadcast",
 }));
-vi.mock("@/lib/telegram/own-bot", () => ({ hasOwnBot: mockHasOwnBot }));
+vi.mock("@/lib/telegram/own-bot", () => ({ getOwnBotStatus: mockGetOwnBotStatus }));
 
 const { GET, POST: CREATE } = await import("@/app/api/broadcasts/route");
 const { POST: SEND, CONFIRMATION_WORD } = await import(
@@ -80,7 +80,7 @@ describe("POST /api/broadcasts (compose)", () => {
     vi.clearAllMocks();
     mockAuth.mockResolvedValue({ user: { id: "u1" } });
     mockGetContext.mockResolvedValue({ workspaceId: "ws1", role: "OWNER" });
-    mockHasOwnBot.mockResolvedValue(true);
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "agency_bot", botId: "bot1" });
     mockCountAudience.mockResolvedValue(50);
     mockPrisma.telegramBroadcast.create.mockResolvedValue({
       id: "b1",
@@ -129,11 +129,12 @@ describe("POST /api/broadcasts/:id/send (confirm)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetContext.mockResolvedValue({ workspaceId: "ws1", role: "OWNER" });
-    mockHasOwnBot.mockResolvedValue(true);
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "agency_bot", botId: "bot1" });
     mockPrisma.telegramBroadcast.findFirst.mockResolvedValue({
       id: "b1",
       status: "DRAFT",
       flowId: null,
+      botId: "bot1",
     });
     mockEnroll.mockResolvedValue(50);
     mockPrisma.telegramBroadcast.update.mockResolvedValue({});
@@ -165,7 +166,7 @@ describe("POST /api/broadcasts/:id/send (confirm)", () => {
   });
 
   it("refuses a saved draft after its own bot was disconnected", async () => {
-    mockHasOwnBot.mockResolvedValue(false);
+    mockGetOwnBotStatus.mockResolvedValue({ configured: false, botUsername: null, botId: null });
 
     const res = await SEND(
       jsonRequest({ confirm: CONFIRMATION_WORD }),
@@ -175,6 +176,20 @@ describe("POST /api/broadcasts/:id/send (confirm)", () => {
 
     expect(res.status).toBe(403);
     expect(body.error).toBe("no_own_bot");
+    expect(mockEnroll).not.toHaveBeenCalled();
+  });
+
+  it("refuses a draft after the workspace changes its bot", async () => {
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "new_bot", botId: "bot2" });
+
+    const res = await SEND(
+      jsonRequest({ confirm: CONFIRMATION_WORD }),
+      sendParams("b1")
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error).toBe("bot_changed");
     expect(mockEnroll).not.toHaveBeenCalled();
   });
 

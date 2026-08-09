@@ -11,6 +11,7 @@ import {
   getCurrentWorkspaceContext,
 } from "@/lib/workspace-access";
 import { canUseFeature, getEffectivePlan, getPlanLimits } from "@/lib/billing/plan";
+import { hasOwnBot } from "@/lib/telegram/own-bot";
 import { httpUrlOrEmptySchema, httpUrlSchema } from "@/lib/validation/url";
 
 // This list is read-your-writes (created/imported campaigns must show up
@@ -370,6 +371,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (parsed.data.telegramEnabled && !(await hasOwnBot(workspaceId))) {
+    return NextResponse.json(
+      { success: false, error: "Connect your own Telegram bot before enabling Telegram" },
+      { status: 409 }
+    );
+  }
+
   const { trackedDestinationUrl, secondaryDestinationUrl, secondaryButtonLabel } =
     parsed.data;
 
@@ -537,6 +545,13 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: "Campaign not found" },
       { status: 404 }
+    );
+  }
+
+  if (parsed.data.telegramEnabled === true && !(await hasOwnBot(workspaceId))) {
+    return NextResponse.json(
+      { success: false, error: "Connect your own Telegram bot before enabling Telegram" },
+      { status: 409 }
     );
   }
 
