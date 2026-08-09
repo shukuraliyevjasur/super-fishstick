@@ -26,6 +26,11 @@ describe("proxy matcher", () => {
     expect(matcher.test("/sitemap.xml")).toBe(false);
   });
 
+  it("skips public assets, which must not be locale-prefixed", () => {
+    expect(matcher.test("/broadcastttutorial.mp4")).toBe(false);
+    expect(matcher.test("/replie-logo.svg")).toBe(false);
+  });
+
   it("skips Telegram Mini App pages, which have no locale prefix", () => {
     expect(matcher.test("/miniapp/some-share-slug")).toBe(false);
   });

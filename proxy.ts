@@ -72,7 +72,8 @@ export const config = {
      * Match all paths except:
      * - _next/static (static files)
      * - _next/image (image optimisation)
-     * - favicon.ico
+     * - files from /public (they must be served at the domain root, not under
+     *   a locale prefix; this includes tutorial videos)
      * - /api/* (API routes, no locale needed)
      *
      * The rest are locale-less by design and have no page under app/[lang],
@@ -86,6 +87,6 @@ export const config = {
      * - /workspace-control-9f7b3c2e1a/* operator panel (no locale, not customer-facing).
      * - robots.txt and sitemap.xml, which crawlers fetch at the domain root.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/|r/|reports/|miniapp/|workspace-control-9f7b3c2e1a/|robots\\.txt|sitemap\\.xml).*)",
+    "/((?!_next/static|_next/image|api/|r/|reports/|miniapp/|workspace-control-9f7b3c2e1a/|.*\\.[^/]+$).*)",
   ],
 };
