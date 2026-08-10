@@ -23,6 +23,7 @@ export const ru: Dict = {
     stats: "Статистика",
     inbox: "Сообщения",
     campaigns: "Кампании",
+    telegram: "Telegram",
     flows: "Сценарии",
     broadcasts: "Рассылка",
     logs: "Журнал DM",
@@ -50,6 +51,8 @@ export const ru: Dict = {
       "/diagnostics": "Диагностика",
       "/overview": "Статистика",
       "/inbox": "Сообщения",
+      "/flows": "Сценарии",
+      "/broadcasts": "Рассылка",
     },
   },
 

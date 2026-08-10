@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useDict } from "@/components/dictionary-provider";
@@ -21,6 +22,16 @@ export default function Sidebar({
   const lang = (params.lang as string) || "uz";
   const pathname = usePathname();
   const switchPath = pathname.slice(1 + lang.length);
+  const telegramItems = [
+    { label: dict.sidebar.flows, path: "/flows" },
+    { label: dict.sidebar.broadcasts, path: "/broadcasts" },
+  ];
+  const telegramActive = telegramItems.some((item) => {
+    const href = `/${lang}${item.path}`;
+    return pathname === href || pathname.startsWith(`${href}/`);
+  });
+  const [telegramOpen, setTelegramOpen] = useState(telegramActive);
+  const telegramExpanded = telegramOpen || telegramActive;
 
   const navItems = [
     {
@@ -58,26 +69,6 @@ export default function Sidebar({
       icon: (
         <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-      ),
-    },
-    {
-      label: dict.sidebar.flows,
-      path: "/flows",
-      icon: (
-        <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="4" y="3" width="16" height="5" rx="1.5"/>
-          <rect x="9" y="16" width="11" height="5" rx="1.5"/>
-          <path d="M7 8v6.5A1.5 1.5 0 008.5 16H9"/>
-        </svg>
-      ),
-    },
-    {
-      label: dict.sidebar.broadcasts,
-      path: "/broadcasts",
-      icon: (
-        <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 11l18-7-7 18-2.5-8.5L3 11z"/>
         </svg>
       ),
     },
@@ -132,20 +123,78 @@ export default function Sidebar({
             const href = `/${lang}${item.path}`;
             const isActive = pathname === href || pathname.startsWith(`${href}/`);
             return (
-              <Link
-                key={item.path}
-                href={href}
-                onClick={onClose}
-                aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-accent/10 text-accent"
-                    : "text-muted hover:text-foreground hover:bg-surface-hover"
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
+              <div key={item.path}>
+                <Link
+                  href={href}
+                  onClick={onClose}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-accent/10 text-accent"
+                      : "text-muted hover:text-foreground hover:bg-surface-hover"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+
+                {item.path === "/campaigns" && (
+                  <div className="mt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setTelegramOpen((open) => !open)}
+                      aria-expanded={telegramExpanded}
+                      aria-controls="telegram-sidebar-subnav"
+                      className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                        telegramActive
+                          ? "bg-accent/10 text-accent"
+                          : "text-muted hover:bg-surface-hover hover:text-foreground"
+                      }`}
+                    >
+                      <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 11l18-7-7 18-2.5-8.5L3 11z"/>
+                      </svg>
+                      <span className="min-w-0 flex-1">{dict.sidebar.telegram}</span>
+                      <svg
+                        className={`h-3.5 w-3.5 shrink-0 transition-transform ${telegramExpanded ? "rotate-90" : ""}`}
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 4l4 4-4 4"/>
+                      </svg>
+                    </button>
+
+                    {telegramExpanded && (
+                      <div id="telegram-sidebar-subnav" className="ml-6 mt-0.5 space-y-0.5 border-l border-border pl-2">
+                        {telegramItems.map((subItem) => {
+                          const subHref = `/${lang}${subItem.path}`;
+                          const subActive = pathname === subHref || pathname.startsWith(`${subHref}/`);
+                          return (
+                            <Link
+                              key={subItem.path}
+                              href={subHref}
+                              onClick={onClose}
+                              aria-current={subActive ? "page" : undefined}
+                              className={`block rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                                subActive
+                                  ? "bg-accent/10 text-accent"
+                                  : "text-muted hover:bg-surface-hover hover:text-foreground"
+                              }`}
+                            >
+                              {subItem.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

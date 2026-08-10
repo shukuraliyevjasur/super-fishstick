@@ -45,24 +45,10 @@ function BotConnectForm({ b, onConnected }: { b: Dict["broadcasts"]; onConnected
   }
 
   return (
-    <div className="panel rounded-lg p-8 space-y-5">
+    <div className="panel rounded-lg p-6 space-y-5">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">{b.noBotTitle}</p>
         <p className="text-sm text-muted">{b.noBotDesc}</p>
-      </div>
-
-      <div className="overflow-hidden rounded-lg border border-border bg-background">
-        <video
-          controls
-          playsInline
-          preload="metadata"
-          className="block aspect-video w-full bg-foreground"
-          aria-label={b.noBotTutorialLabel}
-        >
-          <source src="/broadcastttutorial.mp4" type="video/mp4" />
-          {b.noBotTutorialFallback}
-        </video>
-        <p className="px-3 py-2 text-xs text-muted">{b.noBotTutorialLabel}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -80,6 +66,20 @@ function BotConnectForm({ b, onConnected }: { b: Dict["broadcasts"]; onConnected
             className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground font-mono outline-none focus:border-accent transition-colors"
             required
           />
+        </div>
+
+        <div className="max-w-md overflow-hidden rounded-lg border border-border bg-background">
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            className="block aspect-video w-full bg-foreground"
+            aria-label={b.noBotTutorialLabel}
+          >
+            <source src="/broadcastttutorial.mp4" type="video/mp4" />
+            {b.noBotTutorialFallback}
+          </video>
+          <p className="px-3 py-2 text-xs text-muted">{b.noBotTutorialLabel}</p>
         </div>
 
         {error && <p className="text-sm text-error">{error}</p>}

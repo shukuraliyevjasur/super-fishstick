@@ -23,6 +23,7 @@ export const en: Dict = {
     stats: "Analytics",
     inbox: "Inbox",
     campaigns: "Campaigns",
+    telegram: "Telegram",
     flows: "Flows",
     broadcasts: "Broadcast",
     logs: "DM Log",
@@ -50,6 +51,8 @@ export const en: Dict = {
       "/diagnostics": "Diagnostics",
       "/overview": "Analytics",
       "/inbox": "Inbox",
+      "/flows": "Flows",
+      "/broadcasts": "Broadcast",
     },
   },
 

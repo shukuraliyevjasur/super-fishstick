@@ -20,7 +20,12 @@ export default function TopBar({
   const pathname = usePathname();
 
   const stripped = pathname.replace(new RegExp(`^/${lang}`), "") || "/dashboard";
-  const title = dict.topBar.pageTitles[stripped] ?? "Dashboard";
+  const title =
+    dict.topBar.pageTitles[stripped] ??
+    Object.entries(dict.topBar.pageTitles)
+      .sort((a, b) => b[0].length - a[0].length)
+      .find(([path]) => stripped.startsWith(`${path}/`))?.[1] ??
+    "Dashboard";
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 lg:px-6 border-b border-border bg-surface shadow-sm">

@@ -23,6 +23,7 @@ export const uz: Dict = {
     stats: "Statistika",
     inbox: "Xabarlar",
     campaigns: "Kampaniyalar",
+    telegram: "Telegram",
     flows: "Oqimlar",
     broadcasts: "Ommaviy xabar",
     logs: "DM Jurnali",
@@ -50,6 +51,8 @@ export const uz: Dict = {
       "/diagnostics": "Diagnostika",
       "/overview": "Statistika",
       "/inbox": "Xabarlar",
+      "/flows": "Oqimlar",
+      "/broadcasts": "Ommaviy xabar",
     },
   },
 

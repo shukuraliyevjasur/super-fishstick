@@ -23,6 +23,7 @@ export interface Dict {
     stats: string
     inbox: string
     campaigns: string
+    telegram: string
     flows: string
     broadcasts: string
     logs: string
