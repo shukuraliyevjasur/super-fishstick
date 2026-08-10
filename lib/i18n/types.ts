@@ -257,6 +257,44 @@ export interface Dict {
     namePlaceholder: string
   }
 
+  telegram: {
+    title: string
+    subtitle: string
+    setupTitle: string
+    setupDesc: string
+    tokenLabel: string
+    tokenPlaceholder: string
+    tutorialLabel: string
+    tutorialFallback: string
+    connect: string
+    connecting: string
+    invalidToken: string
+    setupNote: string
+    connectedBot: string
+    disconnect: string
+    disconnectTitle: string
+    disconnectDesc: string
+    disconnectTypeLabel: string
+    disconnectWord: string
+    disconnectConfirm: string
+    disconnecting: string
+    disconnectFailed: string
+    cancel: string
+    statsLabel: string
+    statContacts: string
+    statBroadcastMessages: string
+    statCompletedBroadcasts: string
+    statActiveFlows: string
+    flowPerformance: string
+    flowPerformanceDesc: string
+    flowInteractions: string
+    noFlows: string
+    openFlows: string
+    openBroadcasts: string
+    nextTitle: string
+    nextDesc: string
+  }
+
   broadcasts: {
     title: string
     subtitle: string

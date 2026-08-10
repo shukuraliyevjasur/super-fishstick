@@ -9,6 +9,7 @@ import {
 import { flowStepsSchema } from "@/lib/telegram/flow-schema";
 import { validateFlow } from "@/lib/telegram/flow-validation";
 import { parseFlowSteps } from "@/lib/telegram/flow-types";
+import { hasOwnBot } from "@/lib/telegram/own-bot";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,10 @@ export async function GET(_request: NextRequest, { params }: RouteProps) {
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
+  }
+
+  if (!(await hasOwnBot(workspaceId))) {
+    return NextResponse.json({ success: false, error: "no_own_bot" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -75,6 +80,10 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
       { success: false, error: "Only owners and admins can edit flows" },
       { status: 403 }
     );
+  }
+
+  if (!(await hasOwnBot(context.workspaceId))) {
+    return NextResponse.json({ success: false, error: "no_own_bot" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -144,6 +153,10 @@ export async function DELETE(_request: NextRequest, { params }: RouteProps) {
       { success: false, error: "Only owners and admins can delete flows" },
       { status: 403 }
     );
+  }
+
+  if (!(await hasOwnBot(context.workspaceId))) {
+    return NextResponse.json({ success: false, error: "no_own_bot" }, { status: 403 });
   }
 
   const { id } = await params;

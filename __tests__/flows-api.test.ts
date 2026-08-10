@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockPrisma, mockGetWorkspaceId, mockGetContext } = vi.hoisted(() => ({
+const { mockPrisma, mockGetWorkspaceId, mockGetContext, mockHasOwnBot } = vi.hoisted(() => ({
   mockPrisma: {
     telegramFlow: {
       findMany: vi.fn(),
@@ -12,6 +12,7 @@ const { mockPrisma, mockGetWorkspaceId, mockGetContext } = vi.hoisted(() => ({
   },
   mockGetWorkspaceId: vi.fn(),
   mockGetContext: vi.fn(),
+  mockHasOwnBot: vi.fn(),
 }));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
@@ -20,6 +21,7 @@ vi.mock("@/lib/workspace-access", () => ({
   getCurrentWorkspaceContext: mockGetContext,
   canManageWorkspace: (role: string) => role === "OWNER" || role === "ADMIN",
 }));
+vi.mock("@/lib/telegram/own-bot", () => ({ hasOwnBot: mockHasOwnBot }));
 
 const { GET, POST } = await import("@/app/api/flows/route");
 const {
@@ -52,6 +54,7 @@ describe("flows API", () => {
     vi.clearAllMocks();
     mockGetWorkspaceId.mockResolvedValue("ws1");
     mockGetContext.mockResolvedValue({ workspaceId: "ws1", role: "OWNER" });
+    mockHasOwnBot.mockResolvedValue(true);
   });
 
   describe("authorization", () => {

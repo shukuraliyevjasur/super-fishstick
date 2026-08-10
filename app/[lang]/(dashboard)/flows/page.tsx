@@ -3,6 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/auth";
 import { getFlows } from "@/lib/data/flows";
 import { getDictionary, hasLocale } from "@/lib/i18n";
 import { FLOW_TEMPLATES } from "@/lib/telegram/flow-templates";
+import { hasOwnBot } from "@/lib/telegram/own-bot";
 import FlowList from "@/components/flows/flow-list";
 
 type Props = { params: Promise<{ lang: string }> };
@@ -15,6 +16,8 @@ export default async function FlowsPage({ params }: Props) {
 
   const workspaceId = await getCurrentWorkspaceId();
   if (!workspaceId) redirect(`/${locale}/login`);
+
+  if (!(await hasOwnBot(workspaceId))) redirect(`/${locale}/telegram`);
 
   const flows = await getFlows(workspaceId);
 

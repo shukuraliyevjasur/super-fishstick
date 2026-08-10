@@ -36,6 +36,10 @@ and stores only a hash of its route/header secret. Conversations and broadcast d
 Bot API id, so a bot replacement cannot inherit another bot's audience. `@replieuz_bot` is legacy
 and internal support only; it does not start customer campaigns or send broadcasts.
 
+The Telegram navigation parent is the single setup and reporting page. Until a workspace connects
+its bot there, Flow and Broadcast routes redirect back to that page and their write APIs reject
+requests. This makes the dependency explicit instead of leaving two apparently broken sub-pages.
+
 ---
 
 ## D9 — The flow step schema, and how a campaign finds its flow

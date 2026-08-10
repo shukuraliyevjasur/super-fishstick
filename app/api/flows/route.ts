@@ -10,6 +10,7 @@ import { flowStepsSchema } from "@/lib/telegram/flow-schema";
 import { validateFlow } from "@/lib/telegram/flow-validation";
 import { parseFlowSteps } from "@/lib/telegram/flow-types";
 import { getFlowTemplate } from "@/lib/telegram/flow-templates";
+import { hasOwnBot } from "@/lib/telegram/own-bot";
 
 // Read-your-writes: a flow you just created must appear immediately.
 export const dynamic = "force-dynamic";
@@ -34,6 +35,10 @@ export async function GET() {
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
+  }
+
+  if (!(await hasOwnBot(workspaceId))) {
+    return NextResponse.json({ success: false, error: "no_own_bot" }, { status: 403 });
   }
 
   const flows = await prisma.telegramFlow.findMany({
@@ -86,6 +91,10 @@ export async function POST(request: NextRequest) {
       { success: false, error: "Only owners and admins can create flows" },
       { status: 403 }
     );
+  }
+
+  if (!(await hasOwnBot(context.workspaceId))) {
+    return NextResponse.json({ success: false, error: "no_own_bot" }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);

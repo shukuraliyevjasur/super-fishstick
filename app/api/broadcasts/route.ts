@@ -29,6 +29,11 @@ export async function GET() {
     );
   }
 
+  const ownBot = await getOwnBotStatus(context.workspaceId);
+  if (!ownBot.configured) {
+    return NextResponse.json({ success: false, error: "no_own_bot" }, { status: 403 });
+  }
+
   const broadcasts = await prisma.telegramBroadcast.findMany({
     where: { workspaceId: context.workspaceId },
     orderBy: { createdAt: "desc" },

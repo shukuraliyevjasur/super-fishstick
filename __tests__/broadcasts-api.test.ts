@@ -53,7 +53,10 @@ function jsonRequest(body: unknown, url = "http://localhost/api/broadcasts") {
 const sendParams = (id: string) => ({ params: Promise.resolve({ id }) });
 
 describe("GET /api/broadcasts", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetOwnBotStatus.mockResolvedValue({ configured: true, botUsername: "agency_bot", botId: "bot1" });
+  });
 
   it("returns 401 when not authenticated", async () => {
     mockGetContext.mockResolvedValue(null);

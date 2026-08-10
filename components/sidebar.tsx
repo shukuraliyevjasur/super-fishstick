@@ -26,8 +26,8 @@ export default function Sidebar({
     { label: dict.sidebar.flows, path: "/flows" },
     { label: dict.sidebar.broadcasts, path: "/broadcasts" },
   ];
-  const telegramActive = telegramItems.some((item) => {
-    const href = `/${lang}${item.path}`;
+  const telegramActive = ["/telegram", ...telegramItems.map((item) => item.path)].some((path) => {
+    const href = `/${lang}${path}`;
     return pathname === href || pathname.startsWith(`${href}/`);
   });
   const [telegramOpen, setTelegramOpen] = useState(telegramActive);
@@ -140,21 +140,30 @@ export default function Sidebar({
 
                 {item.path === "/campaigns" && (
                   <div className="mt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setTelegramOpen((open) => !open)}
-                      aria-expanded={telegramExpanded}
-                      aria-controls="telegram-sidebar-subnav"
-                      className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                    <div className={`flex items-center rounded-md text-sm font-medium transition-colors ${
                         telegramActive
                           ? "bg-accent/10 text-accent"
                           : "text-muted hover:bg-surface-hover hover:text-foreground"
-                      }`}
-                    >
+                      }`}>
+                      <Link
+                        href={`/${lang}/telegram`}
+                        onClick={onClose}
+                        aria-current={pathname === `/${lang}/telegram` ? "page" : undefined}
+                        className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2"
+                      >
                       <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 11l18-7-7 18-2.5-8.5L3 11z"/>
                       </svg>
                       <span className="min-w-0 flex-1">{dict.sidebar.telegram}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setTelegramOpen((open) => !open)}
+                        aria-label={dict.sidebar.telegram}
+                        aria-expanded={telegramExpanded}
+                        aria-controls="telegram-sidebar-subnav"
+                        className="mr-1 rounded p-2 hover:bg-surface-hover"
+                      >
                       <svg
                         className={`h-3.5 w-3.5 shrink-0 transition-transform ${telegramExpanded ? "rotate-90" : ""}`}
                         viewBox="0 0 16 16"
@@ -167,7 +176,8 @@ export default function Sidebar({
                       >
                         <path d="M6 4l4 4-4 4"/>
                       </svg>
-                    </button>
+                      </button>
+                    </div>
 
                     {telegramExpanded && (
                       <div id="telegram-sidebar-subnav" className="ml-6 mt-0.5 space-y-0.5 border-l border-border pl-2">
