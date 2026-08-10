@@ -20,7 +20,7 @@ interface Props {
   dict: Dict["broadcasts"];
 }
 
-type Stage = "compose" | "confirm" | "sending";
+type Stage = "compose" | "previewing" | "confirm" | "sending";
 
 export default function BroadcastComposer({
   flows,
@@ -39,30 +39,35 @@ export default function BroadcastComposer({
   /** Creates the broadcast as a DRAFT and reports the reach. Sends nothing. */
   async function preview() {
     setError(null);
+    setStage("previewing");
 
-    const response = await fetch("/api/broadcasts", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message, flowId: flowId || null }),
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/api/broadcasts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message, flowId: flowId || null }),
+      });
+      const data = await response.json();
 
-    if (response.status === 422 && data.audience !== undefined) {
-      setError(t(b.tooLarge, { count: data.audience, limit: data.limit }));
-      return;
-    }
-    if (!response.ok || !data.success) {
+      if (response.status === 422 && data.audience !== undefined) {
+        setError(t(b.tooLarge, { count: data.audience, limit: data.limit }));
+        setStage("compose");
+        return;
+      }
+      if (!response.ok || !data.success) throw new Error("Preview failed");
+      if (data.audience === 0) {
+        setError(b.noAudience);
+        setStage("compose");
+        return;
+      }
+
+      setBroadcastId(data.broadcast.id);
+      setAudience(data.audience);
+      setStage("confirm");
+    } catch {
       setError(b.failed);
-      return;
+      setStage("compose");
     }
-    if (data.audience === 0) {
-      setError(b.noAudience);
-      return;
-    }
-
-    setBroadcastId(data.broadcast.id);
-    setAudience(data.audience);
-    setStage("confirm");
   }
 
   async function send() {
@@ -106,7 +111,7 @@ export default function BroadcastComposer({
         </p>
       )}
 
-      {stage === "compose" ? (
+      {stage === "compose" || stage === "previewing" ? (
         <>
           <label className="block">
             <span className="text-xs font-medium text-muted">{b.messageLabel}</span>
@@ -139,10 +144,10 @@ export default function BroadcastComposer({
           <div className="flex items-center gap-3">
             <button
               onClick={() => void preview()}
-              disabled={message.trim().length === 0}
+              disabled={message.trim().length === 0 || stage === "previewing"}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
-              {b.previewBtn}
+              {stage === "previewing" ? b.previewing : b.previewBtn}
             </button>
             <button
               onClick={onCancel}

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useDict } from "@/components/dictionary-provider";
+import NavigationPending from "@/components/navigation-pending";
 
 export default function Sidebar({
   isOpen,
@@ -135,7 +136,8 @@ export default function Sidebar({
                   }`}
                 >
                   {item.icon}
-                  {item.label}
+                  <span className="min-w-0 flex-1">{item.label}</span>
+                  <NavigationPending />
                 </Link>
 
                 {item.path === "/campaigns" && (
@@ -155,6 +157,7 @@ export default function Sidebar({
                         <path d="M3 11l18-7-7 18-2.5-8.5L3 11z"/>
                       </svg>
                       <span className="min-w-0 flex-1">{dict.sidebar.telegram}</span>
+                      <NavigationPending />
                       </Link>
                       <button
                         type="button"
@@ -190,13 +193,14 @@ export default function Sidebar({
                               href={subHref}
                               onClick={onClose}
                               aria-current={subActive ? "page" : undefined}
-                              className={`block rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                              className={`flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                                 subActive
                                   ? "bg-accent/10 text-accent"
                                   : "text-muted hover:bg-surface-hover hover:text-foreground"
                               }`}
                             >
                               {subItem.label}
+                              <NavigationPending />
                             </Link>
                           );
                         })}

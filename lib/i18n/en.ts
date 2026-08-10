@@ -339,6 +339,7 @@ export const en: Dict = {
     audienceLabel: "To",
     audienceAll: "Everyone who talked to the bot",
     previewBtn: "See how many it reaches",
+    previewing: "Checking audience...",
     reachLabel: "Reaches {{count}} people",
     confirmTitle: "Confirm",
     confirmBody: "This goes to {{count}} people. A sent message cannot be unsent.",

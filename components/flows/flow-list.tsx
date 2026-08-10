@@ -67,9 +67,15 @@ export default function FlowList({
 
   async function deleteFlow(id: string) {
     if (!window.confirm(f.deleteConfirm)) return;
-
-    const response = await fetch(`/api/flows/${id}`, { method: "DELETE" });
-    if (response.ok) setFlows((current) => current.filter((flow) => flow.id !== id));
+    const previous = flows;
+    setFlows((current) => current.filter((flow) => flow.id !== id));
+    try {
+      const response = await fetch(`/api/flows/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete flow");
+    } catch {
+      setFlows(previous);
+      setError(f.createFailed);
+    }
   }
 
   const showPicker = picking || flows.length === 0;

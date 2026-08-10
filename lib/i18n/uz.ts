@@ -340,6 +340,7 @@ export const uz: Dict = {
     audienceLabel: "Kimga",
     audienceAll: "Barcha suhbatlashganlar",
     previewBtn: "Qancha odamga borishini ko'rish",
+    previewing: "Auditoriya tekshirilmoqda...",
     reachLabel: "{{count}} kishiga boradi",
     confirmTitle: "Tasdiqlang",
     confirmBody: "Bu xabar {{count}} kishiga yuboriladi. Yuborilgan xabarni qaytarib bo'lmaydi.",

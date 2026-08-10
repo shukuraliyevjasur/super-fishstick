@@ -109,14 +109,19 @@ export default function CampaignDetailPage() {
 
   async function toggleActive() {
     if (!campaign) return;
+    const previous = campaign;
+    const next = { ...campaign, isActive: !campaign.isActive };
+    setCampaign(next);
     setBusy(true);
     try {
-      await fetch(`/api/automations?id=${campaign.id}`, {
+      const response = await fetch(`/api/automations?id=${campaign.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !campaign.isActive }),
       });
-      setCampaign({ ...campaign, isActive: !campaign.isActive });
+      if (!response.ok) throw new Error("Failed to toggle campaign");
+    } catch {
+      setCampaign(previous);
     } finally {
       setBusy(false);
     }

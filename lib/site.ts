@@ -5,16 +5,14 @@
  * host advertised to crawlers cannot drift from the one used to build canonical
  * URLs (Q4).
  *
- * **This must match the host the deployment actually serves.** As of 2026-08-03
- * `replie.uz` 308s to `www.replie.uz`, so every sitemap URL costs crawlers two
- * redirect hops (308 to www, then 307 to the locale prefix). Fixing that is an
- * operator action, not a code change — either make the apex the primary domain
- * in Vercel, or set `APP_URL` to the `www` host. See Q4 in FIX_BRIEF.md.
+ * **This must match the host the deployment actually serves.** `replie.uz` is
+ * the primary domain; `www.replie.uz` redirects to it. Keep `APP_URL` on the
+ * apex so links we generate never make visitors pay for that redirect.
  *
  * `APP_URL` also builds tracked links inside sent DMs
  * (`lib/tracking/message.ts`), so changing it changes newly generated links.
- * Existing ones keep working through the 308, but know that this value is load
- * bearing in two places at once.
+ * Existing links keep working through the redirect, but know that this value
+ * is load bearing in two places at once.
  */
 export function getSiteUrl(): string {
   const raw =

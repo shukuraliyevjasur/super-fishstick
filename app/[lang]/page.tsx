@@ -90,7 +90,6 @@ export default async function Home({ params }: Props) {
           <div className="flex flex-col lg:flex-row items-center" style={{ gap: 56 }}>
             <div style={{ flex: 1, minWidth: 0, maxWidth: 560 }}>
               <h1
-                className="hero-enter"
                 style={{
                   margin: 0,
                   fontSize: "clamp(2.5rem, 4vw + 1rem, 3.75rem)",

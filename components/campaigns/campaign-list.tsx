@@ -31,6 +31,7 @@ export default function CampaignList({
   const [videos, setVideos] = useState<Record<string, string>>({});
   const [playingVideo, setPlayingVideo] = useState<{ url: string; postUrl: string | null } | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
 
@@ -96,24 +97,50 @@ export default function CampaignList({
   }
 
   async function toggleActive(id: string, isActive: boolean) {
+    const nextActive = !isActive;
+    setPendingIds((current) => new Set(current).add(id));
+    setAutomations((current) =>
+      current.map((automation) =>
+        automation.id === id ? { ...automation, isActive: nextActive } : automation
+      )
+    );
+
     try {
-      await fetch(`/api/automations?id=${id}`, {
+      const response = await fetch(`/api/automations?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !isActive }),
+        body: JSON.stringify({ isActive: nextActive }),
       });
-      setAutomations((prev) => prev.map((a) => (a.id === id ? { ...a, isActive: !isActive } : a)));
+      if (!response.ok) throw new Error("Failed to toggle");
     } catch (err) {
+      // The switch moved immediately; restore its prior state only if the API
+      // rejected the change so the UI never lies about a live campaign.
+      setAutomations((current) =>
+        current.map((automation) =>
+          automation.id === id ? { ...automation, isActive } : automation
+        )
+      );
       console.error("Failed to toggle:", err);
+    } finally {
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
   async function deleteAutomation(id: string) {
     if (!confirm(c.deleteConfirm)) return;
+    const previous = automations;
+    setMenuOpenId(null);
+    setAutomations((current) => current.filter((automation) => automation.id !== id));
+
     try {
-      await fetch(`/api/automations?id=${id}`, { method: "DELETE" });
-      setAutomations((prev) => prev.filter((a) => a.id !== id));
+      const response = await fetch(`/api/automations?id=${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete");
     } catch (err) {
+      setAutomations(previous);
       console.error("Failed to delete:", err);
     }
   }
@@ -369,6 +396,8 @@ export default function CampaignList({
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => toggleActive(auto.id, auto.isActive)}
+                    disabled={pendingIds.has(auto.id)}
+                    aria-pressed={auto.isActive}
                     className={`relative w-11 h-6 rounded-full transition-colors ${auto.isActive ? "bg-accent" : "bg-border"}`}
                   >
                     <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ${auto.isActive ? "left-6" : "left-1"}`} />

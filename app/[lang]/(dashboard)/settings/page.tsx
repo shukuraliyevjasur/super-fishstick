@@ -67,6 +67,7 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
   const [memberError, setMemberError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const igParam = searchParams.get("instagram");
@@ -101,23 +102,37 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function refreshMembers() {
-    const res = await fetch("/api/workspace/members");
-    const payload = await res.json();
-    if (payload.success) setMembersData(payload.data);
-  }
-
   async function disconnectInstagram(instagramAccountId: string) {
     if (!confirm(d.disconnectConfirm)) {
       return;
     }
+    const previous = data;
+    setOperationError(null);
     setBusy(`disconnect:${instagramAccountId}`);
-    await fetch("/api/instagram/disconnect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ instagramAccountId }),
+    setData((current) => current && {
+      ...current,
+      instagramAccount:
+        current.instagramAccount?.id === instagramAccountId
+          ? null
+          : current.instagramAccount,
+      instagramAccounts: current.instagramAccounts.filter(
+        (account) => account.id !== instagramAccountId
+      ),
     });
-    window.location.reload();
+
+    try {
+      const response = await fetch("/api/instagram/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instagramAccountId }),
+      });
+      if (!response.ok) throw new Error("Failed to disconnect Instagram");
+    } catch {
+      setData(previous);
+      setOperationError(d.igErrFailed);
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function inviteMember(event: React.FormEvent) {
@@ -140,14 +155,26 @@ export default function SettingsPage() {
   }
 
   async function removeInvitation(invitationId: string) {
+    const previous = membersData;
+    setOperationError(null);
     setBusy(`invite:${invitationId}`);
-    await fetch("/api/workspace/members", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ invitationId }),
+    setMembersData((current) => current && {
+      ...current,
+      invitations: current.invitations.filter((invitation) => invitation.id !== invitationId),
     });
-    await refreshMembers();
-    setBusy(null);
+    try {
+      const response = await fetch("/api/workspace/members", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId }),
+      });
+      if (!response.ok) throw new Error("Failed to cancel invitation");
+    } catch {
+      setMembersData(previous);
+      setOperationError(d.inviteFailed);
+    } finally {
+      setBusy(null);
+    }
   }
 
   if (loading) {
@@ -179,6 +206,12 @@ export default function SettingsPage() {
             ✕
           </button>
         </div>
+      )}
+
+      {operationError && (
+        <p role="alert" className="rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+          {operationError}
+        </p>
       )}
 
       {/* Instagram Connection */}

@@ -339,6 +339,7 @@ export const ru: Dict = {
     audienceLabel: "Кому",
     audienceAll: "Все, кто общался с ботом",
     previewBtn: "Посмотреть, скольким дойдёт",
+    previewing: "Проверяем аудиторию...",
     reachLabel: "Дойдёт до {{count}} человек",
     confirmTitle: "Подтвердите",
     confirmBody: "Сообщение уйдёт {{count}} людям. Отправленное не отменить.",
